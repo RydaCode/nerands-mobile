@@ -1,0 +1,28 @@
+// import { useRouter } from 'expo-router'
+// import { ScrollView, Text, View } from 'react-native'
+
+// const All = () => {
+//     const router = useRouter();
+//     return (
+//         <ScrollView showsVerticalScrollIndicator={false}>
+//             <View className='px-2 pb-10'>
+//                 <Text className='mt-5' style={{fontFamily: 'maven-medium'}}>All Hotels</Text>
+//                 <View className='w-full flex-row flex-wrap items-center justify-between'>
+//                     {store_data.map((hotel) => (
+//                         <AllCard
+//                             key={hotel.id}
+//                             hotel_name={hotel.name}
+//                             description={hotel.desc}
+//                             hotel_image={hotel.image}
+//                             latitude='15.21358'
+//                             longitude='25.32658'
+//                             router={router}
+//                         />
+//                     ))}
+//                 </View>
+//             </View>
+//         </ScrollView>
+//     )
+// }
+
+// export default All

@@ -1,0 +1,45 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  // NOTE: Update this to include the paths to all of your component files.
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {
+      colors: {
+        // primary: 'red',
+        // primary: '#54C571',
+        // primary: "#E0115F",
+        primary: "#E52F20",
+        white: "#fff",
+        red: "red",
+        coral: "coral",
+        black: "#000",
+        green2: "#32CD32",
+        // green: '#32CD32',
+        green1: "rgba(5, 173, 117, 0.884)",
+        navBtnBg: "#F6E7E6",
+        // navBtnBg: '#DFF6E6',
+        bgFadeGreen: "#DFF6E6",
+        navBtnBgHome: "#F6E7E6",
+        grey_bg: "#F3F4F8",
+        grey: "grey",
+        lite: "lightgrey",
+        slate: "lightslategrey",
+        transparent: "transparent",
+        lavender: "lavender",
+        transparentBlack: "rgba(0,0,0,0.5)",
+        follow_btn: "#00acee",
+      },
+      fontFamily: {
+        maven: ["MavenPro-Regular"],
+        mavenMedium: ["MavenPro-Medium"],
+        mavenBold: ["maven-bold"],
+        outfitMedium: ["outfit-medium"],
+        robotoMedium: ["ubuntu-medium"],
+        ubuntuRegular: ["ubuntu-regular"],
+        ubuntuBold: ["ubuntu-bold"],
+      },
+    },
+  },
+  plugins: [],
+};

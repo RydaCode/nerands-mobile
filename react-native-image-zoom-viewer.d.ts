@@ -1,0 +1,1 @@
+declare module '@vijaykishan312/react-native-image-zoom-viewer';
