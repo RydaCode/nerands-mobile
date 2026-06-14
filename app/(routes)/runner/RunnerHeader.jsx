@@ -16,7 +16,7 @@ const RunnerHeader = ({ runner, setSettings }) => {
                     </Text>
                     <Text className="text-base text-slate" style={{ fontFamily: 'roboto-medium' }}>
                         {runner?.phone_num}
-                    </Text>n
+                    </Text>
                 </View>
 
                 <TouchableOpacity

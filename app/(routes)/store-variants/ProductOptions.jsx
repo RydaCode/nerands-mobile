@@ -24,6 +24,7 @@ const ProductOptions = () => {
         
     );
     const {data: deleteOption, isLoading: deleteOptionLoading, error: deleteOptionError, del: deleteOptions} = useApi();
+    const {data: imagesData, isLoading: imagesLoading, error: imagesError, get: imagesGet} = useApi(`/products/product-images?product_id=${params.product_id}`);
     const router = useRoute();
     const [options, setOptions] = useState([]);
     const [addingOptionId, setaddingOptionId] = useState(null);
@@ -47,7 +48,13 @@ const ProductOptions = () => {
                 `/variants/product/options/${params.product_id}/${params.id}`
             );   
         }
-    }, [params])
+    }, [params]);
+
+    useEffect(() => {
+        if (params) {
+            imagesGet();   
+        }
+    }, [params]);
 
     const product_options = getProductOptions?.data ?? [];
 
@@ -179,7 +186,7 @@ const ProductOptions = () => {
                                     <Text className='text-xl text-black' style={{fontFamily: 'roboto-medium'}}>{params.product_name}</Text>
                                     <ProductImagesGallery
                                         mainImage={params.product_image}
-                                        images={Array.isArray(params.product_images) ? params.product_image : []}
+                                        images={Array.isArray(imagesData?.data) ? imagesData?.data : []}
                                     />
 
                                     <Text className="text-2xl font-bold mb-1 mt-6">{params.name}</Text>

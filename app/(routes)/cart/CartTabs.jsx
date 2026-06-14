@@ -1,25 +1,43 @@
-import { View, Text, TouchableOpacity, FlatList } from 'react-native'
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { COLORS } from '../../../constants/constants';
 import styles from '../../../constants/styles.tabs';
 
-const TabButton = ({ name, activeTab, onHandleSearchType }) => (
+const TabButton = ({ tab, activeTab, onHandleSearchType }) => (
     <TouchableOpacity
-        style={styles.btn(name, activeTab)} className='py-2 px-6 items-center'
+        style={styles.btn(tab.id, activeTab)}
+        className='py-2 border border-lavender px-6 items-center'
         onPress={onHandleSearchType}
     >
-        <Text style={styles.btnText(name, activeTab)}>{name}</Text>
+        <Text style={styles.btnText(tab.id, activeTab)}>
+            {tab.title}{' '}
+
+            {tab.count !== undefined && (
+                <Text
+                    style={{
+                        color:
+                            activeTab === tab.id
+                                ? COLORS.white
+                                : COLORS.primary,
+                    }}
+                >
+                    ({tab.count})
+                </Text>
+            )}
+        </Text>
     </TouchableOpacity>
 );
 
 const CartTabs = ({ tabs, activeTab, setActiveTab }) => {
     return (
-        <View className='px-2 items-center justify-center' style={styles.container}>
+        <View className='items-center justify-center' style={styles.container}>
             <FlatList
                 data={tabs}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <TabButton
-                        name={item}
+                        tab={item}
                         activeTab={activeTab}
-                        onHandleSearchType={() => setActiveTab(item)}
+                        onHandleSearchType={() => setActiveTab(item.id)}
                     />
                 )}
                 showsHorizontalScrollIndicator={false}
@@ -27,7 +45,7 @@ const CartTabs = ({ tabs, activeTab, setActiveTab }) => {
                 contentContainerStyle={{ columnGap: 5 }}
             />
         </View>
-    )
-}
+    );
+};
 
-export default CartTabs
+export default CartTabs;

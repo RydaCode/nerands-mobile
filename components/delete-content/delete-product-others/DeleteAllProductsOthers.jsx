@@ -10,8 +10,6 @@ const DeleteAllProductsOthers = ({ setDeleteAllProductsModalVisible, params }) =
 
     const { data, isLoading, error, del } = useApi(`/products/delete-selected-products`);
 
-    console.log("error")
-
     // -------------------- HANDLE RESPONSE --------------------
     useEffect(() => {
         if (!data && !error) return;

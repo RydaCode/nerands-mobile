@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity, FlatList } from 'react-native'
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import styles from '../../../../constants/styles.tabs';
 
 const TabButton = ({ name, activeTab, onHandleSearchType }) => (
     <TouchableOpacity
-        style={styles.btn(name, activeTab)} className='py-2 px-6 items-center'
+        style={styles.btn(name, activeTab)} className='py-2 border border-lavender px-6 items-center'
         onPress={onHandleSearchType}
     >
         <Text style={styles.btnText(name, activeTab)}>{name}</Text>

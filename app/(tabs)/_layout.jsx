@@ -1,40 +1,65 @@
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { Tabs } from 'expo-router';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from '../../constants/constants';
 
 const TabsLayout = () => {
+    const insets = useSafeAreaInsets();
 
     return (
         <Tabs
             screenOptions={{
-            tabBarActiveTintColor: COLORS.primary,
-            tabBarInactiveTintColor: COLORS.black,
-            headerShown: false,
-            tabBarLabelStyle: {fontFamily: 'roboto-medium', fontSize: 12},
-            tabBarStyle: {
-                // elevation: 6, // Removes elevation (Android)
-                // backgroundColor: COLORS.grey_bg,
+                tabBarActiveTintColor: COLORS.primary,
+                tabBarInactiveTintColor: COLORS.black,
+                headerShown: false,
+                tabBarLabelStyle: {
+                    fontFamily: 'roboto-medium',
+                    fontSize: 12
+                },
 
+                contentStyle: {
+                    paddingBottom: 55 + insets.bottom,
+                },
 
-                // 👇 Rounded container
-                borderTopLeftRadius: 15,
-                borderTopRightRadius: 15,
-                borderTopWidth: 1,
-                borderRightWidth: 1,
-                borderLeftWidth: 1,
-                borderTopColor: COLORS.lavender,
-                borderLeftColor: COLORS.lavender,
-                borderRightColor: COLORS.lavender,
+                tabBarStyle: {
+                    position: "absolute",
+                    height: 55 + insets.bottom,
+                    paddingBottom: insets.bottom,
 
-                // 👇 Shadow (iOS)
-                shadowColor: '#000',
-                shadowOpacity: 0.2,
-                shadowRadius: 6,
-                shadowOffset: { width: 0, height: 3 },
-                height: 55,
-            },
-        }}>
+                    backgroundColor: "transparent", // IMPORTANT
+
+                    borderTopLeftRadius: 15,
+                    borderTopRightRadius: 15,
+
+                    borderWidth: 0,
+                    elevation: 0,
+                },
+
+                tabBarBackground: () => (
+                    <View
+        style={{
+            flex: 1,
+            backgroundColor: "white",
+
+            borderTopLeftRadius: 15,
+            borderTopRightRadius: 15,
+
+            borderWidth: 1,
+            borderColor: COLORS.lavender,
+
+            shadowColor: "#000",
+            shadowOpacity: 0.12,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: -4 },
+
+            elevation: 12,
+        }}
+    />
+                ),
+            }}
+        >
             <Tabs.Screen
                 name="index"
                 options={{

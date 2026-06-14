@@ -160,12 +160,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     thumbnail: {
-        width: 70,
-        height: 60,
-        marginHorizontal: 5,
+        width: 85,
+        height: 70,
+        marginHorizontal: 3,
         borderRadius: 4,
-        borderWidth: 1,
-        borderColor: COLORS.green2,
     },
     activeThumbnail: {
         borderWidth: 2,

@@ -28,8 +28,6 @@ const AllProducts = ({ store_data, store_id, category }) => {
             const res = await get(`/products/category?cat_name=${category}&store_id=${store_id}&page=${nextPage}&limit=10`);
             const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
 
-            console.log("PRODUCTS WITH VARIANTS", store_id)
-
             setProductsList(prev => reset ? newData : [...prev, ...newData]);
             setPage(nextPage);
             setHasMore(nextPage < (res?.data?.pagination?.pages || 0));

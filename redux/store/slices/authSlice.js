@@ -17,6 +17,8 @@ const initialState = {
     is_runner: false,
     transporter_id: null,
     runner_id: null,
+    created_at: null,
+    is_verified: false,
     isAuthenticated: false,
 };
 

@@ -28,7 +28,6 @@ export const useRunnerOrders = ({ runner_id, isActive }) => {
 
     useEffect(() => {
         if (!runner_id || !isActive) return;
-
         acceptedApi.get();
         progressingApi.get();
         readyApi.get();

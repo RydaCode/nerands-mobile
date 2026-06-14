@@ -36,7 +36,7 @@ const index = () => {
     return (
         <SafeAreaView className='flex-1 bg-white'>
             <View className='px-4'>
-                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='My Order' />
+                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Custom Order' />
             </View>
             <UserSingleCustomOrder products={Products}/>
         </SafeAreaView>

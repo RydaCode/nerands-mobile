@@ -8,6 +8,7 @@ import FormInputs from '../../../../components/FormFields/FormInputs';
 import MainHeader from '../../../../components/MainHeader';
 import useApi from '../../../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../../../RequestMethods';
+import { toast } from '../../../../utils/toast';
 import LoadingIndicator from '../../../LoadingIndicator';
 import Redirecting from '../../../Redirecting';
 
@@ -33,27 +34,9 @@ const Index = () => {
     };
 
     const handleSearchAdmin = () => {
-        
-
         if (!admin_id) {
             setErrorMessage('Please enter user phone number / email!');
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Please enter user phone number / email!',
-                visibilityTime: 4000,
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 13,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 12,
-                    fontFamily: 'roboto-medium',
-                },
-            });
+            toast.error('Please enter user phone number / email!');
             return;
         }
 
@@ -65,15 +48,9 @@ const Index = () => {
     useEffect(() => {
         if (!data || hasNavigated) return;
 
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        if (data?.success && Array.isArray(data?.data) && data?.data?.length > 0) {
             setErrorMessage('Success');
-            Toast.show({
-                type: 'success',
-                text1: 'User found!',
-                text2: `Found ${data.data.length} user(s).`,
-                visibilityTime: 4000,
-                position: 'bottom',
-            });
+            toast.success(`Found ${data?.data?.length} user(s).`);
 
             setHasNavigated(true);
             setTimeout(() => {
@@ -84,23 +61,17 @@ const Index = () => {
                         store_profileimage: params.store_profileimage,
                         store_description: params.store_description,
                         store_id: params.store_id,
-                        user_id: data.data[0]?.user_id,
-                        first_name: data.data[0]?.first_name,
-                        last_name: data.data[0]?.last_name,
-                        phone_num: data.data[0]?.phone_num,
-                        status: data.data[0]?.status,
+                        user_id: data?.data[0]?.user_id,
+                        first_name: data?.data[0]?.first_name,
+                        last_name: data?.data[0]?.last_name,
+                        phone_num: data?.data[0]?.phone_num,
+                        status: data?.data[0]?.status,
                     },
                 });
             }, 1000);
-        } else if (!data.success) {
-            setErrorMessage(data.message || 'No users found.');
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: data.message || 'No user found with that ID.',
-                visibilityTime: 4000,
-                position: 'bottom',
-            });
+        } else if (!data?.success) {
+            setErrorMessage(data?.message || 'No users found.');
+            toast.error(data?.message || 'No user found with that ID.');
         }
     }, [data]);
 

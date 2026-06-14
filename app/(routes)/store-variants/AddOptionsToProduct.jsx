@@ -21,9 +21,6 @@ import LoadingIndicator from '../../LoadingIndicator';
 const AddOptionsToProduct = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const parsedOptions = params.variant_options
-    ? JSON.parse(params.variant_options)
-    : [];
     const store_id = params.store_id;
     const [errorMessage, setErrorMessage] = useState('');
     const [isRedirecting, setIsRedirecting] = useState(false);
@@ -38,7 +35,7 @@ const AddOptionsToProduct = () => {
         '/variants/group/product/options/add'
     );
     const {data: deleteMultiGroup, isLoading: deleteMultiLoading, error: deleteMultiError, del: delteMultiGroups} = useApi();
-
+    
     useEffect(() => {
         if (store_id) {
             get();

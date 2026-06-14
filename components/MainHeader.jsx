@@ -8,6 +8,16 @@ const MainHeader = ({ header_name, otherStyles, textStyles, fontFamily }) => {
     const router = useRouter();
     const othersCartItems = useSelector(state => state.otherscart.othersCartItems);
     const cartItems = useSelector(state => state.cart.cartItems);
+
+    const totalOtherCartItems = othersCartItems.reduce(
+        (sum, item) => sum + (item.product_qty || 0),
+        0
+    );
+
+    const totalFoodCartItems = cartItems.reduce(
+        (sum, item) => sum + (item.product_qty || 0),
+        0
+    );
     return (
         <View className={`flex-row pt-1 justify-between items-center w-full mb-1 ${otherStyles}`}>
             <View>
@@ -43,7 +53,7 @@ const MainHeader = ({ header_name, otherStyles, textStyles, fontFamily }) => {
                         style={{ top: -5, height: 21, width: 21 }}
                         className='absolute left-5 bottom-0 justify-center items-center bg-red border border-white rounded-full'
                     >
-                        <Text className='text-white text-sm'>{cartItems.length}</Text>
+                        <Text className='text-white text-sm'>{totalFoodCartItems}</Text>
                     </View>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -59,7 +69,7 @@ const MainHeader = ({ header_name, otherStyles, textStyles, fontFamily }) => {
                         style={{ top: -5, height: 21, width: 21 }}
                         className='absolute left-5 bottom-0 justify-center items-center bg-red border border-white rounded-full'
                     >
-                        <Text  className='text-white text-sm' >{othersCartItems.length}</Text>
+                        <Text  className='text-white text-sm' >{totalOtherCartItems}</Text>
                     </View>
                 </TouchableOpacity>
             </View>

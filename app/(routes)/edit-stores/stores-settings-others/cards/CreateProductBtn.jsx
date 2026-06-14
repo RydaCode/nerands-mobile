@@ -8,7 +8,6 @@ const CreateProductBtn = ({router, params}) => {
             className='h-full items-center justify-center bg-white border-1 rounded-md border-lavender w-full'
             onPress={() => router.push({pathname: '/create-products/', params: {
                 store_latitude: params.store_latitude,
-                location: params.location,
                 store_longitude: params.store_longitude,
                 open_close: params.open_close,
                 open_time: params.open_time,

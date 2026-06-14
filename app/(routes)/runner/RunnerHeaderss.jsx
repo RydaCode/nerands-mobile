@@ -1,4 +1,4 @@
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, SimpleLineIcons } from '@expo/vector-icons';
 import { Image, Text, View } from 'react-native';
 import { USER_IMAGE_URI } from '../../../RequestMethods';
 import { COLORS } from '../../../constants/constants';
@@ -16,7 +16,7 @@ const RunnerHeaderss = ({ runner, setSettings }) => {
                 <Text className='text-sm text-slate' numberOfLines={1}>snyimbili02@gmail.com</Text>
             </View>
             <View>
-                <FontAwesome name='gear' size={20} color={'#93c5fd'}/>
+                <SimpleLineIcons name="badge" size={20} color={'#93c5fd'} />
             </View>
         </View>
     )

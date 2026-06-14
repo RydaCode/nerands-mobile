@@ -1,6 +1,6 @@
 import { Entypo, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useEffect, useReducer, useState } from 'react';
-import { Dimensions, FlatList, Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, useWindowDimensions, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS, SIZES } from '../../constants/constants';
 import {
@@ -10,7 +10,6 @@ import {
     updateOthersItem
 } from '../../redux/store/slices/OthersCartSlice';
 import { PRODUCTS_IMAGE_URI } from '../../RequestMethods';
-import DescriptionInput from '../FormFields/DescriptionInput';
 
 const { width: screenWidth } = Dimensions.get('window'); // Get screen width for scaling
 const { height: screenHeight } = Dimensions.get('window'); // Get screen height for scaling
@@ -50,7 +49,7 @@ const OthersCartData = ({item}) => {
     const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
     const othersCartItem = othersCartItems.find(otherscart => otherscart.product_id === item.product_id);
     const qtycounter = othersCartItem ? othersCartItem.product_qty : 1;
-
+    const [selectedVariants, setSelectedVariants] = useState({});
 
     // Calculate total cart price
     const [totalZMK, setTotalZMK] = useState(0);
@@ -82,19 +81,104 @@ const OthersCartData = ({item}) => {
     const [selectedsizes, setSelectedSizes] = useState([]);
     const [productnotes, setProductNotes] = useState('');
     const [quantity, setQuantity] = useState(item.product_qty);
-    const [totalprice, setTotalPrice] = useState(item.product_price);
+    const [totalprice, setTotalPrice] = useState(item.final_price);
 
     // Extract available colors and sizes from item
     const Colors = typeof item.available_colors === "string"
-    ? item.available_colors.split(",").map(color => color.trim()).filter(Boolean)
-    : [];
+    ? item.available_colors.split(",").map(color => color.trim()).filter(Boolean) : [];
 
     const Sizes = typeof item.available_sizes === "string"
-    ? item.available_sizes.split(",").map(size => size.trim()).filter(Boolean)
-    : [];
+    ? item.available_sizes.split(",").map(size => size.trim()).filter(Boolean) : [];
 
     const handleChangeText = (value) => {
         setProductNotes(value);
+    };
+
+    useEffect(() => {
+        if (!othersCartItems[0].available_variants?.length) return;
+        setSelectedVariants(prev => {
+            const updated = { ...prev };
+            othersCartItems[0].available_variants.forEach(group => {
+                const key = group.id;
+
+                // skip if already selected
+                if (updated[key] && updated[key].length > 0) return;
+
+                if (group.options?.length > 0) {
+                    // ✅ required → must select something
+                    if (group.is_required) {
+                        updated[key] = [group.options[0].id];
+                    }
+                    // ✅ optional → leave empty (better UX)
+                    else {
+                        updated[key] = [];
+                    }
+                }
+            });
+            return updated;
+        });
+    }, [othersCartItems[0].available_variants]);
+
+    const handleSelectVariant = (group, item) => {
+        const key = group.id;
+        setSelectedVariants((prev) => {
+            const current = prev[key] || [];
+            const exists = current.includes(item.id);
+
+            return {
+                ...prev,
+                [key]: exists
+                    ? current.filter(v => v !== item.id)
+                    : [...current, item.id]
+            };
+        });
+    };
+
+    const isSelected = (group, item) => {
+        return (selectedVariants[group.id] || []).includes(item.id);
+    };
+
+    const getVariantPrice = () => {
+        let extra = 0;
+        othersCartItems[0].available_variants.forEach((group) => {
+            const selected = selectedVariants[group.id];
+
+            if (!selected) return;
+
+            const selectedArray = Array.isArray(selected)
+                ? selected
+                : [selected];
+
+            selectedArray.forEach((value) => {
+                const option = group.options?.find(
+                    (o) => String(o.id) === String(value)
+                );
+
+                const price = parseFloat(option?.price ?? 0);
+
+                if (!isNaN(price)) {
+                    extra += price;
+                }
+            });
+        });
+        return extra;
+    };
+
+    const basePrice = Number(item.final_price || 0);
+    const variantPrice = getVariantPrice();
+
+    const totalPrice = (basePrice + variantPrice) * quantity;
+
+    const validateVariants = () => {
+        const missing = [];
+        othersCartItems[0].available_variants.forEach((group) => {
+            const key = group.id;
+
+            if (!selectedVariants[key] || selectedVariants[key].length === 0) {
+                missing.push(group.name);
+            }
+        });
+        return missing;
     };
 
     useEffect(() => {
@@ -150,8 +234,6 @@ const OthersCartData = ({item}) => {
         }));
     };
 
-    // console.log(othersCartItems)
-
     return (
         <>
             {/* Start modal */}
@@ -165,33 +247,30 @@ const OthersCartData = ({item}) => {
                     visible={modalVisible}
                     onRequestClose={() => setModalVisible(false)}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === "ios" ? "padding" : "height"}
-                        style={styles.centeredView}
-                    >
-                    <TouchableWithoutFeedback onPress={(e) => e.target === e.currentTarget && setModalVisible(false)}>
                     <View style={styles.centeredView}>
                         <View style={styles.modalView}>
                             <Pressable
                                 onPress={() => setModalVisible(!modalVisible)}
-                                className='flex-row justify-between mb-5'
+                                className='flex-row justify-between'
                             >
                                 <Text className='text-2xl' style={{ fontFamily: 'ubuntu-medium' }} >Product Details</Text>
                                 <View className='bg-red h-[27px] w-[27px] items-center justify-center rounded-full'>
                                     <Entypo name='cross' color={COLORS.white} />
                                 </View>
                             </Pressable>
-                            <View>
+                            <ScrollView
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ marginTop: 10}}
+                            >
                                 <View className='flex-row items-center'>
                                     <Image
                                         source={{uri:`${PRODUCTS_IMAGE_URI}${item.product_image}`}}
                                         style={{ width: 90, height: 70, resizeMode: 'cover', borderRadius: SIZES.radius }}
                                     />
                                     <View className='ml-3'>
-                                        <Text className='text-xl' style={{ fontFamily: 'roboto-medium' }} >{item.product_name}</Text>
-                                        <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }} >{item.store_name}</Text>
-                                        <Text className='text-primary text-xl' style={{ fontFamily: 'roboto-medium' }}>K{item.product_price.toLocaleString()}</Text>
+                                        <Text className='text-lg' style={{ fontFamily: 'roboto-medium' }} >{item.product_name}</Text>
+                                        <Text className='text-sm text-slate' style={{ fontFamily: 'roboto-medium' }} >{item.store_name}</Text>
+                                        <Text className='text-primary text-lg' style={{ fontFamily: 'roboto-medium' }}>K{item.final_price.toLocaleString()}</Text>
                                     </View>
                                 </View>
                                 {/* <View className='mt-4'>
@@ -205,7 +284,7 @@ const OthersCartData = ({item}) => {
                                             disabled={qtycounter <= 1}
                                             onPress={handleDecreaseQty}
                                             activeOpacity={0.5}
-                                            className='h-[26px] w-[26px] items-center bg-grey_bg justify-center rounded-full border border-slate'
+                                            className='w-7 h-7 items-center bg-grey_bg justify-center rounded-full border border-slate'
                                             style={{ opacity: qtycounter <= 1 ? 0.4 : 0.9 }}
                                         >
                                             <FontAwesome5 name='minus' style={{ color: COLORS.black }} />
@@ -215,78 +294,48 @@ const OthersCartData = ({item}) => {
                                             onPress={handleIncreaseQty}
                                             disabled={qtycounter === 10}
                                             activeOpacity={0.5}
-                                            className='h-[26px] w-[26px] items-center bg-grey_bg justify-center rounded-full border border-slate'
+                                            className='w-7 h-7 items-center bg-grey_bg justify-center rounded-full border border-slate'
                                             style={{ opacity: qtycounter >= 1 ? 0.9 : 0.4 }}
                                         >
                                             <FontAwesome5 name='plus' style={{ color: COLORS.black }} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
-
                                 <View style={{ marginTop: 25 }} >
-                                <Text className='mb-1 text-xl' style={{ fontFamily: 'ubuntu-medium'}}>Colors</Text>
+                                    {othersCartItems[0].available_variants.map((group) => (
+                                        <View key={group.id} className='w-full my-4'>
+                                            <Text className='text-lg mb-1' style={{fontFamily: 'roboto-medium'}}>{group.name}</Text>
+                                            <FlatList
+                                                data={group.options || []}
+                                                horizontal
+                                                showsHorizontalScrollIndicator={false}
+                                                keyExtractor={(item) => item.id}
+                                                renderItem={({ item }) => {
+                                                    const selected = isSelected(group, item);
 
-                                <FlatList
-                                    data={Colors}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    keyExtractor={(color) => color}
-                                    renderItem={({ item: color }) => {
-                                        const isSelected = selectedcolors.includes(color);
-
-                                        return (
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    setSelectedColors(prev =>
-                                                        isSelected ? prev.filter(c => c !== color) : [...prev, color]
+                                                    return (
+                                                        <TouchableOpacity
+                                                            onPress={() => handleSelectVariant(group, item)}
+                                                            className="bg-grey_bg px-4 py-2 mr-2 relative rounded elevation-sm"
+                                                            style={{
+                                                                borderWidth: 1,
+                                                                borderColor: selected ? COLORS.primary : COLORS.lavender,
+                                                                backgroundColor: selected ? COLORS.primary : COLORS.grey_bg,
+                                                            }}
+                                                        >
+                                                            <Text
+                                                                style={{ fontFamily: 'roboto-medium' }}
+                                                                className={`text-base ${selected ? 'text-white' : 'text-slate'}`}
+                                                            >
+                                                                {item.name} {item.price ? ` | K${item.price}` : ''}
+                                                            </Text>
+                                                        </TouchableOpacity>
                                                     );
                                                 }}
-                                                className="bg-grey_bg px-4 py-2 mr-2 border border-lavender relative rounded-md"
-                                                style={{backgroundColor: isSelected ? COLORS.red : COLORS.grey_bg }}
-                                            >
-                                                <Text className={`font-semibold text-${isSelected ? 'white' : 'slate'}`}>{color}</Text>
-                                            </TouchableOpacity>
-                                        );
-                                    }}
-                                    ListEmptyComponent={<Text className="text-gray-500">No colors available</Text>}
-                                />
-
-                                <Text className='mb-1 text-xl mt-4' style={{ fontFamily: 'ubuntu-medium'}}>Sizes</Text>
-                                <FlatList
-                                    data={Sizes}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    keyExtractor={(item) => item.toString()}
-                                    renderItem={({ item: size }) => {
-                                        const isSelected = selectedsizes.includes(size);
-
-                                        return (
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    setSelectedSizes(prev =>
-                                                        isSelected ? prev.filter(s => s !== size) : [...prev, size]
-                                                    );
-                                                }}
-                                                className="bg-grey_bg p-2 mr-2 border border-lavender relative justify-center items-center rounded-md"
-                                                style={{ backgroundColor: isSelected ? COLORS.red : COLORS.grey_bg, height: 40,  }}
-                                            >
-                                                <Text className={`font-semibold text-${isSelected ? 'white' : 'slate'} text-sm`}>{size}</Text>
-                                            </TouchableOpacity>
-                                        );
-                                    }}
-                                    ListEmptyComponent={<Text className="text-gray-500">No sizes available</Text>}
-                                />
-                                <TouchableWithoutFeedback className="w-full mt-4">
-                                    <DescriptionInput
-                                        title="Special Notes"
-                                        defaultValue={item.product_notes}
-                                        handleChangeText={handleChangeText}
-                                        desc="Add any notes before adding to cart (e.g., size, customization, delivery)."
-                                        otherStyles="text-lg mt-4"
-                                        borderStyle="border border-gray-300 rounded-md"
-                                        lines={4}
-                                    />
-                                </TouchableWithoutFeedback>
+                                                ListEmptyComponent={<Text className="text-gray-500">No variants available.</Text>}
+                                            />
+                                        </View>
+                                    ))}
                                 </View>
                                 <View className='flex-row items-center justify-between mb-5'>
                                     <Text className='text-2xl' style={{ fontFamily: 'maven-bold' }}>Total:</Text>
@@ -297,26 +346,23 @@ const OthersCartData = ({item}) => {
                                         <Text style={{fontFamily: 'ubuntu-medium'}} className='text-2xl text-white'>ZMK {item.total_price.toLocaleString()}</Text>
                                     </View>
                                 </View>
-                                            
                                 {/* Next Container */}
-                                <TouchableOpacity
-                                    className='flex-row items-center justify-center bg-primary mt-2 mb-2 p-4'
-                                    onPress={() => {
-                                        handleUpdateCartItem();
-                                        setModalVisible(false); // Close modal after updating
-                                    }}
-                                    style={{ borderRadius: SIZES.radius, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 }}
-                                >
-                                    <Text className='ml-1 text-white text-2xl' style={{ fontFamily: 'ubuntu-medium' }}>
-                                        Update Cart
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+                            </ScrollView>
+                            <TouchableOpacity
+                                className='flex-row rounded border-white elevation-sm items-center justify-center bg-primary mt-2 py-3'
+                                onPress={() => {
+                                    handleUpdateCartItem();
+                                    setModalVisible(false); // Close modal after updating
+                                }}
+                                style={{ marginBottom: 45 }}
+                            >
+                                <FontAwesome name='shopping-cart' color='white' size={20}/>
+                                <Text className='ml-1 text-white text-2xl' style={{ fontFamily: 'maven-medium' }}>
+                                    Update Cart
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                    </TouchableWithoutFeedback>
-                    </KeyboardAvoidingView>
-                    </TouchableWithoutFeedback>
                 </Modal>
             </TouchableOpacity>
             {/* End modal */}
@@ -326,7 +372,7 @@ const OthersCartData = ({item}) => {
                     <View className='flex-row justify-start items-center w-[89%]'>
                         <TouchableOpacity
                             onPress={() => setModalVisible(!modalVisible)}
-                            className='w-[27%]'
+                            className='w-[26%]'
                             style={{height: screenHeight * 0.09}}
                         >
                             <Image 
@@ -335,22 +381,22 @@ const OthersCartData = ({item}) => {
                             />
                         </TouchableOpacity>
                         <View className='w-[70%] ml-2'>
-                            <Text style={{fontFamily: 'roboto-medium'}} className='text-lg'>{item.product_name}</Text>
+                            <Text style={{fontFamily: 'roboto-medium'}} className='text-base'>{item.product_name}</Text>
                             <View className='flex-row items-center justify-between w-full'>
                                 <View className='w-[25%]'>
                                     <Text className='text-slate text-sm' style={{fontFamily: 'roboto-medium'}}>Price</Text>
-                                    <Text style={{fontFamily: 'roboto-medium'}} className='text-lg'>K{item.product_price}</Text>
+                                    <Text style={{fontFamily: 'roboto-medium'}} className='text-base'>K{item.final_price.toLocaleString()}</Text>
                                 </View>
                                 <View className='items-center justify-center w-[45%]'>
-                                    <Text className='text-md text-black' style={{fontFamily: 'roboto-medium'}}>Qty</Text>
+                                    <Text className='text-sm text-black' style={{fontFamily: 'roboto-medium'}}>Qty</Text>
                                     <View className='flex-row justify-center items-center'>
                                         <TouchableOpacity
                                             disabled={qtycounter <= 1}
                                             onPress={handleDecreaseQty}
                                             style={{ opacity: qtycounter <= 1 ? 0.4 : 0.9 }}
-                                            className='p-2 w-8 h-8 bg-grey_bg border border-slate items-center rounded-full justify-center'
+                                            className='p-2 w-7 h-7 bg-grey_bg border border-slate items-center rounded-full justify-center'
                                         >
-                                            <FontAwesome name='minus' color={COLORS.slate} />
+                                            <FontAwesome name='minus' color={COLORS.black} />
                                         </TouchableOpacity>
                                         <View className='w-[35%] mx-1 items-center justify-center'>
                                             <Text style={{fontSize: SIZES.main}} className='mx-1 text-slate'>{item.product_qty}</Text>
@@ -360,16 +406,16 @@ const OthersCartData = ({item}) => {
                                             disabled={qtycounter >= 10}
                                             activeOpacity={0.5}
                                             style={{ opacity: qtycounter >= 10 ? 0.4 : 0.9 }}
-                                            className='p-2 w-8 h-8 items-center justify-center rounded-full bg-grey_bg border border-slate'
+                                            className='p-1 w-7 h-7 items-center justify-center rounded-full bg-grey_bg border border-slate'
                                         >
-                                            <FontAwesome name='plus' color={COLORS.slate} />
+                                            <FontAwesome name='plus' color={COLORS.black} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
                                 <View className='justify-center items-center'>
                                     <Text className='text-slate text-sm' style={{fontFamily: 'roboto-medium'}}>Total</Text>
                                     <View>
-                                        <Text style={{fontFamily: 'roboto-medium'}} className='text-lg text-primary'>K{item.total_price}</Text>
+                                        <Text style={{fontFamily: 'roboto-medium'}} className='text-case text-primary'>K{item.total_price.toLocaleString()}</Text>
                                     </View>
                                 </View>
                             </View>
@@ -382,7 +428,7 @@ const OthersCartData = ({item}) => {
                         <FontAwesome name='times' color={COLORS.red} size={20} />
                     </TouchableOpacity>
                 </View>
-                <View className='w-full bg-gray-400 my-3' style={{height: 1, opacity: 0.2}} />
+                <View className='w-full bg-gray-400 my-4' style={{height: 1, opacity: 0.2}} />
             </View>
         </>
     )
@@ -404,6 +450,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 10,
         borderTopLeftRadius: 10,
         padding: 10,
+        maxHeight: '80%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2, }, 
         shadowOpacity: 0.25,

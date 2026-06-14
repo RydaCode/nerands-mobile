@@ -1,13 +1,12 @@
-import { View, Text } from 'react-native'
-import React, { useState } from 'react'
+import { useState } from 'react'
+import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import MainHeader from '../../../components/MainHeader'
-import HotelTabs from '../../screens/hotels/HotelTabs'
-import { COLORS } from '../../../constants/constants'
 import All from '../../screens/hotels/All'
-import Hotels from '../../screens/hotels/Hotels'
-import Lodges from '../../screens/hotels/Lodges'
 import GuestHouses from '../../screens/hotels/GuestHouses'
+import Hotels from '../../screens/hotels/Hotels'
+import HotelTabs from '../../screens/hotels/HotelTabs'
+import Lodges from '../../screens/hotels/Lodges'
 import Motels from '../../screens/hotels/Motels'
 
 const Hotel = () => {
@@ -28,10 +27,8 @@ const Hotel = () => {
     }
 
     return (
-        <SafeAreaView style={{backgroundColor: COLORS.white}} className='flex-1'>
-            <View className='px-2'>
-                <MainHeader header_name='Hotels & Lodges' />
-            </View>
+        <SafeAreaView className='flex-1 bg-white px-2'>
+            <MainHeader header_name='Hotels & Lodges' textStyles='text-2xl' fontFamily='ubuntu-medium' />
             <View className='w-full mt-5'>
                 <HotelTabs
                     tabs={tabs}

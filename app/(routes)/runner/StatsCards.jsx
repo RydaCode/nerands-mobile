@@ -1,7 +1,6 @@
 import { Text, View } from 'react-native';
 
 const StatsCards = ({ stats, runner }) => {
-    console.log("STATS", stats)
     return (
         <View className="bg-white">
             <View className="w-full flex-row justify-between items-center">

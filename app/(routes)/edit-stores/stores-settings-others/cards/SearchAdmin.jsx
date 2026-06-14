@@ -7,7 +7,6 @@ const SearchAdmin = ({router, params}) => {
         <TouchableOpacity
             onPress={() => router.push({pathname: '../admins-route/search-admin/', params: {
                 store_latitude: params.store_latitude,
-                location: params.location,
                 store_longitude: params.store_longitude,
                 open_close: params.open_close,
                 open_time: params.open_time,

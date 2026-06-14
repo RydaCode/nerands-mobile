@@ -5,13 +5,12 @@ import { toast } from "../../../utils/toast";
 
 const AssignmentModal = ({ pendingorders, onClose, refreshOrders, stopLoopSound }) => {
     const customorder = pendingorders?.data?.[0] ?? null;
-
     const status = customorder?.order_status;
-
     if (!customorder || status !== 'Pending') return null;
-
     const [activeAction, setActiveAction] = useState(null);
-    const { post, isLoading } = useApi("/runner/accept_errand/");
+    const { data, isLoading, error, post } = useApi("/runner/accept_errand");
+
+    const fee = 50/100 * customorder?.service_fee;
 
     // Map backend state to mobile UI
     const getUIState = (orderStatus, orderProgress) => {
@@ -37,7 +36,8 @@ const AssignmentModal = ({ pendingorders, onClose, refreshOrders, stopLoopSound 
                 destination_phone_number: customorder?.receipients_phone_number || null,
                 order_status: actionStatus,
                 order_type: 'custom',
-                order_progress: actionStatus === 'Accepted' ? 'Processing' : 'Cancelled'
+                order_progress: actionStatus === 'Accepted' ? 'Processing' : 'Cancelled',
+                errand_price: fee
             });
 
             if (res?.success) {

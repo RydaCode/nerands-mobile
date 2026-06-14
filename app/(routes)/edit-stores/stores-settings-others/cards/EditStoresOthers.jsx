@@ -11,38 +11,34 @@ const EditStoresOthers = ({router, params, editstorelistmodalvisible, setEditSto
     return (
         <>
             {/* Start edit store list modal */}
-            <View className='w-full'
-                animation='slideInUp'
-                iterationCount={1}
-                duration={1000}  //1 second
-                easing="ease-in-out"  //Easing for smoother animation
+            
+            <Modal
+                animationType="slide"
+                transparent
+                statusBarTranslucent
+                visible={editstorelistmodalvisible}
+                onRequestClose={() => setEditStoreListModalVisible(false)}
             >
-                <TouchableOpacity className='flex-1 items-center'
+                {/* BACKDROP */}
+                <Pressable
+                    style={styles.modalOverlay}
                     onPress={() => setEditStoreListModalVisible(false)}
+                />
+
+                {/* CONTENT */}
+                <MotiView
+                    from={{ opacity: 0, translateY: 100 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: 'timing', duration: 400 }}
+                    style={styles.modalView}
                 >
-                    <Modal
-                        animationType="slide"
-                        transparent={true}
-                        statusBarTranslucent={true}
-                        visible={editstorelistmodalvisible}
-                        onRequestClose={() => setEditStoreListModalVisible(false)}
-                    >
-                        <Pressable style={styles.centeredView}
-                            onPress={() => setEditStoreListModalVisible(false)}
-                        />
-                        <MotiView
-                            from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
-                            animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
-                            transition={{ duration: 1000 }}
-                            style={styles.centeredView}>
-                            <View className='w-full rounded-md' style={[styles.modalView, {maxWidth: width}]}>
-                                {/* Container */}
-                                <EditStoreData router={router} params={params} setEditStoreListModalVisible={setEditStoreListModalVisible}/>
-                            </View>
-                        </MotiView>
-                    </Modal>
-                </TouchableOpacity>
-            </View>
+                    <EditStoreData
+                        router={router}
+                        params={params}
+                        setEditStoreListModalVisible={setEditStoreListModalVisible}
+                    />
+                </MotiView>
+            </Modal>
             {/* End edit store list modal */}
 
             <TouchableOpacity
@@ -67,26 +63,32 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.transparentBlack,
     },
     modalView: {
         position: 'absolute',
         bottom: 0,
         width: '100%',
-        // backgroundColor: COLORS.transparentBlack,
-        // borderTopRightRadius: 10,
-        // borderTopLeftRadius: 10,
-        // padding: 10,
-        // shadowColor: '#000',
-        // shadowOffset: {
-        //   width: 0,
-        //   height: 2,
-        // },
+        maxHeight: '95%',
+        backgroundColor: 'white',
 
-        // shadowOpacity: 0.25,
-        // shadowRadius: 4,
-        // elevation: 5,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+
+        overflow: 'hidden',
+        flexShrink: 1,
+        padding: 10,
+
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
     },
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: COLORS.transparentBlack,
+    }
 });
 
 export default EditStoresOthers

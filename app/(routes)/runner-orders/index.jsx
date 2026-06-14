@@ -26,7 +26,7 @@ const index = () => {
 
     return (
         <SafeAreaView className='flex-1 bg-white px-2'>
-            <MainHeader fontFamily='maven-medium' textStyles='text-2xl' header_name='Runner Orders'/>
+            <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Runner Orders'/>
             <View className='w-full mt-5 mb-1'>
                 <OrderTabs
                     tabs={tabs}

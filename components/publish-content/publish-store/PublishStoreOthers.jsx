@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
 import LoadingIndicator from '../../../app/LoadingIndicator';
 import Redirecting from '../../../app/Redirecting';
 import useApi from '../../../hook/useApi';
+import { toast } from '../../../utils/toast';
 
 const PublishStoreOthers = ({ router, params, setPublishStoreModalVisible }) => {
     const [isRedirecting, setIsRedirecting] = useState(false);
@@ -20,73 +20,22 @@ const PublishStoreOthers = ({ router, params, setPublishStoreModalVisible }) => 
 
     useEffect(() => {
         if (update?.response) {
-            const message = update.response;
+            const message = update?.response;
 
             if (message === 'Success') {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: `Store ${lastToggledStatus ? 'published' : 'unpublished'}!`,
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: '#32CD32',
-                        fontSize: 13,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: lastToggledStatus ? '#32CD32' : 'red',
-                        fontSize: 11,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.success(`Store ${lastToggledStatus ? 'published' : 'unpublished'}!`);
 
                 setIsRedirecting(true);
                 setTimeout(() => {
                     router.back();
                 }, 5000);
             } else {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: message,
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: 'red',
-                        fontSize: 13,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: 'red',
-                        fontSize: 11,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.error(message);
             }
         }
 
         if (error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'An error occurred. Please try again.',
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 13,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 11,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.error('An error occurred. Please try again.');
         }
     }, [update, error]);
 
@@ -129,8 +78,6 @@ const PublishStoreOthers = ({ router, params, setPublishStoreModalVisible }) => 
             </View>
 
             <View className='pb-10' />
-
-            <Toast />
             {isLoading && <LoadingIndicator loading_text={activeStatus ? "Publishing store..." : "Unpublishing store..."} />}
             {isRedirecting && <Redirecting />}
         </View>

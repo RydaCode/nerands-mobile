@@ -5,6 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
+import { SIZES } from '../../constants/constants';
 import { Carticons } from '../../constants/icons';
 // import { useLocation } from '../../LocationContext';
 // import { useSelector } from 'react-redux';
@@ -16,18 +17,32 @@ const HomeHeader = ({ location }) => {
 
     const othersCartItems = useSelector(state => state.otherscart.othersCartItems);
     const cartItems = useSelector(state => state.cart.cartItems);
+
+    const totalOtherCartItems = othersCartItems.reduce(
+        (sum, item) => sum + (item.product_qty || 0),
+        0
+    );
+
+    const totalFoodCartItems = cartItems.reduce(
+        (sum, item) => sum + (item.product_qty || 0),
+        0
+    );
     return (
         <View className='items-center w-full'>
             <View className='w-full flex-row justify-between items-center'>
-                <View className='justify-start' style={{width: '30%', height: 40}}>
-                    <Image className='w-full h-full' source={Carticons.navlogo} resizeMode='contain'/>
-                </View>
-                {/* <View>
-                    <View className='flex-row items-center'>
-                        <Image className='w-[37px] h-[37px]' source={Carticons.navlogo}/>
-                        <Text className='ml-[5px] text-primary' style={{ fontSize: SIZES.mainTitles, fontFamily: 'outfit-bold', fontWeight: SIZES.h2}} >Nerands</Text>
-                    </View>
+                {/* <View className='justify-center items-center' style={{width: '30%', height: 30}}>
+                    <Image className='w-full' style={{height: 33}} source={Carticons.navlogo} resizeMode='contain'/>
                 </View> */}
+                <View>
+                    <View className='flex-row items-center'>
+                        <View
+                            style={{width: 40, height: 30}}
+                        >
+                            <Image className='h-full w-full' source={Carticons.navlogo} resizeMode='contain'/>
+                        </View>
+                        <Text className=' text-primary text-2xl' style={{fontFamily: 'maven-bold', fontWeight: SIZES.h2}} >Nerands</Text>
+                    </View>
+                </View>
                 <View className='flex-row justify-between items-center'>
                     <TouchableOpacity
                         style={{ backgroundColor: COLORS.navBtnBgHome }}
@@ -47,7 +62,7 @@ const HomeHeader = ({ location }) => {
                             <View
                                 className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
                             >
-                                <Text className='text-white text-sm'>{cartItems.length}</Text>
+                                <Text className='text-white text-sm'>{totalFoodCartItems}</Text>
                             </View>
                         </TouchableOpacity>
                     }
@@ -65,7 +80,7 @@ const HomeHeader = ({ location }) => {
                             <View
                                 className='absolute left-5 -top-[5px] size-[21px] rounded-full bg-red bottom-0 border-white border-[1px] justify-center items-center'
                             >
-                                <Text className='text-white text-sm'>{othersCartItems.length}</Text>
+                                <Text className='text-white text-sm'>{totalOtherCartItems}</Text>
                             </View>
                         </TouchableOpacity>
                     }

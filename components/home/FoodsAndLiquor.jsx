@@ -1,13 +1,15 @@
 import { COLORS } from '@/constants/constants';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
+import { isStoreOpen } from '../../utils/isStoreOpen';
 
 const FoodsAndLiquor = (refreshKey) => {
     const router = useRouter();
@@ -56,7 +58,12 @@ const FoodsAndLiquor = (refreshKey) => {
             <FlatList
                 data={storesList}
                 keyExtractor={(item) => item.store_id}
-                renderItem={({ item }) => (
+                renderItem={({ item }) => {
+
+                    const isManuallyClosed = item.open_close === false;
+                    const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
+                    const isClosed = isManuallyClosed || isTimeClosed;
+                    return (
                     <View>
                         <TouchableOpacity className="items-center mr-4 rounded-md border"
                             style={[ {width: imageWidth}, {
@@ -79,20 +86,29 @@ const FoodsAndLiquor = (refreshKey) => {
                                 store_category: item.store_category,
                                 average_rating: item.average_rating,
                                 total_ratings: item.review_count,
-                                favorited: item.favorited
+                                favorited: item.favorited,
+                                open_time: item.open_time,
+                                closing_time: item.closing_time
                             }})}
                         >
                             <View className='rounded-md relative' style={[imageDimensions]}>
                                 <Image
-                                    className='w-full h-full'
-                                    style={{borderTopLeftRadius: 5, borderTopRightRadius: 5}}
-                                    source={{
-                                        uri: item.store_coverimage
-                                            ? `${STORES_IMAGE_URI}${item.store_coverimage}`
+                                    style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            borderTopLeftRadius: 5, borderTopRightRadius: 5
+                                        }}
+                                    
+                                    source={
+                                        item.store_coverimage
+                                            ? { uri: `${STORES_IMAGE_URI}${item.store_coverimage}` }
                                             : Carticons.placeholder
-                                    }}
+                                    }
+                                    placeholder={Carticons.placeholder}
+                                    contentFit="cover"
+                                    transition={200}
                                 />
-                                {item.open_close === false &&
+                                {isClosed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50'>
                                         <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.primary, opacity: 0.5}} />
                                         <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
@@ -170,7 +186,9 @@ const FoodsAndLiquor = (refreshKey) => {
                                     store_category: item.store_category,
                                     average_rating: item.average_rating,
                                     total_ratings: item.review_count,
-                                    favorited: item.favorited
+                                    favorited: item.favorited,
+                                    open_time: item.open_time,
+                                    closing_time: item.closing_time
                                 }})}
                             >
                                 <Text className='text-white text-sm' style={{fontFamily: 'ubuntu-medium'}}>Visit</Text>
@@ -181,21 +199,27 @@ const FoodsAndLiquor = (refreshKey) => {
                             >
                                 <View style={{zIndex: 1100}} className='relative w-full h-full rounded-full'>
                                     <Image
-                                        className='w-full h-full rounded-full'
-                                        source={{
-                                            uri: item.store_profileimage
-                                                ? `${STORES_IMAGE_URI}${item.store_profileimage}`
-                                                : Carticons.placeholder
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            borderRadius: 999,
                                         }}
+                                        source={
+                                            item.store_profileimage
+                                                ? { uri: `${STORES_IMAGE_URI}${item.store_profileimage}` }
+                                                : Carticons.placeholder
+                                        }
+                                        contentFit="cover"
+                                        transition={200}
                                     />
-                                    {item.open_close === false &&
+                                    {isClosed &&
                                         <View className='absolute w-full h-full bg-black opacity-70 rounded-full'/>
                                     }
                                 </View>
                             </View>
                         </TouchableOpacity>
                     </View>
-                )}
+                )}}
                 horizontal
                 showsHorizontalScrollIndicator={false}
             />

@@ -1,12 +1,15 @@
 import { COLORS } from '@/constants/constants';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSelector } from 'react-redux';
+import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
+import { isStoreOpen } from '../../utils/isStoreOpen';
 
 const FashinAndCosmetics = (refreshKey) => {
     const { user_id  } = useSelector((state) => state.auth);
@@ -45,7 +48,12 @@ const FashinAndCosmetics = (refreshKey) => {
             <FlatList
                 data={storesList}
                 keyExtractor={(item) => item.store_id}
-                renderItem={({ item }) => (
+                renderItem={({ item }) => {
+                    const isManuallyClosed = item.open_close === false;
+                    const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
+                    const isClosed = isManuallyClosed || isTimeClosed;
+
+                    return (
                     <View
                         style={{
                             width: imageWidth,
@@ -73,15 +81,30 @@ const FashinAndCosmetics = (refreshKey) => {
                                 store_category: item.store_category,
                                 average_rating: item.average_rating,
                                 total_ratings: item.review_count,
-                                favorited: item.favorited
+                                favorited: item.favorited,
+                                open_time: item.open_time,
+                                closing_time: item.closing_time
                             }})}
                         >
-                            <View className='rounded-sm relative' style={{ width: '35%', height: '100%' }}>
+                            <View className='rounded relative' style={{ width: '35%', height: '100%' }}>
+                                
                                 <Image
-                                    className='rounded-[3px] w-full h-full'
-                                    source={{uri:`${STORES_IMAGE_URI}${item.store_profileimage}`}}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        borderRadius: 4
+                                    }}
+                                    source={
+                                        item.store_profileimage
+                                            ? { uri: `${STORES_IMAGE_URI}${item.store_profileimage}` }
+                                            : Carticons.placeholder
+                                    }
+                                    placeholder={Carticons.placeholder}
+                                    contentFit="cover"
+                                    transition={200}
                                 />
-                                {item.open_close === false &&
+
+                                {isClosed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50'>
                                         <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.primary, opacity: 0.5}} />
                                         <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
@@ -138,7 +161,7 @@ const FashinAndCosmetics = (refreshKey) => {
                             />
                         </TouchableOpacity>
                     </View>
-                )}
+                )}}
                 horizontal
                 showsHorizontalScrollIndicator={false}
             />

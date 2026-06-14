@@ -8,6 +8,7 @@ import { COLORS, SIZES } from '../../constants/constants';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
+import { isStoreOpen } from '../../utils/isStoreOpen';
 import { toast } from '../../utils/toast';
 
 // ----------------- FavoritesCard -----------------
@@ -17,7 +18,6 @@ const FavoritesCard = ({
     store_profileimage,
     store_coverimage,
     store_name,
-    open_close,
     store_latitude,
     store_longitude,
     store_location,
@@ -26,6 +26,10 @@ const FavoritesCard = ({
     store_phone_num,
     average_rating,
     total_ratings,
+    isClosed,
+    open_time,
+    closing_time,
+    open_close,
     latitude,
     longitude,
     onRemove, // parent callback to remove store
@@ -72,6 +76,8 @@ const FavoritesCard = ({
                 average_rating,
                 total_ratings,
                 favorited: true,
+                open_time,
+                closing_time
             },
         });
     } else {
@@ -92,6 +98,8 @@ const FavoritesCard = ({
                     average_rating,
                     total_ratings,
                     favorited: true,
+                    open_time,
+                    closing_time
                 },
             });
         }
@@ -108,12 +116,12 @@ const FavoritesCard = ({
                         className="h-full w-full rounded-sm"
                         source={{ uri: `${STORES_IMAGE_URI}${store_profileimage}` }}
                     />
-                    {open_close === false && (
+                    {isClosed &&
                         <View className="absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50">
                             <MaterialCommunityIcons name="lock" size={16} color={COLORS.primary} />
                             <Text className="text-sm text-white ml-1">Closed</Text>
                         </View>
-                    )}
+                    }
                 </View>
 
                 {/* Store Info */}
@@ -181,7 +189,7 @@ const FavoritesCard = ({
 
 // ----------------- FavoriteStores Screen -----------------
 const FavoriteStores = () => {
-    const { latitude, longitude } = useSelector((state) => state.location);
+    const { latitude, longitude } = useSelector((state) => state.location) || {};
     const { user_id } = useSelector((state) => state.auth);
     const [storeList, setStoreList] = useState([]);
     const [page, setPage] = useState(1);
@@ -258,14 +266,17 @@ const FavoriteStores = () => {
                     tintColor={COLORS.primary} // iOS
                 />
             }
-            renderItem={({ item }) => (
+            renderItem={({ item }) => {
+                const isManuallyClosed = item.open_close === false;
+                const isTimeClosed = !isStoreOpen(item.open_time, item.closing_time);
+                const isClosed = isManuallyClosed || isTimeClosed;
+                return (
                 <FavoritesCard
                     user_id={user_id}
                     store_id={item.store_id}
                     store_profileimage={item.store_profileimage}
                     store_coverimage={item.store_coverimage}
                     store_name={item.store_name}
-                    open_close={item.open_close}
                     store_latitude={item.latitude}
                     store_longitude={item.longitude}
                     store_location={item.store_location}
@@ -274,13 +285,17 @@ const FavoriteStores = () => {
                     store_phone_num={item.store_phone_num}
                     average_rating={item.avg_rating}
                     total_ratings={item.total_reviews}
+                    isClosed={isClosed}
+                    open_time={item.open_time}
+                    closing_time={item.closing_time}
+                    open_close={item.open_close}
                     latitude={latitude}
                     longitude={longitude}
-                    onRemove={removeFromList} // instant removal
+                    onRemove={removeFromList}
                     post={post}
                     router={router}
                 />
-            )}
+            )}}
             
             ListFooterComponent={() =>
                 loadingMore ? <LoadingIndicator loading_text="Loading more..." /> : null

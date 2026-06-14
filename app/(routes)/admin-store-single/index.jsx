@@ -4,14 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MainHeader from '../../../components/MainHeader';
 import AdminStoreSingle from '../../screens/admin-store-single/AdminStoreSingle';
 
-const index = () => {
+const Index = () => {
     const params = useLocalSearchParams();
     return (
-        <SafeAreaView className='flex-1 bg-white'>
-            <View className='px-4'>
-                <MainHeader textStyles='text-2xl' fontFamily='ubuntu-medium' header_name='Store' />
-            </View>
-            <View className='w-full px-4'>
+        <SafeAreaView className='flex-1 bg-white px-2'>
+            <MainHeader textStyles='text-2xl' fontFamily='ubuntu-medium' header_name='Store' />
+            <View className='w-full'>
                 <AdminStoreSingle
                     store_id={params.store_id}
                     user_id={params.user_id}
@@ -41,4 +39,4 @@ const index = () => {
     )
 }
 
-export default index
+export default Index

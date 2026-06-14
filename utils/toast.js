@@ -1,7 +1,7 @@
 import Toast from "react-native-toast-message";
 
 export const toast = {
-    show: (type, text1, text2, duration = 5000) => {
+    show: (type, text1, text2, duration = 4000) => {
         Toast.show({
             type,
             text1,
@@ -9,7 +9,7 @@ export const toast = {
             position: "bottom",
             visibilityTime: duration,
             autoHide: true,
-            bottomOffset: 60,
+            bottomOffset: 80,
         });
     },
 

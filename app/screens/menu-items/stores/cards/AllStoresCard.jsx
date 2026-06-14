@@ -21,7 +21,10 @@ const AllStoresCard = ({
     store_category,
     average_rating,
     total_ratings,
-    favorited
+    favorited,
+    isClosed,
+    open_time,
+    closing_time
 }) => {
     const router = useRouter();
     const { latitude, longitude } = useSelector((state) => state.location);
@@ -46,7 +49,9 @@ const AllStoresCard = ({
                         store_category,
                         average_rating,
                         total_ratings,
-                        favorited
+                        favorited,
+                        open_time,
+                        closing_time
                     }
                 })
             }
@@ -54,17 +59,17 @@ const AllStoresCard = ({
             className='w-full'
         >
             <View className='flex-row justify-between items-center'>
-                <View className='relative rounded-sm' style={{width: '27%', height: 72}}>
+                <View className='relative rounded' style={{width: '27%', height: 72}}>
                     <Image
-                        className='w-full h-full rounded-sm'
+                        className='w-full h-full rounded'
                         source={{uri:`${STORES_IMAGE_URI}${store_profileimage}`}}
                     />
-                    {open_close === false && (
-                        <View className="absolute w-full h-full bg-black opacity-70 rounded-sm flex-row justify-center items-center z-50">
+                    {isClosed &&
+                        <View className="absolute w-full h-full bg-black opacity-70 rounded flex-row justify-center items-center z-50">
                             <MaterialCommunityIcons name="lock" size={16} color={COLORS.primary} />
                             <Text className="text-sm text-white ml-1">Closed</Text>
                         </View>
-                    )}
+                    }
                 </View>
                 <View className='' style={{width: '62%'}}>
                     <View className='flex-row items-center'>

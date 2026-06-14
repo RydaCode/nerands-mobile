@@ -95,7 +95,7 @@ const index = () => {
                 stopLoopSound={stopLoopSound}
             />
             <View className="">
-                <MainHeader header_name="Runner" fontFamily='maven-medium' textStyles="text-2xl text-black" />
+                <MainHeader header_name="Runner" fontFamily='ubuntu-medium' textStyles="text-2xl text-black" />
             </View>
 
             <LocationComponent role="runner" userId={runner_id} />

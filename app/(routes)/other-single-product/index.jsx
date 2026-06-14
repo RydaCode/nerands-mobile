@@ -6,15 +6,16 @@ import OtherProductsSingleCard from '../../screens/other-single-product/OtherPro
 
 const ProductScreen = () => {
     const params = useLocalSearchParams();
+
+    
     // Create a "data" array with a single item just to use FlatList
     const data = [1];
-
     return (
         <SafeAreaView className="flex-1 bg-white">
             <View className="px-2">
                 <MainHeader
                     header_name={params.store_name}
-                    fontFamily="ubuntu-medium"
+                    fontFamily="maven-medium"
                     textStyles="text-2xl"
                 />
             </View>
@@ -30,7 +31,6 @@ const ProductScreen = () => {
                                 product_image={params.product_image}
                                 product_name={params.product_name}
                                 product_description={params.product_description}
-                                product_actual_price={params.product_actual_price}
                                 product_price={params.product_price}
                                 product_status={params.product_status}
                                 store_name={params.store_name}
@@ -38,12 +38,12 @@ const ProductScreen = () => {
                                 store_phone_num={params.store_phone_num}
                                 store_category={params.store_category}
                                 product_category={params.product_category}
-                                product_colors={params.product_colors}
-                                product_sizes={params.product_sizes}
-                                chili_option={params.chili_option}
                                 store_profileImage={params.store_profileImage}
                                 store_location={params.store_location}
                                 variant_groups={JSON.parse(decodeURIComponent(params.variant_groups))}
+                                markup_percent={params.markup_percent}
+                                final_price={params.final_price}
+                            
                             />
                         </View>
                     </>

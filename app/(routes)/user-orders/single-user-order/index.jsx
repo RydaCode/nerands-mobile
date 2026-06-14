@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import MainHeader from '../../../../components/MainHeader'
 import UserOrdderSingleCard from '../cards/UserOrdderSingleCard'
 
-const index = () => {
+const Index = () => {
     const params = useLocalSearchParams();
     
     return (
@@ -17,4 +17,4 @@ const index = () => {
     )
 }
 
-export default index
+export default Index

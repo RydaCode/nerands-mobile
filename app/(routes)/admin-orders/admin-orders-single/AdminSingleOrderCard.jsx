@@ -1,23 +1,116 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Dimensions, FlatList, Text, View, useWindowDimensions } from 'react-native'
 import { useSelector } from 'react-redux'
 import useApi from '../../../../hook/useApi'
-import { formatWithSpaceThousands } from '../../../../utils/thousands'
 import LoadingIndicator from '../../../LoadingIndicator'
 import ClientDetails from './ClientDetails'
+import CustomTransporter from './CustomTransporter'
+import FindTransporter from './FindTransporter'
 import OrderActions from './OrderActions'
 import OrdersData from './OrdersData'
-import TransporterDetails from './TransporterDetails'
+import RunnerDetails from './RunnerDetails'
 
-const AdminSingleOrderCard = () => {
-    const params = useLocalSearchParams();
+const AdminSingleOrderCard = ({params}) => {
     const { width, height } = useWindowDimensions();
     const screenWidth = Dimensions.get('window').width;
     const itemWidth = screenWidth * 0.40; // ~34% of screen width
     const router = useRouter();
 
-    const { data, isLoading, error, get } = useApi(`/orders/${params.order_id}`);
+const STATUS = 'pending';
+    const { get, isLoading } = useApi();
+    const [orderData, setOrders] = useState({});
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [productTotals, setProductTotals] = useState({});
+
+    const {data: mainOrder, isLoading: loadingMainOrder, error: errorMainOrder, get: getMainOrder} = useApi(
+        `/orders/${params?.order_id}`
+    )
+
+    const {data: getTransporter, isLoading: loadingTransporter, error: errorTransporter, get: getTransporterData} = useApi(
+        `/transporter/custom/${mainOrder?.transporter_id}`
+    )
+    
+    useEffect(() => {
+        if (mainOrder?.transporter_id) {
+            getTransporterData();
+        }
+    }, [mainOrder?.transporter_id]);
+    
+    useEffect(() => {
+        getMainOrder();
+    }, []);
+    
+    const items = orderData?.items || [];
+
+    const summary = (items || []).reduce(
+    (acc, item) => {
+        const lineTotal =
+        Number(item.product_price || 0) * Number(item.quantity || 0);
+
+        acc.productTotal += Number(item.product_price || 0);
+        acc.quantityTotal += Number(item.quantity || 0);
+        acc.finalTotal += lineTotal;
+
+        return acc;
+    },
+    { productTotal: 0, quantityTotal: 0, finalTotal: 0 }
+    );
+   
+
+    const fetchOrders = async (pageNumber = 1) => {
+        if (loading) return;
+
+        try {
+            setLoading(true);
+
+            const url = `/orders/adminorder/${params.store_order_id}`;
+            const res = await get(url);
+
+            const newOrders = res?.data?.data;
+
+            if (pageNumber === 1) {
+                setOrders(newOrders);
+            } else {
+                setOrders(prev => [...prev, ...newOrders]);
+            }
+
+            if (newOrders?.length < 10) {
+                setHasMore(false);
+            }
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // initial load
+    useEffect(() => {
+        setPage(1);
+        setHasMore(true);
+        fetchOrders(1);
+    }, [params.store_id]);
+
+    // load more
+    const loadMore = () => {
+        if (loading || !hasMore) return;
+
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchOrders(nextPage);
+    };
+
+    // refresh
+    const onRefresh = () => {
+        setPage(1);
+        setHasMore(true);
+        fetchOrders(1);
+    };
+
     const { latitude, longitude } = useSelector(state => state.location);
 
     const [transporter, setTransporter] = useState(null); // ✅ keep transporter state
@@ -26,101 +119,155 @@ const AdminSingleOrderCard = () => {
  
     const { data:updateorder, error:errorUpdateOrder, patch } = useApi(`/orders/update/`)
 
-    // Fetch general charges once
-    useEffect(() => {
-        get();
-    }, []);
-
     if (isLoading) {
         return <LoadingIndicator loading_text='Loading Order...' />
     }
 
-    const grandTota = Number(params.grand_total) + Number(params.delivery_fee);
+    const handleTotalChange = (orderId, total) => {
+        setProductTotals(prev => ({
+            ...prev,
+            [orderId]: total
+        }));
+    };
+
+    const grandTotal = Object.values(productTotals).reduce(
+        (sum, total) => sum + total, 0
+    );
+
+    console.log("orderData", orderData)
+
+    // const grandTota = Number(summary.finalTotal) + Number(orderData?.shipping_fee);
 
     return (
         <View className="px-4 flex-1">
-            <FlatList
-                data={data?.items || []}
-                keyExtractor={(item, i) => item.order_item_id || `${data.order_id}-${i}`}
-                renderItem={({ item }) => <OrdersData order={item} />}
-                ListHeaderComponent={() => (
-                    <View className="mt-6">
-                        <Text className="text-lg" style={{fontFamily: 'roboto-bold'}}>Order No: {data?.order_number}</Text>
-                        <View className='bg-lavender w-full my-2' style={{height: 1}}/>
-                    </View>
-                )}
-                ListFooterComponent={() => (
-                    <>
-                        <View className='w-full'>
-                            <View className="mt-4 mb-2 w-full flex-row justify-center items-center">
-                                <Text
-                                    className="text-base text-primary"
-                                    style={{ fontFamily: "roboto-medium" }}
-                                >
-                                    Order Total: K{Number(formatWithSpaceThousands(params.grand_total))}
-                                </Text>
-                                <Text className='text-2xl mx-4'>|</Text>
-                                <Text
-                                    className="text-base text-green1"
-                                    style={{ fontFamily: "roboto-medium" }}
-                                >
-                                    Delivery Fee: K{Number(formatWithSpaceThousands(params.delivery_fee))}
-                                </Text>
-                            </View>
-                            <View className="mt-4 flex-row justify-between items-center">
-                                <Text className="text-2xl" style={{fontFamily: 'ubuntu-medium'}}>Grand Total</Text>
-                                <View className="bg-red px-6 py-2 rounded-sm">
-                                    <Text className="text-white text-2xl" style={{fontFamily: 'ubuntu-medium'}}>K{grandTota}</Text>
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Client Info */}
-                        <ClientDetails
-                            client={data?.user}
-                            store_longitude={params.store_longitude}
-                            store_latitude={params.store_latitude}
-                        />
-
-                        {/* Transporter Info */}
-                        {['processing', 'in_progress', 'completed'].includes(data?.order_status) && (
-                            <TransporterDetails
-                                transporter={data?.transporter}
-                                store={data}
-                                user={data?.user}
-                                onCall={(num) => console.log('Call', num)}
+            {!orderData || orderData?.items?.length === 0 ? (
+                <View>
+                    <Text>There are are no products undder this order.</Text>
+                </View>
+            ) : (
+                <>
+                    <FlatList
+                        data={orderData?.items || []}
+                        keyExtractor={(item, i) => item.order_item_id || `${orderData.order_id}-${i}`}
+                        renderItem={({ item }) => 
+                            <OrdersData
+                                order={item}
+                                summary={summary}
+                                order_type={mainOrder?.order_type}
+                                onTotalChange={handleTotalChange}
                             />
-                        )}
-
-                        {data?.order_status === 'ready' && (
-                            <View className="flex-1 mb-4">
-                                <Text className="text-center text-green-600" style={{fontFamily: 'roboto-medium'}}>
-                                    Order is ready to be transported, waiting for transporter to start off.
-                                </Text>
+                        }
+                        ListHeaderComponent={() => (
+                            <View className="mt-6">
+                                <Text className="text-lg" style={{fontFamily: 'roboto-bold'}}>Order No: {params?.order_number}</Text>
+                                <View className='bg-lavender w-full my-2' style={{height: 1}}/>
                             </View>
                         )}
-                        {data?.order_status === 'delayed' && (
-                            <View className="flex-1 mb-4">
-                                <Text className="text-center text-base text-red" style={{fontFamily: 'roboto-medium'}}>
-                                    This order has been delayed, would love to resume or cancel the order, Please let cleint know where you stand.
-                                </Text>
-                            </View>
-                        )}
-                        <View className="mb-20" />
-                    </>
-                )}
-                showsVerticalScrollIndicator={false}
-            />
+                        ListFooterComponent={
+                            <>
+                                <View className='w-full'>
+                                    {!orderData?.runner_active && (
+                                        <View className="mt-4 mb-2 w-full flex-row justify-center items-center">
+                                            <Text
+                                                className="text-base text-primary"
+                                                style={{ fontFamily: "roboto-medium" }}
+                                            >
+                                                Order Total: K{Number(summary.finalTotal).toLocaleString()}
+                                            </Text>
+                                            <Text className='text-2xl mx-4'>|</Text>
+                                            <Text
+                                                className="text-base text-green1"
+                                                style={{ fontFamily: "roboto-medium" }}
+                                            >
+                                                Delivery Fee: K{Number(orderData?.shipping_fee).toLocaleString()}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    <View className="mt-4 flex-row justify-between items-center">
+                                        <Text className="text-2xl" style={{fontFamily: 'ubuntu-medium'}}>Grand Total</Text>
+                                        <View className="bg-red px-6 py-2 rounded-sm">
+                                            <Text className="text-white text-2xl" style={{fontFamily: 'ubuntu-medium'}}>
+                                                K{grandTotal.toLocaleString()}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
 
-            <OrderActions
-                orderId={params.order_id}
-                status={data?.order_status}
-                grandTotal={params.grand_total}
-                params={data?.items[0]}
-                courier_type={params.courier_type}
-                onUpdate={(newStatus) => console.log("Order updated:", newStatus)}
-                onTransporterAssigned={setTransporter} // ✅ lift transporter up
-            />
+                                {/* Client Info */}
+                                <ClientDetails
+                                    user_id={params.user_id}
+                                    store_longitude={params.store_longitude}
+                                    store_latitude={params.store_latitude}
+                                />
+
+                                {/* Transporter Info */}
+                                {/* {['processing', 'in_progress', 'in_transit', 'completed'].includes(data?.status) && (
+                                    <TransporterDetails
+                                        transporter={data?.transporter}
+                                        store={orderData}
+                                        user={data?.user}
+                                        onCall={(num) => console.log('Call', num)}
+                                    />
+                                )} */}
+
+                                {orderData?.status !== 'cancelled' && (
+                                    <>
+                                        {/* Runner Details */}
+                                        <RunnerDetails
+                                            isRunnerActive={orderData?.runner_active}
+                                            order_number={params.order_number}
+                                        />
+
+                                        {/* Custom Transporter */}
+                                        {(getTransporter?.created_by === params.store_id ||
+                                            (!getTransporter?.is_active &&
+                                                orderData?.status === 'in_transit')) && (
+                                            <CustomTransporter
+                                                trans_data={getTransporter}
+                                            />
+                                        )}
+
+                                        {/* Find Transporter */}
+                                        <FindTransporter
+                                            isRunnerActive={orderData?.runner_active}
+                                            params={params}
+                                            data={orderData}
+                                        />
+                                    </>
+                                )}
+
+                                {orderData?.status === 'ready' && (
+                                    <View className="flex-1 mb-4">
+                                        <Text className="text-center text-green-600" style={{fontFamily: 'roboto-medium'}}>
+                                            Order is ready to be transported, waiting for transporter to start off.
+                                        </Text>
+                                    </View>
+                                )}
+                                {orderData?.status === 'delayed' && (
+                                    <View className="flex-1 mb-4">
+                                        <Text className="text-center text-base text-red" style={{fontFamily: 'roboto-medium'}}>
+                                            This order has been delayed, would love to resume or cancel the order, Please let cleint know where you stand.
+                                        </Text>
+                                    </View>
+                                )}
+                                <View className="mb-20" />
+                            </>
+                        }
+                        showsVerticalScrollIndicator={false}
+                    />
+
+                    <OrderActions
+                        orderId={orderData?.order_id}
+                        store_order_id={params.store_order_id}
+                        status={orderData?.status}
+                        grandTotal={grandTotal}
+                        params={orderData?.items}
+                        courier_type={orderData?.shipping_mode}
+                        onUpdate={(newStatus) => console.log("Order updated:", newStatus)}
+                        onTransporterAssigned={setTransporter} // ✅ lift transporter up
+                    />
+                </>
+            )}
         </View>
     )
 }

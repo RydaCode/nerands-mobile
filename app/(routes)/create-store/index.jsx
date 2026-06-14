@@ -1,26 +1,24 @@
-import { useRouter } from "expo-router";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MainHeader from "../../../components/MainHeader";
-import CreateStore from "../../screens/create-store/CreateStore";
+import Headers from "../../../components/Headers";
+import CreateStore from "./CreateStore";
 
-const index = () => {
-    const router = useRouter();
+const Index = () => {
 
     return (
         <SafeAreaView className="flex-1 bg-white items-center justify-start">
             <View className="px-2">
-                <MainHeader
+                <Headers
                     fontFamily="ubuntu-medium"
                     textStyles="text-2xl"
                     header_name="Create Store"
                 />
             </View>
             <View className="flex-row mb-1">
-                <CreateStore router={router} />
+                <CreateStore />
             </View>
         </SafeAreaView>
     );
 };
 
-export default index;
+export default Index;

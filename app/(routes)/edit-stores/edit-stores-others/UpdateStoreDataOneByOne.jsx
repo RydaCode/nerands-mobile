@@ -4,13 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import CustomButton from '../../../../components/Buttons/CustomButton';
 import DescriptionInput from '../../../../components/FormFields/DescriptionInput';
 import FormInputs from '../../../../components/FormFields/FormInputs';
 import PickerInput from '../../../../components/FormFields/PickerInput';
 import MainHeader from '../../../../components/MainHeader';
 import useApi from '../../../../hook/useApi';
+import { toast } from '../../../../utils/toast';
 import LoadingIndicator from '../../../LoadingIndicator';
 import Redirecting from '../../../Redirecting';
 
@@ -85,27 +85,15 @@ const UpdateStoreDataOneByOne = () => {
             const { response } = data;
             const isSuccess = response === 'Success';
 
-            Toast.show({
-                type: isSuccess ? 'success' : 'error',
-                text1: 'Update Status',
-                text2: response,
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: isSuccess ? '#32CD32' : 'black',
-                    fontSize: 12,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: isSuccess ? '#32CD32' : 'red',
-                    fontSize: 12,
-                },
-            });
+            if (isSuccess) {
+                toast.success(response || `Successfully updated ${fieldLabel}`);
+            } else {
+                toast.error(response || `Failed To Upate  ${fieldLabel}`);
+            }
 
             if (isSuccess) {
-                    setIsRedirecting(true);
-                    setTimeout(() => {
+                setIsRedirecting(true);
+                setTimeout(() => {
                     router.back();
                 }, 3000);
             }
@@ -121,11 +109,7 @@ const UpdateStoreDataOneByOne = () => {
         if (!currentValue.trim()) {
             const msg = `${fieldLabel} cannot be empty.`;
             setErrorMessage(msg);
-            Toast.show({
-                type: 'error',
-                text1: 'Validation Error',
-                text2: msg,
-            });
+            toast.error('Validation Error', msg);
             return;
         }
 
@@ -139,11 +123,17 @@ const UpdateStoreDataOneByOne = () => {
 
     const onChangeTime = (event, selectedDate) => {
         setShowTimePicker(false);
+
         if (selectedDate) {
-            const formattedTime = selectedDate.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-            });
+            const hours = selectedDate.getHours();
+            const minutes = selectedDate.getMinutes();
+
+            const formattedTime = `${
+                hours < 10 ? `0${hours}` : hours
+            }:${
+                minutes < 10 ? `0${minutes}` : minutes
+            }`;
+
             setSelectedTime(formattedTime);
         }
     };
@@ -179,7 +169,7 @@ const UpdateStoreDataOneByOne = () => {
                         Current {fieldLabel}: {selectedTime}
                     </Text>
                     <TouchableOpacity
-                        className="bg-green2 p-4 rounded-md flex-row w-full my-3 justify-center items-center"
+                        className="bg-green2 py-3 rounded flex-row w-full my-3 justify-center items-center"
                         onPress={() => setShowTimePicker(true)}
                     >
                         <Feather name="clock" size={18} color="white" />
@@ -217,11 +207,11 @@ const UpdateStoreDataOneByOne = () => {
     return (
         <SafeAreaView className="flex-1 justify-center bg-white items-center">
             <View className="w-full px-4">
-                <MainHeader fontFamily="maven-bold"header_name={`Edit ${fieldLabel}`}/>
+                <MainHeader fontFamily="ubuntu-medium" textStyles='text-2xl' header_name='Edit Store'/>
             </View>
 
             <View className="flex-1 justify-center w-full px-4 my-10">
-                <Text className="text-lg" style={{ fontFamily: 'maven-bold' }}>
+                <Text className="text-lg font-semibold" style={{ fontFamily: 'roboto-medium' }}>
                     {fieldLabel}
                 </Text>
 
@@ -229,7 +219,7 @@ const UpdateStoreDataOneByOne = () => {
 
                 {errorMessage && (
                     <Text
-                        className="text-red mt-2 text-center" style={{ fontFamily: 'maven-medium' }}
+                        className="text-red mt-2 text-center" style={{ fontFamily: 'roboto-medium' }}
                     >
                         {errorMessage}
                     </Text>
@@ -239,14 +229,13 @@ const UpdateStoreDataOneByOne = () => {
                     title={isLoading ? 'Updating...' : 'Update'}
                     handlePress={handleSubmit}
                     disabled={isLoading}
-                    otherStyles={`bg-primary p-4 mt-4 ${
+                    otherStyles={`bg-primary py-3 mt-4 ${
                         isLoading ? 'opacity-50' : 'opacity-100'
                     }`}
-                    textStyles="text-lg"
+                    textStyles="text-2xl "
                 />
             </View>
 
-            <Toast />
             {isLoading && <LoadingIndicator loading_text="Updating..." />}
             {isRedirecting && <Redirecting redirect_text="Please wait..." />}
         </SafeAreaView>

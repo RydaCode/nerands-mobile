@@ -1,15 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import MainHeader from '../../../components/MainHeader';
 import AdminStoresCard from '../../../components/admin-store/AdminStoresCard';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
-import LoadingIndicator from '../../LoadingIndicator';
-// import EmptyState from '../../../components/EmptyState';
 
 const index = () => {
     const { user_id } = useSelector((state) => state.auth);
@@ -23,17 +21,26 @@ const index = () => {
         }
     }, [user_id]);
 
-    if (isLoading) return <LoadingIndicator loading_text="Fetching stores..." />;
-    if (error) return <Text>Error: {error.message}</Text>;
-
     const storeList = data?.data ?? [];
     const storeCount = data?.count ?? 0;
 
     return (
-        <SafeAreaView className="flex-1 px-4 justify-center items-center bg-white">
-            <View style={{ flex: 1 }}>
-                <MainHeader fontFamily="ubuntu-medium" textStyles='text-2xl' header_name="My Stores" />
-
+        <SafeAreaView className="flex-1 px-2 items-center bg-white">
+            <MainHeader fontFamily="ubuntu-medium" textStyles='text-2xl' header_name="My Stores" />
+            {isLoading ? (
+                <View className='w-full h-full justify-center items-center'>
+                    <ActivityIndicator size={50} color={COLORS.primary}/>
+                    <Text className='text-lg' style={{fontFamily: 'roboto-medium'}}>
+                        Loading your stores, please wait...
+                    </Text>
+                </View>
+            ) : error ? (
+                <View className='w-full h-full justify-center items-center'>
+                    <Text className='text-base text-red' style={{fontFamily: 'roboto-medium'}}>
+                        An error occured, please restart the app. 
+                    </Text>
+                </View>
+            ) : (
                 <FlatList
                     data={storeList}
                     keyExtractor={(item) => item.store_id?.toString() ?? Math.random().toString()}
@@ -60,7 +67,7 @@ const index = () => {
                     )}
                     showsVerticalScrollIndicator={false}
                 />
-            </View>
+            )}
         </SafeAreaView>
     );
 };

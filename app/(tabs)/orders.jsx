@@ -21,10 +21,8 @@ const Orders = () => {
     }
 
     return (
-        <SafeAreaView className='flex-1 justify-start items-center pb-20 bg-white'>
-            <View className='mx-4'>
-                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='My Orders'/>
-            </View>
+        <SafeAreaView className='flex-1 justify-start items-center px-2 pb-20 bg-white'style={{paddingBottom: 80}}>
+            <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='My Orders'/>
             <View className='w-full mt-5 mb-1'>
                 <OrderTabs
                     tabs={tabs}
@@ -32,7 +30,7 @@ const Orders = () => {
                     setActiveTab={setActiveTab}
                 />
             </View>
-            <View className='w-full mt-2 px-4'>
+            <View className='w-full mt-2'>
                 {DisplayTabContent()}
             </View>
         </SafeAreaView>

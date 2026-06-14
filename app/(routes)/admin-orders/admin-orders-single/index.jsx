@@ -13,16 +13,7 @@ const index = () => {
                 <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='User Order' />
             </View>
             <AdminSingleOrderCard
-                user_id={params.user_id}
-                store_id={params.store_id}
-                order_id={params.order_id}
-                grand_total={params.grand_total}
-                store_latitude={params.store_latitude}
-                store_longitude={params.store_longitude}
-                user_latitude={params.user_latitude}
-                user_longitude={params.user_longitude}
-                delivery_fee={params.delivery_fee}
-                courier_type={params.courier_type}
+                params={params}
             />
         </SafeAreaView>
     )

@@ -12,7 +12,7 @@ const COLORS = {
   coral: "coral",
   black: "#000",
   green2: "#32CD32",
-  rey_bg: "#F3F4F8",
+  grey_bg: "#F3F4F8",
   // green: '#32CD32',
   green1: "rgba(5, 173, 117, 0.884)",
   navBtnBg: "#F6E7E6",

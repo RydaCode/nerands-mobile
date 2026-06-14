@@ -12,11 +12,11 @@ const ExtraCheckbox = ({ label, price, checked, onToggle }) => (
                 textStyle={{
                     fontFamily: 'roboto-medium',
                     textDecorationLine: "none",
-                    color: checked ? COLORS.primary : COLORS.slate,
+                    color: COLORS.slate,
                     marginLeft: -10,
                     fontSize: 13
                 }}
-                size={20}
+                size={23}
                 fillColor={checked ? COLORS.primary : COLORS.primary}
                 iconStyle={{ borderColor: checked ? COLORS.primary : COLORS.slate, borderRadius: 2.5, borderWidth: 1.3 }}
                 innerIconStyle={{ borderRadius: 2.5, borderWidth: 1.3 }}

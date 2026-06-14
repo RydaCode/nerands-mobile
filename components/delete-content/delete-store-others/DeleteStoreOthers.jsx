@@ -1,14 +1,13 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import useDelete from '../../../hook/useDelete';
-import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
-import Redirecting from '../../../app/Redirecting';
+import { Text, TouchableOpacity, View } from 'react-native';
 import LoadingIndicator from '../../../app/LoadingIndicator';
+import Redirecting from '../../../app/Redirecting';
+import useDelete from '../../../hook/useDelete';
+import { toast } from '../../../utils/toast';
 
 const DeleteStoreOthers = ({setDeleteStoreModalVisible, params}) => {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    // //Custom hook for handling API request (Remove admin from store)
     const { remove, delLoading, delerror, redel } = useDelete(`/store/delete/`, {
         store_id: params.store_id,
     });
@@ -16,45 +15,11 @@ const DeleteStoreOthers = ({setDeleteStoreModalVisible, params}) => {
     //Handle error for delete operation
     useEffect(() => {
         if (delerror) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'An error occurred while removing the admin. Please try again.',
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 18,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 14,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.error('An error occurred while removing the admin. Please try again.');
         }
 
         if (remove && remove.Response === 'Success') {
-            Toast.show({
-                type: 'success',
-                text1: 'Success',
-                text2: 'Store deleted successfully!',
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: '#32CD32',
-                    fontSize: 18,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: '#32CD32',
-                    fontSize: 14,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.success('Store deleted successfully');
             setIsRedirecting(true);
             setTimeout(() => {
                 setDeleteStoreModalVisible(false);
@@ -62,24 +27,7 @@ const DeleteStoreOthers = ({setDeleteStoreModalVisible, params}) => {
             }, 5000);
         }
         if (remove && remove.Response !== 'Success') {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: remove.Response,
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 18,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 14,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.error(remove.Response);
             setIsRedirecting(true);
             setTimeout(() => {
                 setDeleteStoreModalVisible(false);
@@ -88,7 +36,6 @@ const DeleteStoreOthers = ({setDeleteStoreModalVisible, params}) => {
         }
     }, [remove, delerror]);
 
-    // //Handle the API request to remove admin
     const handleDeleteStore = () => {
         redel(); //Trigger the delete API request
     };
@@ -113,7 +60,6 @@ const DeleteStoreOthers = ({setDeleteStoreModalVisible, params}) => {
             </View>
             {delLoading ? <LoadingIndicator loading_text="Deleteing..." /> : null}
             {isRedirecting && <Redirecting />}
-            <Toast />
             <View className='pb-10'/>
         </View>
     )

@@ -29,67 +29,91 @@ const OtherStoresSingleCard = ({
     store_location,
     store_latitude,
     store_longitude,
+    variant_groups,
+    markup_percent,
+    final_price
 }) => {
     const router = useRouter();
     const dispatch = useDispatch();
-    const [selectedcolors, setSelectedColors] = useState([]);
-    const [selectedsizes, setSelectedSizes] = useState([]);
+    const [selectedVariants, setSelectedVariants] = useState({});
     const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
 
-    // const string = product_colors;
-    const Colors = typeof product_colors === "string" ? product_colors
-        .split(",")
-        .map(item => item.trim())
-        .filter(item => item !== "")
-        .map(item => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()) // Capitalize first letter
-    : [];
+        // Auto select variants
+    useEffect(() => {
+        if (!variant_groups?.length) return;
 
-    // const string = product_sizes;
-    const Sizes = typeof product_sizes === "string" ? product_sizes
-        .split(",")
-        .map(item => item.trim())
-        .filter(item => item !== "")
-        .map(item => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()) // Capitalize first letter
-    : [];
+        setSelectedVariants((prev) => {
+            const updated = { ...prev };
+
+            variant_groups.forEach((group) => {
+                const key = group.id;
+
+                // skip if already selected
+                if (updated[key] && updated[key].length > 0) return;
+
+                const options = group.options || [];
+
+                if (!options.length) return;
+
+                if (group.is_required) {
+                    // ✅ Required groups must always have at least 1
+                    updated[key] = [options[0].id];
+                } else {
+                    // ✅ Optional groups start empty
+                    updated[key] = [];
+                }
+            });
+            return updated;
+        });
+    }, [variant_groups]);
 
     // ✅ Add item to Other Cart
     const handleAddItem = () => {
+        const getVariantPrice = () => {
+            let extra = 0;
+            variant_groups.forEach(group => {
+                const selected = selectedVariants[group.id] || [];
+
+                selected.forEach(id => {
+                    const opt = group.options?.find(o => o.id === id);
+                    extra += Number(opt?.price || 0);
+                });
+            });
+            return extra;
+        };
+
+        const finalPrice = Number(final_price) + getVariantPrice();
+
         dispatch(addOthersItem({ 
             product_id: product_id,
             product_image: product_image,
             product_name: product_name,
             product_description: product_description,
             product_actual_price: product_actual_price,
-            product_price: product_price,
+            product_price: Number(product_price),
             product_qty: 1,
-            total_price: total_price,
+            total_price: finalPrice,
             product_status: product_status,
             store_name: params.store_name,
-            available_colors: product_colors,
-            available_sizes: product_sizes,
+            available_variants: variant_groups,
             store_id: params.store_id,
             store_phone_num: params.store_phone_num,
             store_category: params.store_category,
             product_category: product_category,
-            product_colors: selectedcolors,
-            product_sizes: selectedsizes,
+            selected_variants: selectedVariants,
             store_profileImage: params.store_profileImage,
             store_location: params.store_location,
             store_latitude: params.store_latitude,
-            store_longitude: params.store_longitude
+            store_longitude: params.store_longitude,
+            markup_percent: markup_percent,
+            final_price: Number(final_price)
         }));
-
         toast.success('Product added to cart');
     };
 
-    useEffect(() => {
-        if (Colors?.length > 0 && selectedcolors.length === 0) {
-            setSelectedColors([Colors[0]]); // Select the first available color
-        }
-        if (Sizes?.length > 0 && selectedsizes.length === 0) {
-            setSelectedSizes([Sizes[0]]); // Select the first available size
-        }
-    }, [Colors, Sizes]); // Runs when Colors or Sizes change
+    const isSelected = (group, item) => {
+        return (selectedVariants[group.id] || []).includes(item.id);
+    };
 
     return (
         <TouchableOpacity
@@ -100,6 +124,7 @@ const OtherStoresSingleCard = ({
                 product_description: product_description,
                 product_actual_price: product_actual_price,
                 product_price: product_price,
+                final_price: Number(final_price),
                 // product_qty: quantity,
                 // total_price: totalprice,
                 product_status: product_status,
@@ -113,7 +138,8 @@ const OtherStoresSingleCard = ({
                 store_profileImage: params.store_profileImage,
                 store_location: params.store_location,
                 store_latitude: params.store_latitude,
-                store_longitude: params.store_longitude
+                store_longitude: params.store_longitude,
+                variant_groups: JSON.stringify(variant_groups)
             }})}
             activeOpacity={0.7}
             className='w-[49%] rounded-md items-center justify-center relative'
@@ -144,7 +170,7 @@ const OtherStoresSingleCard = ({
                 <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className='text-lg'>{product_name}</Text>
             </View>
             <View className='w-full justify-center items-center p-1'>
-                <Text className='text-lg text-primary' style={{fontFamily: 'roboto-medium'}}>K{product_price}</Text>
+                <Text className='text-lg text-primary' style={{fontFamily: 'roboto-medium'}}>K{final_price}</Text>
             </View>
             <TouchableOpacity
                 disabled={othersCartItems.some(item => product_id === item.product_id)}

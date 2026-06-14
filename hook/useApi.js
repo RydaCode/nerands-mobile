@@ -24,6 +24,11 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
     };
   }, []);
 
+  const safeReturn = (result) => {
+    if (mountedRef.current) setIsLoading(false);
+    return result;
+  };
+
   /* -------------------- CORE REQUEST -------------------- */
   const request = useCallback(
     async (
@@ -34,7 +39,7 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
       config = {}
     ) => {
       if (!mountedRef.current) {
-        return { success: false, canceled: true };
+        return safeReturn({ success: false, offline: true });
       }
 
       const controller = new AbortController();
@@ -49,7 +54,11 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
 
         if (!netState.isConnected) {
           offlineQueue.push({ method, body, customEndpoint, config });
-          return { success: false, offline: true };
+
+          return safeReturn({
+            success: false,
+            offline: true,
+          });
         }
 
         /* -------- REQUEST -------- */
@@ -64,19 +73,22 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
         });
 
         if (!mountedRef.current) {
-          return { success: false, canceled: true };
+          return safeReturn({ success: false, canceled: true });
         }
 
         setData(response.data);
-        return { success: true, data: response.data };
+        return safeReturn({ success: true, data: response.data });
       } catch (err) {
         if (!mountedRef.current) {
-          return { success: false, canceled: true };
+          return safeReturn({ success: false, canceled: true });
         }
 
         /* -------- REQUEST CANCELED -------- */
         if (err.name === "CanceledError") {
-          return { success: false, canceled: true };
+          return safeReturn({
+            success: false,
+            canceled: true,
+          });
         }
 
         /* -------- RETRY -------- */
@@ -87,7 +99,7 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
               BACKOFF_BASE * 2 ** (MAX_RETRIES - retries)
             )
           );
-          return request(
+          const result = await request(
             method,
             body,
             customEndpoint,
@@ -103,11 +115,13 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
 
           setError({ message });
 
-          return {
-            success: false,
-            offline: false,
-            message,
-          };
+          return safeReturn(
+            {
+              success: false,
+              offline: false,
+              message,
+            }
+          );
         }
 
         /* -------- API ERROR -------- */
@@ -121,11 +135,11 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
           message,
         });
 
-        return {
+        return safeReturn({
           success: false,
           offline: false,
           message,
-        };
+        });
       } finally {
         mountedRef.current && setIsLoading(false);
       }

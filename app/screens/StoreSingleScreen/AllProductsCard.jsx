@@ -2,6 +2,7 @@ import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MotiView } from 'moti';
 import { Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { COLORS } from '../../../constants/constants';
+import { Carticons } from '../../../constants/icons';
 import { PRODUCTS_IMAGE_URI } from '../../../RequestMethods';
 import ProductDetailsModal from './ProductDetailsModal';
 import { useProductDetailsReducer } from './useProductDetailsReducer';
@@ -9,11 +10,8 @@ import { useProductDetailsReducer } from './useProductDetailsReducer';
 const AllProductsCard = ({ store_data, item }) => {
   if (!item) return null;
 
-  const isOpen = store_data.open_close === true || store_data.open_close === "true";
   const isAvailable = item.is_available === true || item.is_available === "true";
   const extras = item.product_extras || [];
-
-  
 
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
@@ -26,7 +24,7 @@ const AllProductsCard = ({ store_data, item }) => {
   // Use first product image or placeholder
   const productImage = Array.isArray(item.product_images) && item.product_images.length > 0
     ? item.product_images[0]
-    : 'https://yourapp.com/placeholder.png';
+    : Carticons.placeholder;
 
   return (
     <>
@@ -42,7 +40,7 @@ const AllProductsCard = ({ store_data, item }) => {
         item={item}
         extras={extras}
         isAvailable={isAvailable}
-        isOpen={isOpen}
+        isClosed={store_data.isClosed}
         store_profileimage={store_data.store_profileimage}
         product_iamges={productImage}
         store_description={store_data.store_description}
@@ -50,6 +48,8 @@ const AllProductsCard = ({ store_data, item }) => {
         store_latitude={store_data.store_latitude}
         store_longitude={store_data.store_longitude}
         store_location={store_data.store_location}
+        store_id={store_data.store_id}
+        store_phone_num={store_data.store_phone_num}
       />
 
       {/* Product Card */}
@@ -76,7 +76,7 @@ const AllProductsCard = ({ store_data, item }) => {
                 {item.product_description}
               </Text>
               <Text className='text-lg text-primary mt-1' style={{ fontFamily: 'roboto-medium' }}>
-                K{item.product_price}
+                K{item.final_price}
               </Text>
             </View>
           </View>

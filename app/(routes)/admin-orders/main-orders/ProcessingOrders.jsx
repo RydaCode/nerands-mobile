@@ -1,29 +1,31 @@
-import { Entypo } from '@expo/vector-icons';
+import { Entypo, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
-import { COLORS, SIZES } from '../../../../constants/constants';
+import agoTimeStamp from '../../../../components/agoTimeStamp';
+import { COLORS } from '../../../../constants/constants';
 import useApi from '../../../../hook/useApi';
 
 // --- Single order row ---
-const OrdersData = ({ order, router }) => {
+const OrdersData = ({ order, router, params }) => {
+
     const total = order?.order_items?.reduce(
         (sum, item) => sum + (item.product_actual_price || 0) * (item.quantity || 0),
         0
     );
-    const qty = order?.order_items?.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+    const qty = order?.order_items?.reduce(
+        (sum, item) => sum + (item.quantity || 0),
+        0
+    );
 
     const statusColors = {
         pending: 'red',
-        accepted: 'orange',
+        accepted: COLORS.green2,
+        ready: COLORS.coral,
         processing: 'purple',
         in_transit: 'blue',
         completed: 'green',
-        cancelled: 'gray',
-        delayed: 'yellow',
-        returned: 'brown',
-        ready: 'teal',
-        in_progress: 'cyan',
     };
 
     return (
@@ -32,16 +34,15 @@ const OrdersData = ({ order, router }) => {
                 router.push({
                     pathname: './admin-orders-single/',
                     params: {
-                        user_id: order.user_id,
-                        store_id: order.store_id,
-                        order_id: order.order_id,
-                        store_latitude: order.store_latitude,
-                        store_longitude: order.store_longitude,
-                        user_latitude: order.user_latitude,
-                        user_longitude: order.user_longitude,
-                        delivery_fee: order.delivery_fee,
-                        courier_type: order.delivery_mode,
+                        user_id: order.order.user_id,
+                        order_number: order.order.order_number,
+                        store_id: order.store_order.store_id,
+                        order_id: order.order.order_id,
+                        store_order_id: order.store_order.store_order_id,
+                        store_latitude: params.store_latitude,
+                        store_longitude: params.store_longitude,
                         grand_total: total,
+                        order_status: order.store_order.status
                     },
                 })
             }
@@ -49,38 +50,50 @@ const OrdersData = ({ order, router }) => {
         >
             <View className="flex-row justify-start items-center">
                 <View
-                    style={{ borderRadius: SIZES.radius }}
-                    className="h-[65px] w-[26%] border-2 border-lavender justify-center items-center"
+                    style={{ width: '23%', height: 60 }}
+                    className="border bg-white rounded elevation-sm border-lavender justify-center items-center"
                 >
-                    <Entypo size={40} name="box" color={COLORS.primary} />
+                    <Entypo size={35} name="box" color={COLORS.slate} />
                 </View>
+
                 <View className="w-[71.7%] flex-row ml-2 justify-between items-center">
                     <View className="w-full">
-                        <Text className="text-lg" style={{ fontFamily: 'roboto-medium' }}>
-                            Order No: {order.order_number}
+                        <Text className="text-base" style={{ fontFamily: 'roboto-medium' }}>
+                            Order No: {Number(order.order.order_number)}
                         </Text>
+
                         <View className="flex-row justify-between items-center mt-1">
-                            <Text className="text-base text-primary" style={{ fontFamily: 'roboto-medium' }}>
-                                Total: K{total}
-                            </Text>
+                            
                             <Text className="text-slate text-sm ml-2" style={{ fontFamily: 'roboto-medium' }}>
-                                Qty: {qty}
+                                Qty: {order.order.items_quantity}
                             </Text>
+
                             <View
-                                style={{ backgroundColor: statusColors[order.order_status] || 'gray' }}
+                                style={{ backgroundColor: statusColors[order.store_order.status] || 'gray' }}
                                 className="flex-row rounded-sm px-2 py-0.5 items-center justify-center"
                             >
-                                <Text className="text-white text-sm" style={{ fontFamily: 'roboto-medium' }}>
-                                    {order.order_status}
+                                <Text className="text-white text-sm">
+                                    {order.store_order.status?.charAt(0).toUpperCase() + order.store_order.status?.slice(1)}
                                 </Text>
                             </View>
                         </View>
-                        <View className="flex-row justify-between items-center mt-1">
-                            <Text className="text-grey text-sm" style={{ fontFamily: 'roboto-medium' }}>
-                                Time: {order.order_time}
+
+                        <View className="flex-row justify-between items-center">
+                            <Text
+                                className="text-sm text-slate"
+                                style={{ fontFamily: "roboto" }}
+                            >
+                                {new Date(order.store_order.created_at).toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                })}
                             </Text>
-                            <Text className="text-grey text-sm" style={{ fontFamily: 'roboto-medium' }}>
-                                Date: {order.order_date}
+                            <Text
+                                className="text-sm text-slate mr-4"
+                                style={{ fontFamily: "roboto" }}
+                            >
+                            {' '} ({agoTimeStamp(order.store_order.created_at)})
                             </Text>
                         </View>
                     </View>
@@ -90,131 +103,123 @@ const OrdersData = ({ order, router }) => {
     );
 };
 
-// --- Processing Orders List (includes accepted + processing) ---
+// --- Pending Orders ---
 const ProcessingOrders = ({ title, params }) => {
     const router = useRouter();
+    const STATUS_FILTER = {
+        ACTIVE: ['processing', 'accepted', 'ready', 'delayed'],
+        // CANCELLED: ['cancelled'],
+        // COMPLETED: ['completed']
+    };
+
     const { get, isLoading } = useApi();
-
-    // Fetch orders with these statuses
-    const STATUSES = ['accepted', 'processing', 'ready', 'delayed'];
-
     const [orderData, setOrders] = useState([]);
-    const [nextCursor, setNextCursor] = useState(null);
+    const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const appendOrders = (newOrders) => {
-        setOrders((prev) => {
-            const merged = [...prev, ...newOrders];
-            const unique = merged.filter(
-                (v, i, a) => a.findIndex((x) => x.order_id === v.order_id) === i
-            );
-            return unique;
-        });
-    };
-
-    // --- Build API URL, optionally ignoring cursor (for pull-to-refresh) ---
-    const buildUrl = (ignoreCursor = false) => {
-        let url = `/orders/adminorders/${params.store_id}?limit=10&order_status=${encodeURIComponent(STATUSES.join(','))}`;
-        if (!ignoreCursor && nextCursor?.last_order_time && nextCursor?.last_order_id != null) {
-            url += `&last_order_time=${encodeURIComponent(nextCursor.last_order_time)}`;
-            url += `&last_order_id=${nextCursor.last_order_id}`;
-        }
-        return url;
-    };
-
-    // --- Fetch first page (pull-to-refresh) ---
-    const fetchInitialOrders = async () => {
-        if (!params.store_id) return;
+    const fetchOrders = async (pageNumber = 1) => {
+        if (loading) return;
 
         try {
-            setIsRefreshing(true);
-            setOrders([]);
-            setNextCursor(null);
-            setHasMore(true);
+            setLoading(true);
 
-            const url = buildUrl(true); // ignore cursor for refresh
-            const res = await get(url);
-
-            const data = Array.isArray(res?.data?.data) ? res.data.data : [];
-            setOrders(data);
-            setNextCursor(res?.data?.next_cursor || null);
-            setHasMore(res?.data?.next_cursor !== null);
-        } catch (err) {
-            console.error('Error refreshing orders:', err);
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
-
-    // --- Load more on scroll (cursor pagination) ---
-    const loadMoreOrders = async () => {
-        if (!hasMore || !nextCursor) return;
-
-        try {
-            const url = buildUrl(); // use cursor
+            const url = `/orders/adminorders/${params.store_id}?limit=10&page=${pageNumber}&order_status=${STATUS_FILTER.ACTIVE.join(',')}`;
             const res = await get(url);
 
             const newOrders = Array.isArray(res?.data?.data) ? res.data.data : [];
-            appendOrders(newOrders);
 
-            setNextCursor(res?.data?.next_cursor || null);
-            setHasMore(res?.data?.next_cursor !== null);
+            if (pageNumber === 1) {
+                setOrders(newOrders);
+            } else {
+                setOrders(prev => [...prev, ...newOrders]);
+            }
+
+            if (newOrders.length < 10) {
+                setHasMore(false);
+            }
+
         } catch (err) {
-            console.error('Error loading more orders:', err);
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    // --- Fetch first page on mount ---
+    // initial load
     useEffect(() => {
-        fetchInitialOrders();
+        setPage(1);
+        setHasMore(true);
+        fetchOrders(1);
     }, [params.store_id]);
 
-    // --- Loader ---
-    if (orderData.length === 0 && isLoading) {
+    // load more
+    const loadMore = () => {
+        if (loading || !hasMore) return;
+
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchOrders(nextPage);
+    };
+
+    // refresh
+    const onRefresh = () => {
+        setPage(1);
+        setHasMore(true);
+        fetchOrders(1);
+    };
+
+    if (orderData.length === 0 && loading) {
         return (
             <View className="flex-1 justify-center items-center">
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text className="text-md mt-3 text-slate">Loading orders...</Text>
+                <ActivityIndicator size={40} color={COLORS.primary} />
+                <Text className="mt-3 text-slate text-lg" style={{fontFamily: 'roboto-medium'}}>Loading orders...</Text>
             </View>
         );
     }
 
-    // --- FlatList render ---
     return (
         <FlatList
             data={orderData}
-            keyExtractor={(item) => item.order_id.toString()}
+            keyExtractor={(item) => item.order.order_id}
             renderItem={({ item }) => (
                 <View className="px-2">
-                    <OrdersData order={item} router={router} />
+                    <OrdersData
+                        order={item}
+                        router={router}
+                        params={params}
+                    />
                     <View className="w-full my-4 rounded-full bg-slate opacity-10" style={{ height: 1 }} />
                 </View>
             )}
             ListHeaderComponent={() => (
-                <View className="flex-row px-2 justify-between items-center my-6">
-                    <Text className="mt-1 text-lg" style={{ fontFamily: 'roboto-medium' }}>
-                        {title}
-                    </Text>
+                <View className=" px-2 justify-center items-center my-6">
+                    <View className="items-center py-[1px] justify-start px-2 w-full bg-[#F3F4F8]">
+                        <Text className="text-black">
+                            There {orderData?.length === 1 ? 'is': 'are'} <Text className='text-primary text-lg'>{orderData?.length}</Text> {title} from this store
+                        </Text>
+                    </View>
                     <View
-                        className="flex-row justify-start items-center py-[1px] px-2 rounded-full"
-                        style={{ backgroundColor: '#F3F4F8' }}
+                        className='w-full my-4 rounded p-2 bg-navBtnBgHome'
                     >
-                        <View
-                            className="rounded-full bg-red border-1 border-red mr-1"
-                            style={{ height: 10, width: 10 }}
-                        />
-                        <Text className="text-red" style={{ fontFamily: 'roboto-medium' }}>
-                            {orderData?.length} Orders
+                        <View className='flex-row items-center justify-start'>
+                            <MaterialCommunityIcons name="alert-circle" size={24} color="red" />
+                            <Text className='text-lg ml-1' style={{fontFamily: 'roboto-medium'}}>Attention</Text>
+                        </View>
+                        <Text
+                            className='text-slate text-sm ml-1'
+                            style={{fontFamily: 'roboto-medium', textAlign: 'justify'}}
+                        >
+                            Ensure all orders are processed and dispatched without delay to avoid inconveniencing customers.
                         </Text>
                     </View>
                 </View>
             )}
-            onEndReached={loadMoreOrders}
+            onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             showsVerticalScrollIndicator={false}
-            refreshing={isRefreshing}
-            onRefresh={fetchInitialOrders}
+            refreshing={loading}
+            onRefresh={onRefresh}
         />
     );
 };

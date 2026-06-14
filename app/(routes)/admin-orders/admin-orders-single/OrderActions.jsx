@@ -13,6 +13,7 @@ const sendPushNotification = async (userId, payload) => {
 
 const OrderActions = ({
     orderId,
+    store_order_id,
     status,
     grandTotal,
     params,
@@ -22,17 +23,19 @@ const OrderActions = ({
 }) => {
     const [loading, setLoading] = useState(false);
 
-    const { patch } = useApi(`/orders/update`);
+    const { data: updateOrder, isLoading: loadingUpdateOrder, error: errorUpdateOrder, patch } = useApi(`/orders/admin/update`);
     const { data, isLoading, error, post: findTransporter } = useApi("/transporter/find");
 
-    console.log(data)
+    
 
     // --- Update order status locally ---
     const handleUpdate = async (newStatus, resumeStatus = null) => {
+        console.log(newStatus)
+
         try {
             setLoading(true);
 
-            const payload = { order_id: orderId, order_status: newStatus };
+            const payload = { order_id: orderId, order_status: newStatus, store_order_id: store_order_id };
             if (status === "delayed" && resumeStatus) payload.resume = resumeStatus;
 
             const res = await patch(payload);
@@ -72,9 +75,9 @@ const OrderActions = ({
             }
 
             if (!res.data?.success) {
-        toast.error(res.data?.message || "Transporter search failed");
-        return;
-    }
+                toast.error(res.data?.message || "Transporter search failed");
+                return;
+            }
 
             const transporter = res.transporter;
 
@@ -82,7 +85,6 @@ const OrderActions = ({
                 toast.error("No transporter available");
                 return;
             }
-
 
             await sendPushNotification(transporter.user_id, {
                 type: "NEW_ORDER",
@@ -122,25 +124,35 @@ const OrderActions = ({
     if (loading) return <LoadingIndicator loading_text="Processing..." />;
 
     return (
-        <View className="absolute bottom-4 left-4 right-4 flex-row">
+        <View className="absolute bottom-4 left-3 right-3 flex-row">
             {/* Pending: admin must accept */}
             {status === "pending" && (
                 <>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("accepted")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.green2 }}
                     >
-                        <Text className="text-center text-white text-lg">ACCEPT</Text>
+                        <Text
+                            className="text-center text-white text-lg"
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            ACCEPT
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("cancelled")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.red }}
                     >
-                        <Text className="text-center text-white text-lg">REJECT</Text>
+                        <Text
+                            className="text-center text-white text-lg"
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            REJECT
+                        </Text>
                     </TouchableOpacity>
                 </>
             )}
@@ -151,18 +163,28 @@ const OrderActions = ({
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("processing")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.green2 }}
                     >
-                        <Text className="text-center text-white text-lg">PROCESS</Text>
+                        <Text
+                            className="text-center text-white text-lg"
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            PROCESS
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("delayed")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.red }}
                     >
-                        <Text className="text-center text-white text-lg">DELAYED</Text>
+                        <Text
+                            className="text-center text-white text-lg"
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            DELAYED
+                        </Text>
                     </TouchableOpacity>
                 </>
             )}
@@ -173,18 +195,22 @@ const OrderActions = ({
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("ready")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.green2 }}
                     >
-                        <Text className="text-center text-white text-lg">READY</Text>
+                        <Text style={{fontFamily: 'roboto-medium'}} className="text-center text-white text-lg">
+                            READY
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("delayed")}
-                        className="flex-1 mx-1 py-4 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.red }}
                     >
-                        <Text className="text-center text-white text-lg">DELAYED</Text>
+                        <Text style={{fontFamily: 'roboto-medium'}} className="text-center text-white text-lg">
+                            DELAYED
+                        </Text>
                     </TouchableOpacity>
                 </>
             )}
@@ -195,25 +221,27 @@ const OrderActions = ({
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("processing", "processing")}
-                        className="flex-1 mx-1 py-3 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.green2 }}
                     >
-                        <Text className="text-center text-white text-lg">Processing</Text>
+                        <Text className="text-center text-white text-lg" style={{fontFamily: 'roboto-medium'}}>
+                            Processing
+                        </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("ready", "ready")}
-                        className="flex-1 mx-1 py-3 rounded-sm bg-purple-600"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm bg-purple-600"
                     >
-                        <Text className="text-center text-white text-lg">Ready</Text>
+                        <Text className="text-center text-white text-lg" style={{fontFamily: 'roboto-medium'}}>Ready</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         disabled={loading}
                         onPress={() => handleUpdate("cancelled")}
-                        className="flex-1 mx-1 py-3 rounded-sm"
+                        className="flex-1 mx-1 py-3 rounded elevation-sm"
                         style={{ backgroundColor: COLORS.red }}
                     >
-                        <Text className="text-center text-white text-lg">Cancel</Text>
+                        <Text className="text-center text-white text-lg" style={{fontFamily: 'roboto-medium'}}>Cancel</Text>
                     </TouchableOpacity>
                 </>
             )}
@@ -227,7 +255,7 @@ const OrderActions = ({
                         className="py-4 rounded-sm"
                         style={{ backgroundColor: COLORS.primary }}
                     >
-                        <Text className="text-center text-2xl text-white">Find Transporter</Text>
+                        <Text className="text-center text-2xl text-white" style={{fontFamily: 'roboto-medium'}}>Find Transporter</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -235,14 +263,14 @@ const OrderActions = ({
             {/* Completed */}
             {status === "completed" && (
                 <View className="flex-1 p-3 rounded-2xl bg-grey_bg">
-                    <Text className="text-center text-slate">✅ Order Completed (Total: K{grandTotal})</Text>
+                    <Text className="text-center text-slate" style={{fontFamily: 'roboto-medium'}}>✅ Order Completed (Total: K{grandTotal})</Text>
                 </View>
             )}
 
             {/* Cancelled */}
             {status === "cancelled" && (
                 <View className="flex-1 p-3 rounded-2xl bg-red">
-                    <Text className="text-center text-white">❌ Order Cancelled</Text>
+                    <Text className="text-center text-white" style={{fontFamily: 'roboto-medium'}}>❌ Order Cancelled</Text>
                 </View>
             )}
         </View>

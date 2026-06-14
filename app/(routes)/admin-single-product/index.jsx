@@ -15,8 +15,6 @@ const index = () => {
     const screenHeight = Dimensions.get('window').height;
     const itemWidth = screenWidth * 0.2;
     const productImages = Array.isArray(params.product_images) ? params.product_images : [];
-    const productSizes = Array.isArray(params.product_sizes) ? params.product_sizes : [];
-    const productColors = Array.isArray(params.product_colors) ? params.product_colors : [];
 
     const isStorePublished = params.active_status === true || params.active_status === 1 || params.active_status === 'true';
 
@@ -141,15 +139,12 @@ const index = () => {
                 product_images={params.product_images}
                 product_name={params.product_name}
                 product_description={params.product_description}
-                product_actual_price={params.product_actual_price}
+                product_price={params.product_price}
                 product_status={params.product_status}
                 store_name={params.store_name}
                 store_id={params.store_id}
                 store_category={params.store_category}
                 product_category={params.product_category}
-                product_colors={params.product_colors}
-                product_sizes={params.product_sizes}
-                chili_option={params.chili_option}
                 product_extras_status={params.product_extras_status}
                 store_profileimage={params.store_profileimage}
                 handleCheckboxChange={params.handleCheckboxChange}

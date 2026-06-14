@@ -1,34 +1,33 @@
-// import { View, Text, TouchableOpacity, FlatList } from 'react-native'
-// import React from 'react'
-// import styles from '../../../constants/styles.tabs';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import styles from '../../../constants/styles.tabs';
 
-// const TabButton = ({ name, activeTab, onHandleSearchType }) => (
-//     <TouchableOpacity
-//         style={styles.btn(name, activeTab)} className='py-2 px-6 items-center'
-//         onPress={onHandleSearchType}
-//     >
-//         <Text style={styles.btnText(name, activeTab)}>{name}</Text>
-//     </TouchableOpacity>
-// );
+const TabButton = ({ name, activeTab, onHandleSearchType }) => (
+    <TouchableOpacity
+        style={styles.btn(name, activeTab)} className='py-2 px-6 border border-lavender items-center'
+        onPress={onHandleSearchType}
+    >
+        <Text style={styles.btnText(name, activeTab)}>{name}</Text>
+    </TouchableOpacity>
+);
 
-// const HotelTabs = ({ tabs, activeTab, setActiveTab }) => {
-//     return (
-//         <View style={styles.container}>
-//             <FlatList
-//                 data={tabs}
-//                 renderItem={({ item }) => (
-//                     <TabButton
-//                         name={item}
-//                         activeTab={activeTab}
-//                         onHandleSearchType={() => setActiveTab(item)}
-//                     />
-//                 )}
-//                 showsHorizontalScrollIndicator={false}
-//                 horizontal
-//                 contentContainerStyle={{ columnGap: 5 }}
-//             />
-//         </View>
-//     )
-// }
+const HotelTabs = ({ tabs, activeTab, setActiveTab }) => {
+    return (
+        <View style={styles.container}>
+            <FlatList
+                data={tabs}
+                renderItem={({ item }) => (
+                    <TabButton
+                        name={item}
+                        activeTab={activeTab}
+                        onHandleSearchType={() => setActiveTab(item)}
+                    />
+                )}
+                showsHorizontalScrollIndicator={false}
+                horizontal
+                contentContainerStyle={{ columnGap: 5 }}
+            />
+        </View>
+    )
+}
 
-// export default HotelTabs
+export default HotelTabs

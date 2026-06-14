@@ -18,7 +18,7 @@ const Menu = () => {
         { title: 'Parcels', 
             icon: 
                 <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                    <Ionicons size={20} name="bag-outline" color={COLORS.green1} />
+                    <Ionicons size={20} name="bag-outline" color={COLORS.primary} />
                 </View>,
             route: '../(routes)/parcels-menu-items/' },
         // { title: 'Hotels', icon: <FontAwesome6 name="hotel" color="#54C571" size={20} />, route: '../(routes)/hotels-menu-items/' },
@@ -28,20 +28,20 @@ const Menu = () => {
         // { title: 'Create Store', icon: <Ionicons name="create-outline" size={27} color="#54C571" />, route: '../(routes)/create-store/' },
         { title: 'Custom Order', icon:
             <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                <Ionicons size={20} name="bag-outline" color={COLORS.purple} />
+                <Ionicons size={20} name="bag-outline" color={COLORS.primary} />
             </View>,
             route: '../(routes)/custom-order-menu-items/' },
         // { title: 'Sign Up', icon: <FontAwesome6 size={20} name="user-plus" color="#54C571" />, route: '../(routes)/sign-up/' },
         { title: 'My Account', icon:
             <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                <FontAwesome size={21} name="user" color={COLORS.purple} />
+                <FontAwesome size={21} name="user" color={COLORS.primary} />
             </View>,
             route: '../(routes)/user-account/' },
         // { title: 'Logout', icon: <FontAwesome5 name="sign-out-alt" size={20} color="red" />, route: '../(routes)/user-account/', textStyles: 'text-red' }
     ];
 
     return (
-        <SafeAreaView className='flex-1 bg-white px-4'>
+        <SafeAreaView className='flex-1 bg-white px-2'style={{paddingBottom: 45}}>
             <MainHeader textStyles='text-2xl' fontFamily='maven-medium' header_name='Menu' />
             <View className='w-full items-center mt-4'>
                 <Text style={{ fontFamily: 'roboto' }}>Your current location:</Text>
@@ -87,9 +87,9 @@ const Menu = () => {
                     from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
                     animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
                     transition={{ duration: 1000 }}
-                    className='justify-end'
+                    className='justify-center w-full'
                 >
-                <View className='flex-row flex-wrap items-center justify-between'>
+                <View className='flex-row flex-wrap  items-center justify-between'>
                     {menuItems.map((item, index) => (
                         <MenuItem
                             key={index}

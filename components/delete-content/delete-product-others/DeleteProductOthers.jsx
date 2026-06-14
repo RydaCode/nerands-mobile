@@ -1,14 +1,13 @@
-import { View, Text, TouchableOpacity } from 'react-native'
-import useDelete from '../../../hook/useDelete';
-import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
-import Redirecting from '../../../app/Redirecting';
+import { Text, TouchableOpacity, View } from 'react-native';
 import LoadingIndicator from '../../../app/LoadingIndicator';
+import Redirecting from '../../../app/Redirecting';
+import useDelete from '../../../hook/useDelete';
+import { toast } from '../../../utils/toast';
 
 const DeleteProductOthers = ({onClose, product_id, store_id}) => {
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    // //Custom hook for handling API request (Remove admin from store)
     const { remove, delLoading, delerror, redel } = useDelete(`/product/delete/`, {
         store_id: store_id,
         product_id: product_id
@@ -19,95 +18,27 @@ const DeleteProductOthers = ({onClose, product_id, store_id}) => {
         if (remove) {
             const message = remove.Response;
             if (message === 'Success') {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Product deleted!',
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: '#32CD32',
-                        fontSize: 18,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: '#32CD32',
-                        fontSize: 14,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.success('Product deleted');
                 setIsRedirecting(true);
                 setTimeout(() => {
                     onClose(false);
                 }, 3000);
             }
             else if (message !== 'Success') {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: message,
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: 'rgba(5, 173, 117, 0.884)',
-                        fontSize: 18,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: 'rgba(5, 173, 117, 0.884)',
-                        fontSize: 14,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.error(message);
                 setIsRedirecting(true);
                 setTimeout(() => {
                     onClose(false);
                 }, 3000);
             }
             else {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: message || 'Unknown error.',
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: 'red',
-                        fontSize: 18,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: 'red',
-                        fontSize: 14,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.error(message || 'Unknown error.');
             }
         }
 
         // Handle error for delete
         if (delerror) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'An error occurred while updating. Please try again.',
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 18,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 14,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.error('An error occurred while updating. Please try again.');
         }
     }, [remove, delerror]);
 
@@ -135,7 +66,6 @@ const DeleteProductOthers = ({onClose, product_id, store_id}) => {
             </View>
             {delLoading ? <LoadingIndicator loading_text="Deleteing..." /> : null}
             {isRedirecting && <Redirecting />}
-            <Toast />
             <View className='pb-10'/>
         </View>
     )

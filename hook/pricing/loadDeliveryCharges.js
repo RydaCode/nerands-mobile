@@ -1,52 +1,40 @@
 import { setCharges } from '../../redux/store/slices/DeliverySlice';
-import { toast } from '../../utils/toast';
-import {
-    fetchBaseFee,
-    fetchBikeDistance,
-    fetchFootDistance,
-    fetchMotorBikeDistance,
-    fetchMotorCarDistance,
-    fetchRatePerKm,
-    fetchServiceCharge
-} from './pricingApi';
+import axiosInstance from '../axiosInstance';
 
-export const loadDeliveryCharges = () => async (dispatch, getState) => {
-    const { charges } = getState().delivery;
+const api = axiosInstance;
 
-    if (charges) return;
+export const loadDeliveryCharges = () => async (dispatch) => {
+    const api = axiosInstance;
 
-    try {
-        const [
-            baseRes,
-            rateRes,
-            footRes,
-            bikeRes,
-            motorBikeRes,
-            motorCarRes,
-            serviceCharge
-        ] = await Promise.all([
-            fetchBaseFee(),
-            fetchRatePerKm(),
-            fetchFootDistance(),
-            fetchBikeDistance(),
-            fetchMotorBikeDistance(),
-            fetchMotorCarDistance(),
-            fetchServiceCharge()
-        ]);
+    const tryFetch = async (attempt = 1) => {
+        try {
+            const res = await api.get("/admin/charges");
 
-        dispatch(setCharges({
-            baseFee: Number(baseRes?.data?.charges?.[0]?.charge_percent ?? 0),
-            ratePerKm: Number(rateRes?.data?.charges?.[0]?.charge_percent ?? 0),
-            serviceCharge: Number(serviceCharge?.data?.charges?.[0]?.charge_percent ?? 0),
-            maxDistance: {
-                foot: Number(footRes?.data?.charges?.[0]?.charge_percent ?? 100),
-                bike: Number(bikeRes?.data?.charges?.[0]?.charge_percent ?? 100),
-                motorBike: Number(motorBikeRes?.data?.charges?.[0]?.charge_percent ?? 100),
-                motorCar: Number(motorCarRes?.data?.charges?.[0]?.charge_percent ?? 100)
-            }
-        }));
-    } catch (err) {
-        toast.info('Failed to load delivery charges');
-        console.log("Failed to load delivery charges:", err);
-    }
+            const map = {};
+            res.data.charges.forEach((item) => {
+                map[item.charge_type] = Number(item.charge_percent);
+            });
+
+            dispatch(setCharges({
+                baseFee: map.base_fee || 0,
+                ratePerKm: map.rate_per_km || 0,
+                serviceCharge: map.service_charge || 0,
+                maxDistance: {
+                    foot: map.foot_distance || 100,
+                    bike: map.bike_distance || 100,
+                    motorBike: map.motor_bike_distance || 100,
+                    motorCar: map.motor_car_distance || 100
+                }
+            }));
+
+        } catch (err) {
+            console.log(`Pricing fetch failed (attempt ${attempt})`, err.message);
+
+            // retry in background
+            setTimeout(() => {
+                tryFetch(attempt + 1);
+            }, Math.min(10000, attempt * 2000));
+        }
+    };
+    tryFetch();
 };

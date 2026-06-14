@@ -7,10 +7,8 @@ const useInitPricing = () => {
     const charges = useSelector(state => state.delivery.charges);
 
     useEffect(() => {
-        if (!charges) {
-            dispatch(loadDeliveryCharges());
-        }
-    }, [charges]);
+        dispatch(loadDeliveryCharges());
+    }, [dispatch]);
 
     return charges;
 };

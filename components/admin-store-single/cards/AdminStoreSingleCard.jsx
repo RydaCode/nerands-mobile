@@ -13,15 +13,12 @@ const AdminStoreSingleCard = ({
     product_images,
     product_name,
     product_description,
-    product_actual_price,
+    product_price,
     product_status,
     store_name,
     store_id,
     store_category,
     product_category,
-    product_colors,
-    product_sizes,
-    chili_option,
     product_extras_status,
     store_profileimage,
     handleCheckboxChange,
@@ -29,13 +26,15 @@ const AdminStoreSingleCard = ({
     setSelectedItems,
     active_status,
     is_available,
-    variant_groups
+    variant_groups,
+    markup_percent,
+    final_price
 }) => {
     const variants = JSON.stringify(variant_groups);
 
     // Parse JSON safely
-const variant = variants ? JSON.parse(variants) : [];
-const optionss = variant[0]?.id ?? [];
+    const variant = variants ? JSON.parse(variants) : [];
+    const optionss = variant[0]?.id ?? [];
 
     const router = useRouter();
     const [modalVisible, setModalVisible] = useState(false);
@@ -47,15 +46,12 @@ const optionss = variant[0]?.id ?? [];
         product_images,
         product_name,
         product_description,
-        product_actual_price,
+        product_price,
         product_status,
         store_name,
         store_id,
         store_category,
         product_category,
-        product_colors,
-        product_sizes,
-        chili_option,
         product_extras_status,
         store_profileimage,
         handleCheckboxChange,
@@ -66,7 +62,9 @@ const optionss = variant[0]?.id ?? [];
         group_name: variant[0]?.name,
         variant_is_required: variant[0]?.is_required,
         variant_multi_select: variant[0]?.multi_select,
-        variant_options: JSON.stringify(variant_groups[0]?.options || [])
+        variant_options: JSON.stringify(variant_groups[0]?.options || []),
+        markup_percent,
+        final_price
     });
 
     const openModal = (type) => {
@@ -82,24 +80,20 @@ const optionss = variant[0]?.id ?? [];
     return (
         <View className="mb-4" style={{width: '48.5%'}}>
             <TouchableOpacity
-                // onPress={() => openModal('edit')}
                 onPress={() => router.push({
                     pathname: '../../(routes)/admin-single-product/',
                     params: {
                         product_id,
                         product_image,
-                        product_images,
+                        product_images: JSON.stringify(product_images),
                         product_name,
                         product_description,
-                        product_actual_price,
                         product_status,
                         store_name,
+                        product_price,
                         store_id,
                         store_category,
                         product_category,
-                        product_colors,
-                        product_sizes,
-                        chili_option,
                         product_extras_status,
                         store_profileimage,
                         handleCheckboxChange,
@@ -130,9 +124,10 @@ const optionss = variant[0]?.id ?? [];
                                 textStyle={{ textDecorationLine: "none", color: COLORS.slate}}
                                 size={20}
                                 onPress={() => handleCheckboxChange(product_id)}
-                                fillColor={COLORS.green2}
-                                iconStyle={{ borderColor: COLORS.green2, borderWidth: 2, borderRadius: 2 }}
+                                fillColor={COLORS.primary}
+                                iconStyle={{ borderColor: COLORS.primary, borderWidth: 2, borderRadius: 2 }}
                                 innerIconStyle={{ borderWidth: 2, borderRadius: 2 }}
+                                disableText
                             />
                         </View>
                         {product_status === false &&
@@ -152,7 +147,7 @@ const optionss = variant[0]?.id ?? [];
                 </View>
                 <View className="w-full justify-center items-center"> 
                     <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className="text-base text-center">{product_name}</Text>
-                    <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className="text-base text-primary">K{product_actual_price}</Text>
+                    <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className="text-base text-primary">K{product_price}</Text>
                 </View>
             </TouchableOpacity>
             <View className='w-full mt-1 rounded-full bg-slate opacity-10' style={{height: 1}} />

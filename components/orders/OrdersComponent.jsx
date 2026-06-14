@@ -1,6 +1,6 @@
-import { Entypo, Ionicons } from "@expo/vector-icons";
+import { Entypo, Fontisto, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,9 +10,10 @@ import {
   View,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { COLORS, SIZES } from "../../constants/constants";
+import { COLORS } from "../../constants/constants";
 import useApi from "../../hook/useApi";
 import EmptyState from "../EmptyState";
+import agoTimeStamp from "../agoTimeStamp";
 
 // Individual order display
 const OrdersData = ({ order, router, user_id }) => {
@@ -26,7 +27,6 @@ const OrdersData = ({ order, router, user_id }) => {
 
   const statusColor = statusColorMap[order.order_status] || "bg-red";
 
-  // console.log(order)
   const orderTota = Number(order.order_total_price) + Number(order.delivery_fee);
 
   const dotClassName = `flex-row rounded-full ${statusColor}`;
@@ -48,18 +48,19 @@ const OrdersData = ({ order, router, user_id }) => {
               store_longitude: order.store_longitude,
               delivery_fee: order.delivery_fee,
               delivery_mode: order.delivery_mode,
-              store_profileimage: order.store_profileimage
+              store_profileimage: order.store_profileimage,
+              order_type: order.order_type
             },
           })
         }
-        className="flex-row justify-between items-center"
+        className="flex-row w-full justify-between items-cente border border-lavender rounded bg-white mb-6 p-1"
       >
-        <View className="flex-row justify-start items-center">
+        <View className="flex-row justify-start items-center w-full">
           <View
-            style={{ borderRadius: SIZES.radius }}
-            className="h-[65px] w-[26%] border-2 border-lavender justify-center items-center"
+            style={{ height: 65, width: '24%' }}
+            className="border rounded border-lavender justify-center items-center"
           >
-            <Entypo size={40} name="box" color={COLORS.primary} />
+            <Entypo size={40} name="box" color={COLORS.slate} />
           </View>
           <View className="w-[71.7%] flex-row ml-2 justify-between items-center">
             <View className="w-[90%]">
@@ -87,22 +88,26 @@ const OrdersData = ({ order, router, user_id }) => {
                     className="text-green1 text-sm"
                     style={{ fontFamily: "roboto-medium" }}
                   >
-                    {order.order_type === 1 ? "Foods" : "General"}
+                    {order.order_type}
                   </Text>
                 </View>
               </View>
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row mt-1 justify-between items-center">
                 <Text
                   className="text-sm text-slate"
-                  style={{ fontFamily: "roboto-medium" }}
+                  style={{ fontFamily: "roboto" }}
                 >
-                  Time: {order.order_time}
+                  {new Date(order.created_at).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </Text>
                 <Text
                   className="text-sm text-slate mr-4"
-                  style={{ fontFamily: "roboto-medium" }}
+                  style={{ fontFamily: "roboto" }}
                 >
-                  | Date: {order.order_date}
+                  {' '} ({agoTimeStamp(order.created_at)})
                 </Text>
               </View>
             </View>
@@ -136,9 +141,10 @@ const OrdersComponent = ({ title }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
+  const [loadingMore, setLoadingMore] = useState(false);
   const { data, isLoading, error, get } = useApi();
 
+  const onEndReachedCalledDuringMomentum = useRef(false);
   // Fetch on mount
   useEffect(() => {
     if (!user_id) return;
@@ -171,11 +177,15 @@ const OrdersComponent = ({ title }) => {
   };
 
   const loadMoreOrders = async () => {
+    if (loadingMore || !hasMore) return;
+
     try {
+      setLoadingMore(true);
+
       const nextPage = page + 1;
 
       const res = await get(
-        `/orders/get_orders/${user_id}?page=${nextPage}&limit=10`,
+        `/orders/get_orders/${user_id}?page=${nextPage}&limit=10`
       );
 
       const payload = res?.data;
@@ -186,45 +196,49 @@ const OrdersComponent = ({ title }) => {
         return;
       }
 
-      setOrders((prev) => [...prev, ...newOrders]);
+      setOrders(prev => [...prev, ...newOrders]);
       setPage(nextPage);
 
       if (payload?.total && payload?.limit) {
         setHasMore(nextPage < Math.ceil(payload.total / payload.limit));
       }
-    } catch (error) {
-      console.error("Error loading more orders:", error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
   // Show loader while fetching
-  if (isLoading || isRefreshing) {
+  if (!orders.length && isLoading) {
     return (
       <View className="flex-1 justify-center items-center">
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text className="text-md mt-3 text-slate">Loading orders...</Text>
+        <Text className="mt-3">Loading orders...</Text>
       </View>
     );
   }
 
   return (
-    <View className="justify-center items-center">
+    <View className="justify-center w-full items-center">
       {!user_id ? (
         <View className="w-full h-full justify-center items-center bg-white">
-          <Text className="text-sm text-red">
-            You are not logged in, Please login to see your orders
+                    
+          <Fontisto name="locked" size={30} color={COLORS.slate} />
+          <Text className="text-base my-4 text-slate" style={{fontFamily: 'roboto-medium'}}>
+              Please login to see your orders
           </Text>
           <TouchableOpacity
-            style={{ width: "90%" }}
-            className="bg-primary rounded-md justify-center items-center py-2 mt-3"
-            onPress={() => router.push("/sign-in")}
+              style={{ width: "90%" }}
+              className="bg-primary rounded elevation-md justify-center items-center py-2 mt-3"
+              onPress={() => router.push("/(auth)/login")}
           >
-            <Text
-              className="text-white text-2xl"
-              style={{ fontFamily: "ubuntu-medium" }}
-            >
-              Goto Login
-            </Text>
+              <Text
+                  className="text-white text-2xl"
+                  style={{ fontFamily: "ubuntu-medium" }}
+              >
+                  Login
+              </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -233,11 +247,15 @@ const OrdersComponent = ({ title }) => {
           contentContainerStyle={{ flexGrow: 1 }}
           keyExtractor={(item) => `${item.order_id}`}
           renderItem={({ item }) => (
-            <>
-              <OrdersData order={item} router={router} user_id={user_id} />
-              <View className="w-full my-5 rounded-full bg-slate opacity-10 h-[1px]" />
-            </>
+            <OrdersData order={item} router={router} user_id={user_id} />
           )}
+
+          ListHeaderComponent={() => (
+            <View className='my-4 justify-start items-center'>
+              <Text>You have {orders.length} orders</Text>
+            </View>
+          )}
+
           ListEmptyComponent={() => (
             <View className="flex-1 justify-center items-center relative">
               <View
@@ -265,12 +283,36 @@ const OrdersComponent = ({ title }) => {
               tintColor={COLORS.primary}
             />
           }
+          onMomentumScrollBegin={() => {
+            onEndReachedCalledDuringMomentum.current = false;
+          }}
+
           onEndReached={() => {
-            if (hasMore && !isRefreshing && !isLoading) {
-              loadMoreOrders();
+            if (!onEndReachedCalledDuringMomentum.current) {
+              if (!loadingMore && hasMore) {
+                loadMoreOrders();
+                onEndReachedCalledDuringMomentum.current = true;
+              }
             }
           }}
           onEndReachedThreshold={0.5}
+
+          ListFooterComponent={() => {
+            if (loadingMore) {
+              return (
+                <View style={{ paddingVertical: 15 }}>
+                  <ActivityIndicator size={30} color={COLORS.primary} />
+                  <Text style={{ textAlign: "center", color: "gray", marginTop: 5 }}>
+                    Loading more...
+                  </Text>
+                </View>
+              );
+            }
+          }}
+
+          contentContainerStyle={{
+            paddingBottom: 80,
+          }}
         />
       )}
     </View>

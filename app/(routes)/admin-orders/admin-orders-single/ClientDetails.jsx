@@ -1,12 +1,23 @@
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons'
+import { useEffect } from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
 import { COLORS, SIZES } from '../../../../constants/constants'
+import useApi from '../../../../hook/useApi'
 import { USER_IMAGE_URI } from '../../../../RequestMethods'
 import { calculateDistance, makeCall } from '../../../../utils/getDistance'
 
-const ClientDetails = ({ client, store_longitude, store_latitude }) => {
+const ClientDetails = ({ user_id, store_longitude, store_latitude }) => {
 
-    if (!client) return;
+  const {data, isLoading, error, get} = useApi(
+    `/users/user/external/${user_id}`
+  );
+
+  useEffect(() => {
+    if (!user_id) return;
+    get();
+  }, [user_id]);
+
+    if (!data) return;
 
     const pointA = {
       latitude: Number(store_latitude),
@@ -14,8 +25,8 @@ const ClientDetails = ({ client, store_longitude, store_latitude }) => {
     };
 
     const pointB = {
-      latitude: Number(client.user_latitude),
-      longitude: Number(client.user_longitude),
+      latitude: Number(data.latitude),
+      longitude: Number(data.longitude),
     };
     
     return (
@@ -34,7 +45,7 @@ const ClientDetails = ({ client, store_longitude, store_latitude }) => {
             
                             <View className="w-full flex-row justify-between items-center">
                               <TouchableOpacity className="w-[83%] flex-row justify-start items-center mb-3">
-                                {!client.profile_image ?
+                                {!data.profile_image ?
                                   <View className=''>
                                     <FontAwesome name="user-circle-o" size={52} color={COLORS.slate} />
                                   </View> :
@@ -44,7 +55,7 @@ const ClientDetails = ({ client, store_longitude, store_latitude }) => {
                                   >
                                     <Image
                                       source={{
-                                        uri: `${USER_IMAGE_URI}${client.profile_image}`,
+                                        uri: `${USER_IMAGE_URI}${data.profile_image}`,
                                       }}
                                       className="rounded-full h-full w-full"
                                     />
@@ -55,7 +66,7 @@ const ClientDetails = ({ client, store_longitude, store_latitude }) => {
                                     className="text-base"
                                     style={{ fontFamily: "roboto-medium" }}
                                   >
-                                    {client.first_name} {client.last_name}
+                                    {data.first_name} {data.last_name}
                                   </Text>
                                   <Text
                                     className="text-slate text-sm"
@@ -64,13 +75,13 @@ const ClientDetails = ({ client, store_longitude, store_latitude }) => {
                                       fontSize: SIZES.small,
                                     }}
                                   >
-                                    {client.phone_num}
+                                    {data.phone_num}
                                   </Text>
                                 </View>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 className="w-[15%] items-center justify-center"
-                                onPress={() => makeCall(client.phone_num)}
+                                onPress={() => makeCall(data.phone_num)}
                               >
                                 <View
                                   className="border border-lavender bg-[#DFF6E6] items-center justify-center rounded-full"

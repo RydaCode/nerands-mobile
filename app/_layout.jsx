@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { Provider } from "react-redux";
+import { Provider, useDispatch } from "react-redux";
 
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as Notifications from 'expo-notifications';
@@ -14,26 +14,14 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { CustomToast } from "../components/CustomToast";
 import { COLORS } from "../constants/constants";
 import "../global.css";
-import useInitPricing from "../hook/pricing/useInitPricing";
-import useApi from "../hook/useApi";
+import { loadDeliveryCharges } from '../hook/pricing/loadDeliveryCharges';
 import store from "../redux/store/store";
 import LocationComponent from "../services/LocationComponent";
-import useRehydrateAuth from "./(auth)/auth/useRehydrateAuth";
-import LoadingIndicator from "./LoadingIndicator";
 
 const APP_PRIMARY_COLOR = COLORS.white;
 const NAVIGATION_STATE_KEY = "NAVIGATION_STATE";
 
 const AppContent = () => {
-    const api = useApi();
-    const rehydrated = useRehydrateAuth(api.flushQueue);
-
-    const charges = useInitPricing();
-
-    if (!rehydrated) {
-        return <LoadingIndicator loading_text="Restoring Session..." />;
-    }
-
     Notifications.setNotificationHandler({
         handleNotification: async () => ({
             shouldShowAlert: true,
@@ -42,9 +30,11 @@ const AppContent = () => {
         }),
     });
 
-    // if (!charges) {
-    //     return <LoadingIndicator loading_text="Initializing..." />;
-    // }
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(loadDeliveryCharges());
+    }, [dispatch]);
 
     // Only mount Stack when user is authenticated
     return (
@@ -55,7 +45,7 @@ const AppContent = () => {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
-                {rehydrated && <Stack.Screen name="(routes)" />}
+                <Stack.Screen name="(routes)" />
             </Stack>
 
             <Toast

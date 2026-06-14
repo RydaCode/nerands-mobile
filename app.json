@@ -4,36 +4,40 @@
     "slug": "Nerands",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/core-img/APPICON1.png",
     "scheme": "nerands",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.nerands.app",
+      "bundleIdentifier": "com.nerands.marketplace",
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to assign errands.",
-        "NSLocationAlwaysUsageDescription": "We need your location to assign errands in the background.",
-        "UIBackgroundModes": [
-          "location"
-        ]
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby stores, transporters, and runners."
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyD7UJW4D9PbCB7odPwvLqetEKjzqMLfrrA"
       }
     },
     "android": {
-      "package": "com.nerands.app",
+      "package": "com.nerands.marketplace",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/core-img/APPICON1.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
-      ]
+        "ACCESS_COARSE_LOCATION"
+      ],
+
+      "blockedPermissions": [
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ],
+
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD7UJW4D9PbCB7odPwvLqetEKjzqMLfrrA"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -44,7 +48,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/core-img/NEWLOGO.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -53,7 +57,9 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

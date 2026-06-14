@@ -9,7 +9,7 @@ const DescriptionInput = ({ title, value, handleChangeText, otherStyles, borderS
                     <Text className='text-sm mb-1 text-slate' style={{fontFamily: 'roboto-medium', textAlign: "justify"}}>{desc}</Text>
                 }
             </View>
-            <View className={`w-full h-28 px-2 ${borderStyle} border border-lavender rounded-md`}>
+            <View className={`w-full h-28 px-2 border ${borderStyle} border-lavender rounded-md`}>
                 <TextInput
                     style={{fontFamily: 'roboto-medium', textAlignVertical: 'top', height: 100}}
                     className='flex-1 font-semibold text-base text-slate'

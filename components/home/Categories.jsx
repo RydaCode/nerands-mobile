@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { FlatList, Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, FlatList, Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Carticons } from '../../constants/icons';
 
@@ -12,13 +13,13 @@ const category_items = [
         link: '../(routes)/stores-menu-items/'
     },
     {
-        category_id: '3',
+        category_id: '2',
         category_image: Carticons.groceries,
         category_text: 'Custom Order',
         link: '../(routes)/custom-order-menu-items/'
     },
     {
-        category_id: '5',
+        category_id: '3',
         category_image: Carticons.veg,
         category_text: 'Local Market',
         link: '../(routes)/local-market/'
@@ -30,16 +31,22 @@ const category_items = [
         link: '../(routes)/parcels-menu-items/'
     },
     {
-        category_id: '8',
+        category_id: '5',
         category_image: Carticons.rea_estate,
         category_text: 'Real Estate',
-        link: '../(routes)/stores-menu-items/'
+        link: '../(routes)/real-estate/'
+    },
+    {
+        category_id: '6',
+        category_image: Carticons.hotels,
+        category_text: 'Hotels & Lodges',
+        link: '../(routes)/hotels-menu-items/'
     },
     {
         category_id: '7',
-        category_image: Carticons.hotels,
-        category_text: 'Hotels & Lodges',
-        link: '../(routes)/stores-menu-items/'
+        category_image: Carticons.buses,
+        category_text: 'Buses',
+        link: '../(routes)/buses/'
     },
 ];
 
@@ -49,19 +56,86 @@ const Categories = () => {
     const isLandscape = width > height; // Determine orientation
     const isTablet = width >= 768; // Define a breakpoint for tablets
     const router = useRouter();
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    
+    const getTimeOfDay = () => {
+        const hour = new Date().getHours();
+
+        if (hour < 12) return "morning";
+        if (hour < 18) return "afternoon";
+        return "evening";
+    };
+
+    const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
 
     // Set image dimensions based on orientation and device type
     const imageDimensions = isLandscape
         ? { width: 80, height: 60 } // Larger dimensions for landscape
         : { width: 65, height: 50 }; // Requested dimensions for portrait
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeOfDay(getTimeOfDay());
+        }, 60000); // every 1 min
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const greeting = `Good ${timeOfDay}`;
+    const name = first_name || "Guest";
+
+    const getPersonalizedGreeting = () => {
+        const name = first_name || "Guest";
+
+        if (timeOfDay === "morning") {
+            return {
+                text: "Good morning",
+                sub: "What would you like to explore today?"
+            };
+        }
+
+        if (timeOfDay === "afternoon") {
+            return {
+                text: "Good afternoon",
+                sub: "What are you in the mood for this afternoon?"
+            };
+        }
+
+        return {
+            text: "Good evening",
+            sub: "Relax and explore something new on Nerands"
+        };
+    };
+
+    useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+        }).start();
+    }, []);
+
+    const { text, sub } = getPersonalizedGreeting();
+
     return (
         <View>
             <View className="mt-6">
-                <Text className='text-base text-slate mb-4' style={{fontFamily: 'roboto-medium'}}>
-                    Hi <Text className='text-primary'>{!first_name ? 'Guest' : first_name}</Text>, What's on your mind...?
-                </Text>
-                <Text className='text-2xl' style={{fontFamily: 'roboto-medium'}}>Categories</Text>
+                <Animated.View className='rounded mb-8'>
+                    <Animated.Text
+                        style={{ opacity: fadeAnim, fontFamily: 'roboto-medium' }}
+                        className="text-base text-slate mb-1"
+                    >
+                        {text},{' '}
+                        <Text className="text-primary">{first_name || "Guest"}</Text>
+                    </Animated.Text>
+                    <Text className="text-sm text-green1"
+                        style={{fontFamily: 'roboto-medium'}}
+                    >
+                        {sub}
+                    </Text>
+                </Animated.View>
+
+                <Text className='text-2xl' style={{fontFamily: 'roboto-medium'}}>Explore</Text>
                 <FlatList
                     data={category_items}
                     keyExtractor={(item) => item.category_id}

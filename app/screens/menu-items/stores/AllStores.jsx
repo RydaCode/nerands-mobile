@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { COLORS } from '../../../../constants/constants';
 import useApi from '../../../../hook/useApi';
+import { isStoreOpen } from '../../../../utils/isStoreOpen';
 import AllStoresCard from './cards/AllStoresCard';
 
 const AllStores = ({ cat_name }) => {
@@ -61,7 +62,7 @@ const AllStores = ({ cat_name }) => {
     useEffect(() => {
         if (!data?.stores) return;
 
-        const newStores = data.stores;
+        const newStores = data?.stores;
 
         if (page === 1) {
             setStores(newStores);
@@ -85,7 +86,7 @@ const AllStores = ({ cat_name }) => {
     };
 
     // UI states
-    if (isLoading && stores.length === 0) {
+    if (isLoading && stores?.length === 0) {
         return (
             <View className='flex-1 justify-center items-center'>
                 <ActivityIndicator size={40} color={COLORS.primary} />
@@ -96,7 +97,7 @@ const AllStores = ({ cat_name }) => {
         );
     }
 
-    if (!stores.length) {
+    if (!stores?.length) {
         return (
             <View className='flex-1 justify-center items-center'>
                 <FontAwesome5 name='search' color={COLORS.slate} size={40} />
@@ -111,7 +112,11 @@ const AllStores = ({ cat_name }) => {
         <FlatList
             data={stores}
             keyExtractor={(item) => item.store_id.toString()}
-            renderItem={({ item }) => (
+            renderItem={({ item }) => {
+                const isManuallyClosed = item.open_close === false;
+                const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
+                const isClosed = isManuallyClosed || isTimeClosed;
+                return (
                 <AllStoresCard
                     store_id={item.store_id}
                     store_profileimage={item.store_profileimage}
@@ -127,8 +132,11 @@ const AllStores = ({ cat_name }) => {
                     average_rating={item.average_rating}
                     total_ratings={item.review_count}
                     favorited={item.favorited}
+                    isClosed={isClosed}
+                    open_time={item.open_time}
+                    closing_time={item.closing_time}
                 />
-            )}
+            )}}
             onEndReached={loadMore}
             onEndReachedThreshold={0.2}
             ListFooterComponent={() =>

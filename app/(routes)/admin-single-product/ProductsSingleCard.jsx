@@ -16,13 +16,11 @@ const ProductsSingleCard = ({
     product_images,
     product_name,
     product_description,
-    product_actual_price,
+    product_price,
     product_status,
     store_name,
     store_id,
     product_category,
-    product_colors,
-    product_sizes,
     store_category,
     store_profileimage,
     active_status,
@@ -34,19 +32,17 @@ const ProductsSingleCard = ({
     variant_options,
 }) => {
         const [opendeleteproduct, setOpenDeleteProduct] = useState(false);
+        const {data: imagesData, isLoading: imagesLoading, error: imagesError, get: imagesGet} = useApi(`/products/product-images?product_id=${product_id}`);
         const screenWidth = Dimensions.get('window').width;
         const screenHeight = Dimensions.get('window').height;
         const itemWidth = screenWidth * 0.2;
-        const productImages = Array.isArray(product_images) ? product_images : [];
-        const productSizes = Array.isArray(product_sizes) ? product_sizes : [];
-        const productColors = Array.isArray(product_colors) ? product_colors : [];
 
         const isStorePublished = active_status === true || active_status === 1 || active_status === 'true';
 
         const productData = [
             { label: 'Product name', value: product_name },
             { label: 'Product category', value: product_category },
-            { label: 'Product price', value: `K${product_actual_price}` },
+            { label: 'Product price', value: `K${product_price}` },
             { label: 'Product description', value: product_description },
         ];
 
@@ -107,6 +103,10 @@ const ProductsSingleCard = ({
             }
             deleteProduct({ product_id, store_id, store_category });
         };
+
+        useEffect(() => {
+            imagesGet();
+        }, []);
 
         useEffect(() => {
             if (publishResponse?.message) {
@@ -205,7 +205,7 @@ const ProductsSingleCard = ({
                 >
                     <ProductImagesGallery
                         mainImage={product_image}
-                        images={Array.isArray(product_images) ? product_image : []}
+                        images={Array.isArray(imagesData?.data) ? imagesData?.data : []}
                     />
 
                     <View className="h-[1px] my-4 bg-lavender" />
@@ -276,16 +276,13 @@ const ProductsSingleCard = ({
                                 product_id,
                                 product_name,
                                 product_description,
-                                product_actual_price,
+                                product_price,
                                 product_status,
                                 store_name,
                                 store_category,
                                 product_category,
-                                product_colors,
-                                product_sizes,
                                 store_profileimage,
-                                product_image,
-                                router,
+                                product_image
                             }})}
                         >
                             <View className='bg-[#DFF6E6] rounded-full justify-center items-center' style={{width: 45, height: 45}}>
@@ -329,8 +326,8 @@ const ProductsSingleCard = ({
                             <TouchableOpacity
                                 onPress={() =>
                                     router.push({
-                                    pathname: '/edit-products/add-extras-to-product',
-                                    params: { store_id, product_id },
+                                        pathname: '/edit-products/add-extras-to-product',
+                                        params: { store_id, product_id },
                                     })
                                 }
                                 className="justify-center py-1 items-center rounded-md border border-[#E2E8F0] mb-4"
@@ -380,91 +377,6 @@ const ProductsSingleCard = ({
                             </View>
                         </TouchableOpacity>
                     ))}
-
-                    {store_category === 'Fashion' && (
-                        <>
-                            {/* Product Colors ScrollView */}
-                            <TouchableOpacity className="px-4 mb-2"
-                                onPress={() =>
-                                    router.push({
-                                        pathname: '/edit-products/edit-product-on-by-one',
-                                        params: {
-                                            store_id: store_id,
-                                            product_id: product_id,
-                                            store_category: store_category,
-                                            product_value: JSON.stringify(productColors), // pass as string
-                                            product_label: 'Product Colors',
-                                        },
-                                    })
-                                }
-                            >
-                                <View className="w-full flex-row items-center">
-                                    <Text className="text-lg mr-2 mb-1" style={{ fontFamily: 'roboto-medium' }}>Product colors</Text>
-                                    <Ionicons name="create-outline" color={COLORS.green2} size={18} />
-                                    <Text className="text-sm text-green2">Edit</Text>
-                                </View>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                    {productColors.length > 0 ? (
-                                        productColors.map((color, index) => (
-                                            <TouchableOpacity key={index} className="mb-4 bg-lavender p-2 mr-2 rounded-md px-4 "
-                                                onPress={() =>
-                                                    router.push({
-                                                        pathname: '/edit-products/edit-product-on-by-one',
-                                                        params: {
-                                                            store_id: store_id,
-                                                            product_id: product_id,
-                                                            store_category: store_category,
-                                                            product_value: JSON.stringify(productColors), // pass as string
-                                                            product_label: 'Product Colors',
-                                                        },
-                                                    })
-                                                }
-                                            >
-                                                <View className="w-full flex-row items-center">
-                                                    <Text className="text-slate mr-2">{color}</Text>
-                                                </View>
-                                            </TouchableOpacity>
-                                        ))
-                                    ) : (
-                                        <Text className="text-slate">No colors</Text>
-                                    )}
-                                </ScrollView>
-                            </TouchableOpacity>
-
-                            {/* Product Sizes ScrollView */}
-                            <TouchableOpacity className="px-4 mb-4"
-                                onPress={() =>
-                                    router.push({
-                                        pathname: '/edit-products/edit-product-on-by-one',
-                                        params: {
-                                            store_id: store_id,
-                                            product_id: product_id,
-                                            store_category: store_category,
-                                            product_value: JSON.stringify(productSizes),
-                                            product_label: 'Product Sizes',
-                                        },
-                                    })
-                                }
-                            >
-                                <View className="w-full flex-row items-center">
-                                    <Text className="text-lg mr-2 mb-1" style={{ fontFamily: 'roboto-medium' }}>Product sizes</Text>
-                                    <Ionicons name="create-outline" color={COLORS.green2} size={18} />
-                                    <Text className="text-sm text-green2">Edit</Text>
-                                </View>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                    {productSizes.length > 0 ? (
-                                        productSizes.map((size, index) => (
-                                            <View key={index} className="mb-4 px-4 bg-lavender mr-2 rounded-md p-2">
-                                                <Text className="text-slate mr-2">{size}</Text>
-                                            </View>
-                                        ))
-                                    ) : (
-                                        <Text className="text-slate">No sizes</Text>
-                                    )}
-                                </ScrollView>
-                            </TouchableOpacity>
-                        </>
-                    )}
                     <View style={{paddingBlock: 40}}/>
                 </ScrollView>
             </View>

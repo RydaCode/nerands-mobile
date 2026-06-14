@@ -6,9 +6,7 @@ import DescriptionInput from '../../../components/FormFields/DescriptionInput';
 import { COLORS, SIZES } from '../../../constants/constants';
 import { Carticons } from '../../../constants/icons';
 import useApi from '../../../hook/useApi';
-import {
-    addOthersItem
-} from '../../../redux/store/slices/OthersCartSlice';
+import { addOthersItem } from '../../../redux/store/slices/OthersCartSlice';
 import { toast } from '../../../utils/toast';
 import MenSizeChartCard from './MenSizeChartCard';
 import ProductImagesGallery from './ProductImagesGallery';
@@ -19,7 +17,6 @@ const OtherProductsSingleCard = ({
     product_image,
     product_name,
     product_description,
-    product_actual_price,
     product_price,
     product_status,
     store_name,
@@ -27,123 +24,319 @@ const OtherProductsSingleCard = ({
     store_phone_num,
     store_category,
     product_category,
-    product_colors,
-    product_sizes,
-    chili_option,
     store_profileImage,
     store_location,
-    variant_groups
+    variant_groups,
+    markup_percent,
+    final_price
 }) => {
-        // Get the window dimensions for responsiveness
-        // const { width, height } = useWindowDimensions();
-        const { width, height } = Dimensions.get('window');
+    // Get the window dimensions for responsiveness
+    // const { width, height } = useWindowDimensions();
+    const { width, height } = Dimensions.get('window');
 
-        // Make the image height and width responsive based on the screen size
-        const imageWidth = width * 0.25;
-        const imageHeight = height * 0.10;
-        const {data, isLoading, error, get} = useApi(`/products/product-images?product_id=${product_id}`);
-        const dispatch = useDispatch();
-        const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
-        const [selectedcolors, setSelectedColors] = useState([]);
-        const [selectedsizes, setSelectedSizes] = useState([]);
-        const [productnotes, setProductNotes] = useState('');
-        const [quantity, setQuantity] = useState(1);
-        const [totalprice, setTotalPrice] = useState(product_price);
-        
-        useEffect(() => {
-            get();
-        }, []);
-        
-        // const string = product_colors;
-        const Colors = typeof product_colors === "string" ? product_colors
-            .split(",")
-            .map(item => item.trim())
-            .filter(item => item !== "")
-            .map(item => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()) // Capitalize first letter
-        : [];
+    // Make the image height and width responsive based on the screen size
+    const imageWidth = width * 0.25;
+    const imageHeight = height * 0.10;
+    const {data, isLoading, error, get} = useApi(`/products/product-images?product_id=${product_id}`);
+    const dispatch = useDispatch();
+    const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
+    const [productnotes, setProductNotes] = useState('');
+    const [quantity, setQuantity] = useState(1);
+    const [totalprice, setTotalPrice] = useState(final_price);
+    const [selectedVariants, setSelectedVariants] = useState({});
 
-        // const string = product_sizes;
-        const Sizes = typeof product_sizes === "string" ? product_sizes
-            .split(",")
-            .map(item => item.trim())
-            .filter(item => item !== "")
-            .map(item => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()) // Capitalize first letter
-        : [];
-
-        // ✅ Add item to Other Cart
-        const handleAddItem = () => {
-            dispatch(addOthersItem({
-                product_id: product_id,
-                product_image: product_image,
-                product_name: product_name,
-                product_description: product_description,
-                product_actual_price: product_actual_price,
-                product_price: product_price,
-                product_qty: quantity,
-                total_price: totalprice,
-                product_status: product_status,
-                store_name: store_name,
-                product_notes: productnotes,
-                available_colors: product_colors,
-                available_sizes: product_sizes,
-                store_id: store_id,
-                store_phone_num: store_phone_num,
-                store_category: store_category,
-                product_category: product_category,
-                product_colors: selectedcolors,  // ✅ Store selected colors
-                product_sizes: selectedsizes,    // ✅ Store selected sizes
-                selected_colors: selectedcolors,
-                selected_sizes: selectedsizes,
-                store_profileImage: store_profileImage,
-                store_location: store_location
-            }));
-            toast.success('Product aaded to cart')
-        };
-    
-        // Increase quantity
-        const handleIncreaseQty = () => {
-            setQuantity((prevQty) => {
-                const newQty = Math.min(prevQty + 1, 10);
-                setTotalPrice(newQty * product_price);
-                return newQty;
-            });
-        };
-
-        // Decrease quantity (ensure it doesn't go below 1)
-        const handleDecreaseQty = () => {
-            setQuantity((prevQty) => {
-                const newQty = Math.max(prevQty - 1, 1);
-                setTotalPrice(newQty * product_price);
-                return newQty;
-            });
-        };
-
-    // Auto-select the only color if there's just one and it's not already selected
     useEffect(() => {
-        if (Colors.length === 1 && selectedcolors.length === 0) {
-            setSelectedColors([Colors[0]]);
-        }
-        
-        if (Sizes.length === 1 && selectedsizes.length === 0) {
-            setSelectedSizes([Sizes[0]]);
-        }
-    }, [Colors, Sizes]); // Only run when Colors change
+        get();
+    }, []);
+
+
+
+
+
+
+
+
+
+    // Object.values(selectedVariants).forEach(group => {
+    //     console.log("GROUPS:", group.group_name);
+
+    //     group.options.forEach(option => {
+    //         console.log("OPTIONS:", option.name);
+    //     });
+    // });
+
+    console.log('SELECTED VARIANTS',selectedVariants)
+
+    // Auto select variants
+    // useEffect(() => {
+    //     if (!variant_groups?.length) return;
+
+    //     setSelectedVariants((prev) => {
+    //         const updated = { ...prev };
+
+    //         variant_groups.forEach((group) => {
+    //             const key = group.id;
+
+    //             if (updated[key]?.options?.length > 0) return;
+
+    //             const options = group.options || [];
+    //             if (!options.length) return;
+
+    //             updated[key] = {
+    //                 group_id: group.id,
+    //                 group_name: group.name,
+    //                 is_required: group.is_required,
+    //                 multi_select: group.multi_select,
+    //                 options: [
+    //                     {
+    //                         id: options[0].id,
+    //                         name: options[0].name,
+    //                         price: options[0].price,
+    //                     }
+    //                 ]
+    //             };
+    //         });
+    //         return updated;
+    //     });
+    // }, [variant_groups]);
+
+
+    // const getVariantPrices = () => {
+    //     let extra = 0;
+
+    //     variant_groups.forEach(group => {
+    //         const selectedGroup = selectedVariants[group.id];
+
+    //         const options = selectedGroup?.options || [];
+
+    //         options.forEach(opt => {
+    //             extra += Number(opt?.price || 0);
+    //         });
+    //     });
+
+    //     return extra;
+    // };
+
+    // const finalPrices = Number(final_price) + getVariantPrices();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    useEffect(() => {
+        if (!variant_groups?.length) return;
+
+        setSelectedVariants(prev => {
+            const updated = { ...prev };
+
+            variant_groups.forEach(group => {
+                const key = group.id;
+
+                // skip if already selected
+                if (updated[key] && updated[key].length > 0) return;
+
+                if (group.options?.length > 0) {
+                    // ✅ required → must select something
+                    if (group.is_required) {
+                        // updated[key] = [group.options[0].id, group.options[0].name, group.options[0].price];
+
+                        updated[key] = {
+                            group_id: group.id,
+                            group_name: group.name,
+                            is_required: group.is_required,
+                            multi_select: group.multi_select,
+                            options: [
+                                {
+                                    id: group.options[0].id,
+                                    name: group.options[0].name,
+                                    price: group.options[0].price,
+                                }
+                            ]
+                        };
+                    }
+                    // ✅ optional → leave empty (better UX)
+                    else {
+                        updated[key] = [];
+                    }
+                }
+            });
+
+            return updated;
+        });
+    }, [variant_groups]);
+    
+    // Increase quantity
+    const handleIncreaseQty = () => {
+        setQuantity((prevQty) => {
+            const newQty = Math.min(prevQty + 1, 10);
+            setTotalPrice(newQty * final_price);
+            return newQty;
+        });
+    };
+
+    // Decrease quantity (ensure it doesn't go below 1)
+    const handleDecreaseQty = () => {
+        setQuantity((prevQty) => {
+            const newQty = Math.max(prevQty - 1, 1);
+            setTotalPrice(newQty * final_price);
+            return newQty;
+        });
+    };
 
     const handleChangeText = (value) => {
         setProductNotes(value);
     };
 
-    const hasColors = product_colors?.length > 0;    // Product has color options
-    const hasSizes = product_colors?.length > 0;      // Product has size options
+    const missingVariants = () => {
+    return variant_groups
+        .filter(group => {
+            const selected = selectedVariants[group.id];
 
-    const missingColor = hasColors && selectedcolors?.length === 0;
-    const missingSize = hasSizes && selectedsizes?.length === 0;
+            return (
+                group.is_required &&
+                (!selected ||
+                 !selected.options ||
+                 selected.options.length === 0)
+            );
+        })
+        .map(group => group.name);
+};
 
     const alreadyInCart = othersCartItems.some(
-        item => item.product_id === product_id
-    );
+    item => item.product_id === product_id
+);
 
-    const isDisabled = alreadyInCart || missingColor || missingSize;
+const missing = missingVariants();
+
+const isDisabled = alreadyInCart || missing.length > 0;
+
+    const handleSelectVariant = (group, item) => {
+    const key = group.id;
+
+    setSelectedVariants(prev => {
+        const current = prev[key]?.options || [];
+
+        const exists = current.some(
+            opt => String(opt.id) === String(item.id)
+        );
+
+        let updatedOptions = [];
+
+        // multi select
+        if (group.multi_select) {
+            updatedOptions = exists
+                ? current.filter(opt => String(opt.id) !== String(item.id))
+                : [...current, item];
+        } else {
+            // single select
+            updatedOptions = [item];
+        }
+
+        return {
+            ...prev,
+            [key]: {
+                group_id: group.id,
+                group_name: group.name,
+                is_required: group.is_required,
+                multi_select: group.multi_select,
+                options: updatedOptions,
+            }
+        };
+    });
+};
+
+    const isSelected = (group, item) => {
+    const options = selectedVariants[group.id]?.options || [];
+
+    return options.some(
+        opt => String(opt.id) === String(item.id)
+    );
+};
+
+    const getVariantPrice = () => {
+    let extra = 0;
+
+    Object.values(selectedVariants).forEach(group => {
+        const options = group?.options || [];
+
+        options.forEach(option => {
+            extra += Number(option.price || 0);
+        });
+    });
+
+    return extra;
+};
+
+    const basePrice = Number(final_price || 0);
+    const variantPrice = getVariantPrice();
+
+    const totalPrice = (basePrice + variantPrice) * quantity;
+
+    const validateVariants = () => {
+    const missing = [];
+
+    variant_groups.forEach(group => {
+        const selected = selectedVariants[group.id];
+
+        if (
+            group.is_required &&
+            (!selected ||
+             !selected.options ||
+             selected.options.length === 0)
+        ) {
+            missing.push(group.name);
+        }
+    });
+
+    return missing;
+};
+
+    // ✅ Add item to Other Cart
+    const handleAddItem = () => {
+        dispatch(addOthersItem({
+            product_id: product_id,
+            product_image: product_image,
+            product_name: product_name,
+            product_description: product_description,
+            product_price: product_price,
+            product_qty: quantity,
+            total_price: totalPrice,
+            product_status: product_status,
+            store_name: store_name,
+            product_notes: productnotes,
+            available_variants: variant_groups,
+            store_id: store_id,
+            store_phone_num: store_phone_num,
+            store_category: store_category,
+            product_category: product_category,
+            selected_variants: selectedVariants,
+            store_profileImage: store_profileImage,
+            store_location: store_location,
+            final_price: final_price,
+            markup_percent
+        }));
+        toast.success('Product added to cart')
+    };
 
     return (
         <View className='bg-white w-full justify-center items-center pb-20'>
@@ -156,7 +349,7 @@ const OtherProductsSingleCard = ({
             <View className='w-full px-2'>   
                 <View className='w-full mt-5'>
                     <Text style={{fontSize: 20, fontFamily: 'roboto-medium'}} className='font-semibold text-xl'>{product_name}</Text>
-                    <Text style={{fontSize: 20}} className='font-semibold text-lg mt-2 text-primary'>K{product_price}</Text>
+                    <Text style={{fontSize: 20}} className='font-semibold text-lg mt-2 text-primary'>K{final_price}</Text>
                 </View>
                 <View className='mt-2 w-full'>
                     <Text className='mt-3 text-sm' style={{fontFamily: 'roboto-medium'}}>{product_description}
@@ -182,27 +375,24 @@ const OtherProductsSingleCard = ({
                             showsHorizontalScrollIndicator={false}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => {
-                                const isSelected = selectedcolors.includes(item.name);
+                                const selected = isSelected(group, item);
+
                                 return (
                                     <TouchableOpacity
-                                        onPress={() => {
-                                            setSelectedColors(prev =>
-                                                isSelected ? prev.filter(c => c !== item.name) : [...prev, item.name]
-                                            );
-                                        }}
-                                        className="bg-grey_bg px-3 py-2 mr-2 relative rounded-sm"
+                                        onPress={() => handleSelectVariant(group, item)}
+                                        className="bg-grey_bg px-4 py-2 mr-2 relative rounded elevation-sm"
                                         style={{
                                             borderWidth: 1,
-                                            borderColor: isSelected ? COLORS.grey_bg : COLORS.lavender,
-                                            backgroundColor: isSelected ? COLORS.primary : COLORS.grey_bg,
+                                            borderColor: selected ? COLORS.primary : COLORS.lavender,
+                                            backgroundColor: selected ? COLORS.primary : COLORS.grey_bg,
                                         }}
                                     >
-                                        {isSelected && (
-                                            <View className="absolute -right-2 -top-1 border-2 border-white rounded">
-                                                {/* <View className='h-4 w-4 bg-green2 rounded-full' /> */}
-                                            </View>
-                                        )}
-                                        <Text style={{fontFamily: 'roboto-medium'}} className={`text-base text-${isSelected ? 'white' : 'slate'}`}>{`${item.name}${item.price === 0 ? '' : ` | K${item.price}`}`}</Text>
+                                        <Text
+                                            style={{ fontFamily: 'roboto-medium' }}
+                                            className={`text-base ${selected ? 'text-white' : 'text-slate'}`}
+                                        >
+                                            {item.name} {item.price ? ` | K${item.price}` : ''}
+                                        </Text>
                                     </TouchableOpacity>
                                 );
                             }}
@@ -230,7 +420,7 @@ const OtherProductsSingleCard = ({
                             disabled={quantity <= 1 ? true : false}
                             onPress={handleDecreaseQty}
                             style={{ opacity: quantity <= 1 ? 0.5 : 1 }}
-                            className='bg-slate p-2 w-[25px] h-[25px] rounded-full justify-center items-center'
+                            className='bg-primary p-2 w-[30px] h-[30px] rounded-full justify-center items-center'
                         >
                             <FontAwesome name="minus" style={{ color: COLORS.white }} />
                         </TouchableOpacity>
@@ -245,7 +435,7 @@ const OtherProductsSingleCard = ({
                             disabled={quantity >= 10 ? true : false}
                             onPress={handleIncreaseQty}
                             style={{ opacity: quantity >= 10 ? 0.5 : 1 }}
-                            className='bg-slate p-2  w-[25px] h-[25px] rounded-full justify-center items-center'
+                            className='bg-primary p-2  w-[30px] h-[30px] rounded-full justify-center items-center'
                         >
                                 <FontAwesome name="plus" style={{ color: COLORS.white }} />
                         </TouchableOpacity>
@@ -254,38 +444,41 @@ const OtherProductsSingleCard = ({
 
                 <View className='flex-row w-full justify-center items-center'>
                     <View className='flex-row justify-center items-center'>
-                        <Text className='text-xl text-green1' style={{fontFamily: 'roboto-medium'}}>Price: {`K${product_price.toLocaleString()}`}</Text>
+                        <Text className='text-xl text-green1' style={{fontFamily: 'roboto-medium'}}>Price: {`K${final_price.toLocaleString()}`}</Text>
                     </View> 
                     <Text className='mx-4 text-2xl text-slate'>|</Text>
                     <View className='flex-row justify-center items-center'>
-                        <Text className='text-xl text-red' style={{fontFamily: 'roboto-medium'}}>Total: {`K${totalprice.toLocaleString()}`}</Text>
+                        <Text className='text-xl text-red' style={{fontFamily: 'roboto-medium'}}>Total: {`K${totalPrice.toLocaleString()}`}</Text>
                     </View>
                 </View>
                 <View className='mt-2 justify-center items-center w-full'>
                     
                     <View className='flex-row w-full mt-4 justify-between items-center'>
                         <TouchableOpacity
-                            // disabled={isDisabled}
                             style={{
                                 width: '79%',
                                 shadowColor: '#000',
                                 shadowOffset: { width: 0, height: 8 },
                                 shadowOpacity: 0.5,
                                 shadowRadius: 5,
-                                elevation: 5,
-                                opacity: isDisabled && 0.9 ,
+                                opacity: isDisabled ? 0.5 : 1,
                             }}
-                            className='flex-row bg-primary justify-center items-center py-3 rounded-sm'
+                            className='flex-row bg-primary justify-center items-center py-2 rounded elevation-sm'
                             onPress={() => {
-                                if (missingColor) return toast.error("Please select a color(s)");
-                                if (missingSize) return toast.error("Please select a size(s)");
-                                if (alreadyInCart) return toast.info("This product is already in your cart");
+                                const missing = missingVariants();
+
+                                if (missing.length > 0) {
+                                    return toast.error(
+                                        `Please select: ${missing.join(', ')}`
+                                    );
+                                }
                                 handleAddItem();
                             }}
+                            disabled={isDisabled}
                         >
                             <FontAwesome name='shopping-cart' color={COLORS.white} size={19} />
-                            <Text className='ml-2 text-white' style={{ fontSize: 18, fontFamily: 'roboto-medium', fontWeight: SIZES.h1 }}>
-                                {othersCartItems.some(item => item.product_id === product_id) ? "ALREADY IN CART" : "ADD TO CART"}
+                            <Text className='ml-2 text-white text-2xl' style={{ fontFamily: 'maven-medium', fontWeight: SIZES.h1 }}>
+                                {othersCartItems.some(item => item.product_id === product_id) ? "Already In Cart" : "Add To Cart"}
                             </Text>
                         </TouchableOpacity>
 
@@ -295,13 +488,11 @@ const OtherProductsSingleCard = ({
                                 shadowOffset: { width: 0, height: 8 },
                                 shadowOpacity: 0.5,
                                 shadowRadius: 5,
-                                elevation: 5,
                                 backgroundColor: COLORS.green1,
                             }}
-                            className='justify-center items-center rounded-sm py-1'
+                            className='justify-center items-center elevation-sm rounded py-3'
                         >
                             <FontAwesome name='heart' color={COLORS.white} size={20} />
-                            <Text className='text-sm text-white' style={{fontFamily: 'roboto'}}>Wishlist</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

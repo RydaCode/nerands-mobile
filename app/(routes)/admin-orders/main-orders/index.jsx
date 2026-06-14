@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MainHeader from '../../../../components/MainHeader';
-import AdminOrders from './AdminOrders';
+import AdminOrderHistory from './AdminOrderHistory';
 import CancelledOrders from './CancelledOrders';
 import CompletedOrders from './CompletedOrders';
 import InTransitOrders from './InTransitOrders';
@@ -13,18 +13,19 @@ import ProcessingOrders from './ProcessingOrders';
 
 const index = () => {
     const params = useLocalSearchParams();
+
     const router = useRouter();
     const tabs = ['Pending', 'Processing', 'In_Transit', 'Completed', 'Cancelled', 'History'];
     const [activeTab, setActiveTab] = useState(tabs[0]);
 
     const DisplayTabContent = () => {
         switch (activeTab) {
-            case 'Pending': return <PendingOrders title="Pending Orders" params={params}/>;
-            case 'Processing': return <ProcessingOrders title="Processing Orders" params={params}/>;
+            case 'Pending': return <PendingOrders title="Pending" params={params}/>;
+            case 'Processing': return <ProcessingOrders title="Processing" params={params}/>;
             case 'In_Transit': return <InTransitOrders title="Orders In Transit" params={params}/>;
-            case 'Completed': return <CompletedOrders title="Completed Orders" params={params}/>;
-            case 'Cancelled': return <CancelledOrders title="Cancelled Orders" params={params}/>;
-            case 'History': return <AdminOrders title="Orders History" params={params}/>;
+            case 'Completed': return <CompletedOrders title="Completed" params={params}/>;
+            case 'Cancelled': return <CancelledOrders title="Cancelled" params={params}/>;
+            case 'History': return <AdminOrderHistory title="History" params={params}/>;
             default:
             break;
         }

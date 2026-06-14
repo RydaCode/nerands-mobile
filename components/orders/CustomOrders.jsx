@@ -1,4 +1,4 @@
-import { Entypo, Ionicons } from '@expo/vector-icons'
+import { Entypo, Fontisto, Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native'
@@ -6,14 +6,10 @@ import { useSelector } from 'react-redux'
 import { COLORS, SIZES } from '../../constants/constants'
 import useApi from '../../hook/useApi'
 import EmptyState from '../EmptyState'
+import agoTimeStamp from '../agoTimeStamp'
 
 const OrdersData = ({ order, router }) => {
-    const CustomProducts = typeof order?.custom_products === "string"
-    ? JSON.parse(order?.custom_products) // Parse JSON if it's a string
-        .map(item => item.trim()) // Trim each item
-        .filter(item => item !== "") // Remove empty strings
-        .map(item => item.charAt(0).toUpperCase() + item.slice(1).toLowerCase()) // Capitalize first letter
-    : []; // Return empty array if it's not a string
+    const CustomProducts = order?.custom_products;
 
     const statusColorMap = {
         Pending: 'bg-rose-700',
@@ -71,10 +67,17 @@ const OrdersData = ({ order, router }) => {
                         </View>
                         <View className='flex-row justify-between items-center'>
                             <View>
-                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Time: {order.order_time}</Text>
+                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>
+                                    {new Date(order?.order_date_time).toLocaleDateString("en-GB", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                    })}
+                                </Text>
                             </View>
                             <View className='flex-row items-center justify-start mr-4'>
-                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Date: {order.order_date}</Text>
+                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>
+                                    {' '} ({agoTimeStamp(order.order_date_time)})</Text>
                             </View>
                         </View>
                     </View>
@@ -164,16 +167,26 @@ const CustomOrders = ({title}) => {
     return (
         <View className='pb-8 h-full'>
             {!user_id ?
-                <View className='w-full h-full justify-center items-center bg-white'>
-                    <Text className='text-sm text-red'>You are not logged in, Please login to see your orders</Text>
+                <View className="w-full h-full justify-center items-center bg-white">
+                    
+                    <Fontisto name="locked" size={30} color={COLORS.slate} />
+                    <Text className="text-base my-4 text-slate" style={{fontFamily: 'roboto-medium'}}>
+                        Please login to see your custom orders
+                    </Text>
                     <TouchableOpacity
-                        style={{width: '90%'}}
-                        className='bg-primary rounded-md justify-center items-center py-2 mt-3'
-                        onPress={() => router.push('/sign-in')}
+                        style={{ width: "90%" }}
+                        className="bg-primary rounded elevation-md justify-center items-center py-2 mt-3"
+                        onPress={() => router.push("/(auth)/login")}
                     >
-                        <Text className='text-white text-2xl' style={{fontFamily: 'ubuntu-medium'}}>Goto Login</Text>
+                        <Text
+                            className="text-white text-2xl"
+                            style={{ fontFamily: "ubuntu-medium" }}
+                        >
+                            Login
+                        </Text>
                     </TouchableOpacity>
-                </View> :
+                    </View>
+                :
                 <FlatList
                     data={Array.isArray(orders) ? orders : []}
                     contentContainerStyle={{ flexGrow: 1 }}

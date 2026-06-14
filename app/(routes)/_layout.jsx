@@ -1,16 +1,7 @@
-import { Redirect, Stack } from 'expo-router';
-import { useSelector } from 'react-redux';
+import { Stack } from 'expo-router';
 
 const RoutesLayout = () => {
-    const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
-
-    console.log(isAuthenticated)
-
-    // 🔐 AUTH GATE
-    if (!isAuthenticated) {
-        return <Redirect href="/(auth)/login" />;
-    }
-
+    
     // Protected routes goes here
     return (
         <Stack screenOptions={{headerShown: false}}>

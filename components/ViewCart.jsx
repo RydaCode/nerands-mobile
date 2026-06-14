@@ -6,15 +6,15 @@ const ViewCart = ({cart_qty, cart_total, router}) => {
     return (
         <>
             <View
-                className='flex-1 items-center justify-center flex-row absolute bottom-4'
-                style={{ zIndex: 999 }}
+                className='flex-1 items-center justify-center flex-row absolute'
+                style={{ zIndex: 999, bottom: 50 }}
             >
                 <View className='flex-row justify-center w-full'>
                     <TouchableOpacity
                         onPress={() => router.push('../cart/')}
                         activeOpacity={0.5}
-                        className='mt-10 flex-row bg-primary justify-between items-center w-[332px] relative p-2'
-                        style={{ borderRadius: SIZES.radius, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5 }}
+                        className='mt-10 flex-row rounded bg-primary justify-between items-center relative p-2'
+                        style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5, width: 350 }}
                     >
                         <View
                             className='p-2 items-center justify-center bg-white h-[35px] w-[35px] rounded-full'

@@ -3,18 +3,21 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { MotiView } from 'moti';
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import useLogout from '../../(auth)/auth/useLogout';
+import agoTimeStamp from '../../../components/agoTimeStamp';
 import CustomButton from '../../../components/Buttons/CustomButton';
 import HomeHeader from '../../../components/home/HomeHeader';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
 import { SERVER_URI, USER_IMAGE_URI } from '../../../RequestMethods';
+import { formatDate, formatTime } from '../../../utils/formatDateTime';
 import { toast } from '../../../utils/toast';
 import LoadingIndicator from '../../LoadingIndicator';
+
 
 const Index = () => {
     const [openLogout, setOpenLogout] = useState(false);
@@ -22,6 +25,7 @@ const Index = () => {
     const { displayCurrentLocation } = useSelector((state) => state.location);
     const [image, setImage] = useState(null);
     const router = useRouter();
+    const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
     const { logout, isLoggingOut } = useLogout();
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -39,8 +43,16 @@ const Index = () => {
         province,
         profile_image,
         is_runner,
-        is_transporter
+        is_transporter,
+        created_at,
+        is_verified
     } = useSelector((state) => state.auth);
+
+    useEffect(() => {
+        if (isAuthenticated === false) {
+            router.replace('/(auth)/login');
+        }
+    }, [isAuthenticated]);
 
     // -----------------------
     // MIME TYPE DETECTION
@@ -101,62 +113,76 @@ const Index = () => {
     useApi(`/users/${user_id}`);
 
     // -----------------------
-        // UPLOAD IMAGE
-        // -----------------------
-        const handleUpload = async () => {
-            if (!image) {
-                toast.error('Please select an image.');
-                return;
+    // UPLOAD IMAGE
+    // -----------------------
+    const handleUpload = async () => {
+        if (!image) {
+            toast.error('Please select an image.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const token = await SecureStore.getItemAsync('authToken');
+
+            if (!token) {
+                throw new Error('Session expired. Please login again.');
             }
-    
-            setIsLoading(true);
-    
-            try {
-                const token = await SecureStore.getItemAsync('authToken');
-    
-                if (!token) {
-                    throw new Error('Session expired. Please login again.');
-                }
-    
-                const formData = new FormData();
-    
-                formData.append('user_id', user_id);
-    
-                const file = {
-                    uri: image,
-                    name: `user_image.${image.split('.').pop() || 'jpg'}`,
-                    type: getMimeType(image),
-                };
-    
-                formData.append('user_image', file);
-    
-                const response = await fetch(`${SERVER_URI}/users/upload-image`, {
-                    method: 'POST',
-                    headers: {
-                    Authorization: `Bearer ${token}`,
-                    // DO NOT set Content-Type manually
-                    },
-                    body: formData,
-                });
-    
-                const data = await response.json().catch(() => ({}));
-    
-                if (!response.ok) {
-                    throw new Error(data?.Response || 'Upload failed.');
-                }
-    
-                toast.success('Image uploaded successfully!');
-                setErrorMessage('Success');
-                setImage(null);
-    
-            } catch (error) {
-                console.error('Upload error:', error);
-                toast.error(error.message || 'Upload failed.');
-                setErrorMessage('Upload Failed');
-            } finally {
-                setIsLoading(false);
+
+            const formData = new FormData();
+
+            formData.append('user_id', user_id);
+
+            const file = {
+                uri: image,
+                name: `user_image.${image.split('.').pop() || 'jpg'}`,
+                type: getMimeType(image),
+            };
+
+            formData.append('user_image', file);
+
+            const response = await fetch(`${SERVER_URI}/users/upload-image`, {
+                method: 'POST',
+                headers: {
+                Authorization: `Bearer ${token}`,
+                // DO NOT set Content-Type manually
+                },
+                body: formData,
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data?.Response || 'Upload failed.');
             }
-        };
+
+            toast.success('Image uploaded successfully!');
+            setErrorMessage('Success');
+            setImage(null);
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error(error.message || 'Upload failed.');
+            setErrorMessage('Upload Failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyAccount = () => {
+        if (!first_name || !last_name || !gender) {
+            router.push({
+                pathname: '../(auth)/personaldetails',
+                params: {user_id: user_id}
+            });
+        } else if (!province) {
+            router.push({
+                pathname: '../(auth)/otherinputs',
+                params: {user_id: user_id}
+            });
+        }
+    }
 
     if (isLoggingOut) {
         return <LoadingIndicator loading_text="Logging out..." />;
@@ -170,8 +196,8 @@ const Index = () => {
             </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
                 <View className='mt-8'>
-                    <View className='justify-center items-center  mb-4 p-4 rounded-lg bg-white'>
-                        <View className='w-full justify-center items-center'>
+                    <View className='justify-center items-center  mb-4'>
+                        <View className='w-full justify-center items-center bg-white border border-grey_bg py-4 rounded'>
                             <TouchableOpacity className='relative'
                                 onPress={() => setOpenChangeProfileImage(true)}
                             >
@@ -195,11 +221,42 @@ const Index = () => {
                                 </View>
                             </TouchableOpacity>
                             <View className=''>
-                                <Text className='text-2xl' style={{ fontFamily: 'ubuntu-medium'}}>
-                                    {first_name} {last_name}
+                                <Text
+                                    className={`${!is_verified ? 'text-lg text-red' : 'text-2xl text-black'}`}
+                                    style={{ fontFamily: 'ubuntu-medium' }}
+                                >
+                                    {!is_verified
+                                        ? 'Unverified Account'
+                                        : first_name + ' ' + last_name
+                                    }
                                 </Text>
                             </View>
+
+                            {!is_verified &&
+                                <TouchableOpacity
+                                    className='py-2 justify-center items-center mt-6 rounded elevation-lg'
+                                    style={{backgroundColor: COLORS.purple, width: '65%'}}
+                                    onPress={() => handleVerifyAccount()}
+                                >
+                                    <Text
+                                        className='text-xl text-white'
+                                        style={{fontFamily: 'maven-medium'}}
+                                    >Verify</Text>
+                                </TouchableOpacity>
+                            }
                         </View>
+                        {!is_verified &&
+                            <View
+                                className='justify-center items-center mt-6 border border-[#EF4444] rounded p-2 bg-[#FEF2F2]'
+                            >
+                                <Text
+                                    className='text-base text-black'
+                                    style={{fontFamily: 'roboto-medium', textAlign: 'justify'}}
+                                >
+                                    Account verification required. Complete your account setup by tapping the Verify button above to gain access to all features.
+                                </Text>
+                            </View>
+                        }
                     </View>
 
                     <View className='justify-start w-full border border-grey_bg rounded-lg bg-white p-4'>
@@ -231,9 +288,11 @@ const Index = () => {
                             <View className='flex-row items-center mb-6'>
                                 <View className='flex-row items-center'>
                                     <FontAwesome6 name='clock' color={COLORS.primary} size={20}/>
-                                    <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>Joned: </Text>
+                                    <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>Joined: </Text>
                                 </View>
-                                <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>26, Sep, 2026 (2 months ago)</Text>
+                                <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>
+                                    {formatDate(created_at)} • {formatTime(created_at)} ({agoTimeStamp(created_at)})
+                                </Text>
                             </View>
                         </View>
 
@@ -271,72 +330,83 @@ const Index = () => {
                             })}
                         >
                             <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <MaterialIcons name="create" color={COLORS.green1} size={20} />
+                                <MaterialIcons name="create" color={COLORS.primary} size={20} />
                             </View>
                             <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Edit Account</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={{width: '32%'}}
-                            className='justify-center items-center borde py-5 rounded-md'
-                            onPress={() => router.push('/(routes)/create-store/')}
-                        >
-                            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <Ionicons name="create-outline" size={25} color={COLORS.green1} />
-                            </View>
-                            <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Create Store</Text>
-                        </TouchableOpacity>
+                        {is_verified &&
+                            <TouchableOpacity
+                                style={{width: '32%'}}
+                                className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                onPress={() => router.push('/(routes)/create-store/')}
+                                disabled={!is_verified}
+                            >
+                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <Ionicons name="create-outline" size={25} color={COLORS.primary} />
+                                </View>
+                                <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Create Store</Text>
+                            </TouchableOpacity>
+                        }
+
+                        {is_verified &&
+                            <TouchableOpacity
+                                style={{width: '32%'}}
+                                className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                onPress={() => router.push('/(routes)/admin-stores/')}
+                            >
+                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <FontAwesome5 name="store-alt" color={COLORS.primary} size={17} />
+                                </View>
+                                <Text className='text-sm' style={{ fontFamily: 'roboto' }}>My Stores</Text>
+                            </TouchableOpacity>
+                        }
+
+                        {is_verified &&
+                            <TouchableOpacity
+                                style={{width: '32%'}}
+                                className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                onPress={() => router.push('/(routes)/runner/')}
+                            >
+                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <MaterialIcons name="directions-run" size={27} color={COLORS.primary} />
+                                </View>
+                                <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Runner</Text>
+                            </TouchableOpacity>
+                        }
+
+                        {is_verified &&
+                            <TouchableOpacity
+                                style={{width: '32%'}}
+                                className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                onPress={() => router.push('/(routes)/transporter/')}
+                            >
+                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <MaterialCommunityIcons name="bike-fast" color={COLORS.primary} size={24} />
+                                </View>
+                                <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Transporter</Text>
+                            </TouchableOpacity>
+                        }
+
+                        {is_verified &&
+                            <TouchableOpacity
+                                style={{width: '32%'}}
+                                className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                onPress={() => router.push('/(routes)/saved-locations/')}
+                            >
+                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <Entypo name='location' size={22} color={COLORS.primary} />
+                                </View>
+                                <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Locations</Text>
+                            </TouchableOpacity>
+                        }
 
                         <TouchableOpacity
                             style={{width: '32%'}}
                             className='justify-center items-center borde py-5 rounded-md'
-                            onPress={() => router.push('/(routes)/admin-stores/')}
                         >
                             <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <FontAwesome5 name="store-alt" color={COLORS.green1} size={17} />
-                            </View>
-                            <Text className='text-sm' style={{ fontFamily: 'roboto' }}>My Stores</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={{width: '32%'}}
-                            className='justify-center items-center borde py-5 rounded-md'
-                            onPress={() => router.push('/(routes)/runner/')}
-                        >
-                            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <MaterialIcons name="directions-run" size={27} color={COLORS.green1} />
-                            </View>
-                            <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Runner</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={{width: '32%'}}
-                            className='justify-center items-center borde py-5 rounded-md'
-                            onPress={() => router.push('/(routes)/transporter/')}
-                        >
-                            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <MaterialCommunityIcons name="bike-fast" color={COLORS.green1} size={24} />
-                            </View>
-                            <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Transporter</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={{width: '32%'}}
-                            className='justify-center items-center borde py-5 rounded-md'
-                            onPress={() => router.push('/(routes)/saved-locations/')}
-                        >
-                            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <Entypo name='location' size={22} color={COLORS.green1} />
-                            </View>
-                            <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Locations</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={{width: '32%'}}
-                            className='justify-center items-center borde py-5 rounded-md'
-                        >
-                            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <Entypo name='thumbs-up' size={24} color={COLORS.green1} />
+                                <Entypo name='thumbs-up' size={24} color={COLORS.primary} />
                             </View>
                             <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Rate Us</Text>
                         </TouchableOpacity>
@@ -346,7 +416,7 @@ const Index = () => {
                             className='justify-center items-center borde py-5 rounded-md'
                         >
                             <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                <Entypo name='info-with-circle' size={24} color={COLORS.green1} />
+                                <Entypo name='info-with-circle' size={24} color={COLORS.primary} />
                             </View>
                             <Text className='text-sm' style={{ fontFamily: 'roboto' }}>About Us</Text>
                         </TouchableOpacity>
@@ -379,117 +449,165 @@ const Index = () => {
                 </MotiView>
                 </View>
 
-            {openLogout &&
-                <>
-                    <Pressable className='absolute inset-0 bg-transparentBlack'
+            <Modal
+                    visible={openLogout}
+                    transparent
+                    animationType="none"
+                    onRequestClose={() => setOpenLogout(false)}
+                >
+                    {/* Overlay */}
+                    <Pressable
+                        className="flex-1 bg-transparentBlack justify-end"
                         onPress={() => setOpenLogout(false)}
-                    />
-                    <MotiView
-                        from={{ opacity: 0, translateY: 50 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        transition={{ duration: 700 }}
-                        style={{ justifyContent: 'center', alignItems: 'center' }}
                     >
-                        <View className='justify-center bg-white rounded-md absolute bottom-2 items-center w-full'>
-                            <View className='p-4 pb-4 bg-white w-full elevation-xl rounded-md'>
-                                <Text className='mb-4 text-xl' style={{fontFamily: 'roboto-medium'}}>Logout</Text>
-                                <Text className='mb-4' style={{fontFamily: 'roboto-medium'}}>Are you sure you want to logout</Text>
-                                <View className='flex-row justify-between w-full'>
-                                    <TouchableOpacity className='bg-green2 py-4 rounded-sm justify-center items-center' style={{width: '48%'}}
+                        {/* Inner content wrapper (prevents closing when tapped) */}
+                        <View
+                            onStartShouldSetResponder={() => true}
+                        >
+                            <MotiView
+                                from={{ opacity: 0, translateY: 80 }}
+                                animate={{ opacity: 1, translateY: 0 }}
+                                transition={{ type: "timing", duration: 300 }}
+                                style={{borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 80}}
+                                className="bg-white px-4 pt-3"
+                            >
+                                {/* Header */}
+                                <View className="flex-row justify-between items-center">
+                                    <View className='flex-row justify-start items-center'>
+                                        <FontAwesome5 name='sign-out-alt' size={20} />
+                                        <Text
+                                            className="text-xl ml-1"
+                                            style={{ fontFamily: "roboto-medium" }}
+                                        >
+                                            Logout
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        className='bg-grey_bg rounded-full justify-center items-center'
+                                        style={{width: 27, height: 27}}
                                         onPress={() => setOpenLogout(false)}
                                     >
-                                        <Text className='text-white text-lg' style={{fontFamily: 'roboto-medium'}}>No</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity className='bg-red py-4 rounded-sm justify-center items-center' style={{width: '48%'}}
-                                        onPress={confirmLogout}
-                                    >
-                                        <Text className='text-white text-lg' style={{fontFamily: 'roboto-medium'}}>Yes</Text>
+                                        <FontAwesome name='times' size={17} color={'red'}/>
                                     </TouchableOpacity>
                                 </View>
-                            </View>
+
+                                <View className='w-full bg-lavender my-3' style={{height: 1}} />
+
+                                <View className='p-4 bg-white w-full elevation-xl rounded-md'>
+                                        <Text className='mb-4' style={{fontFamily: 'roboto-medium'}}>Are you sure you want to logout</Text>
+                                        <View className='flex-row justify-between w-full'>
+                                            <TouchableOpacity className='bg-green2 py-3 rounded justify-center items-center' style={{width: '48%'}}
+                                                onPress={() => setOpenLogout(false)}
+                                            >
+                                                <Text className='text-white text-lg' style={{fontFamily: 'roboto-medium'}}>No</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity className='bg-red py-3 rounded justify-center items-center' style={{width: '48%'}}
+                                                onPress={confirmLogout}
+                                            >
+                                                <Text className='text-white text-lg' style={{fontFamily: 'roboto-medium'}}>Yes</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                            </MotiView>
                         </View>
-                    </MotiView>
-                </>
-            }
+                    </Pressable>
+                </Modal>
 
-            {openChangeProfileImage &&
-                <>
-                    <Pressable className='absolute inset-0 bg-transparentBlack'
+                <Modal
+                    visible={openChangeProfileImage}
+                    transparent
+                    animationType="none"
+                    onRequestClose={() => setOpenChangeProfileImage(false)}
+                >
+                    {/* Overlay */}
+                    <Pressable
+                        className="flex-1 bg-transparentBlack justify-end"
                         onPress={() => setOpenChangeProfileImage(false)}
-                    />
-                    <MotiView
-                        from={{ opacity: 0, translateY: 50 }}
-                        animate={{ opacity: 1, translateY: 0 }}
-                        transition={{ duration: 700 }}
-                        style={{ justifyContent: 'center', alignItems: 'center' }}
                     >
-                        <View className='justify-center bg-white rounded-md absolute bottom-2 items-center w-full'>
-                            <View
-                                className='bg-red w-full mb-3 rounded-tl-md rounded-tr-md justify-center items-center'
+                        {/* Inner content wrapper (prevents closing when tapped) */}
+                        <View
+                            onStartShouldSetResponder={() => true}
+                        >
+                            <MotiView
+                                from={{ opacity: 0, translateY: 80 }}
+                                animate={{ opacity: 1, translateY: 0 }}
+                                transition={{ type: "timing", duration: 300 }}
+                                style={{borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 80}}
+                                className="bg-white px-4 pt-3"
                             >
-                                <Text className='py-1 text-white text-xl' style={{fontFamily: 'roboto-medium'}}>Update Profile Image</Text>
-                            </View>
-                           {/* ---------------- MAIN CONTENT ---------------- */}
-                            <View className="flex-1 justify-center items-center w-full px-2">
+                                {/* Header */}
+                                <View className="flex-row justify-between items-center">
+                                    <Text
+                                        className="text-xl"
+                                        style={{ fontFamily: "roboto-medium" }}
+                                    >
+                                        Update Profile Image
+                                    </Text>
+                                    <TouchableOpacity
+                                        className='bg-grey_bg rounded-full justify-center items-center'
+                                        style={{width: 27, height: 27}}
+                                        onPress={() => setOpenChangeProfileImage(false)}
+                                    >
+                                        <FontAwesome name='times' size={17} color={'red'}/>
+                                    </TouchableOpacity>
+                                </View>
 
-                                {/* Pick Image Button */}
+                                <View className='w-full bg-lavender my-3' style={{height: 1}} />
+
+                                {/* Pick Image */}
                                 <TouchableOpacity
                                     onPress={pickImage}
-                                    activeOpacity={0.2}
-                                    className={`
-                                     bg-grey_bg px-6 py-4 mb-6 rounded-lg w-full flex-row justify-center items-center`}
+                                    className="bg-grey_bg px-6 py-4 mb-6 rounded w-full flex-row justify-center items-center"
                                 >
-                                    <FontAwesome5 name="camera" size={24} color={COLORS.green1} />
-                                    <Text className="text-lg font-bold ml-2">
-                                        {!image ? 'Pick Image' : 'Change Image'}
+                                    <FontAwesome5
+                                        name="camera"
+                                        size={24}
+                                        color={COLORS.green1}
+                                    />
+                                    <Text className="text-lg ml-2 font-semibold" style={{fontFamily: 'roboto-medium'}}>
+                                        {!image ? "Pick Image" : "Change Image"}
                                     </Text>
                                 </TouchableOpacity>
 
-                                {/* Image Preview */}
-                                <ScrollView className="w-full mb-4" showsVerticalScrollIndicator={false}>
-                                    {image && (
-                                        <View className="relative mt-3 items-center">
-                                            <Image
-                                                source={{ uri: image }}
-                                                style={{ width: 220, height: 180 }}
-                                                className="border-2 border-lavender rounded-md"
-                                            />
+                                {/* Preview */}
+                                {image && (
+                                    <View className="items-center mb-5">
+                                        <Image
+                                            source={{ uri: image }}
+                                            style={{ width: 220, height: 180 }}
+                                            className="border-2 border-lavender rounded-md"
+                                        />
+                                    </View>
+                                )}
 
-                                            <TouchableOpacity
-                                                onPress={() => setImage(null)}
-                                                className="absolute top-2 right-2 bg-red rounded-full p-2"
-                                            >
-                                                <FontAwesome5 name="times" color={COLORS.white} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                </ScrollView>
+                                {/* Status */}
+                                {errorMessage ? (
+                                    <View className="items-center mb-4">
+                                        <Text
+                                            className={`text-lg ${
+                                                errorMessage === "Success"
+                                                    ? "text-green2"
+                                                    : "text-red"
+                                            }`}
+                                            style={{ fontFamily: "roboto-medium" }}
+                                        >
+                                            {errorMessage}
+                                        </Text>
+                                    </View>
+                                ) : null}
 
-                                {/* Status Message */}
-                                <View className="w-full items-center justify-center p-2 mb-2">
-                                    <Text
-                                        className={`text-lg ${
-                                            errorMessage === 'Success' ? 'text-green2' : 'text-red'
-                                        }`}
-                                        style={{ fontFamily: 'roboto-medium' }}
-                                    >
-                                        {errorMessage}
-                                    </Text>
-                                </View>
-
-                                {/* Upload Button */}
+                                {/* Upload */}
                                 <CustomButton
-                                    title={isLoading ? 'Uploading...' : 'Upload'}
+                                    title={isLoading ? "Uploading..." : "Upload"}
                                     handlePress={handleUpload}
-                                    otherStyles="bg-primary p-4 mb-4 w-full"
+                                    otherStyles="bg-primary py-3 w-full"
                                     textStyles="text-2xl text-white"
                                     disabled={isLoading || !image}
                                 />
-                            </View>
+                            </MotiView>
                         </View>
-                    </MotiView>
-                </>
-            }
+                    </Pressable>
+                </Modal>
             </ScrollView>
         </SafeAreaView>
     );

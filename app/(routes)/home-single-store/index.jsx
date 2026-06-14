@@ -1,8 +1,7 @@
-import { FontAwesome, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Linking, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, Polyline } from "react-native-maps";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { STORES_IMAGE_URI, USER_IMAGE_URI } from '../../../RequestMethods';
@@ -15,6 +14,7 @@ import StoreMenuTabs from './StoreMenuTabs';
 import { MotiView } from 'moti';
 import useApi from '../../../hook/useApi';
 import { calculateDistance, makeCall } from '../../../utils/getDistance';
+import { formatTime, isStoreOpen } from '../../../utils/isStoreOpen';
 import { toast } from '../../../utils/toast';
 import AllProducts from '../../screens/StoreSingleScreen/AllProducts';
 
@@ -32,8 +32,14 @@ const StorePage = () => {
         store_category,
         average_rating,
         total_ratings,
-        favorited
+        favorited,
+        open_time,
+        closing_time
     } = useLocalSearchParams();
+
+    const isManuallyClosed = open_close === false;
+    const isTimeClosed = !isStoreOpen(open_time, closing_time);
+    const isClosed = isManuallyClosed || isTimeClosed;
 
     const store_data = {
         store_id: store_id,
@@ -46,7 +52,10 @@ const StorePage = () => {
         store_longitude: store_longitude,
         store_location: store_location,
         store_category: store_category,
-        favorited: favorited
+        favorited: favorited,
+        open_time: open_time,
+        closing_time: closing_time,
+        isClosed: isClosed
     };
 
     const { user_id  } = useSelector((state) => state.auth);
@@ -55,7 +64,7 @@ const StorePage = () => {
     const [refreshKey, setRefreshKey] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
     const [ratestore, setRateStore] = useState(false);
-    const { latitude, longitude } = useSelector(state => state.location);
+    const { latitude, longitude } = useSelector(state => state.location) || {};
     const [showLocationMap, setShowLocationMap] = useState(false);
     const [mapReady, setMapReady] = useState(false);
 
@@ -81,9 +90,9 @@ const StorePage = () => {
     const pagination = storereviews?.data?.pagination;
 
         useEffect(() => {
-            if (data && data.success !== undefined) {
-                setRating(data.rating || 0);
-                setReview(data.review || '');
+            if (data && data?.success !== undefined) {
+                setRating(data?.rating || 0);
+                setReview(data?.review || '');
             } else {
                 // Safety fallback if data is null/undefined
                 setRating(0);
@@ -150,7 +159,6 @@ const StorePage = () => {
 
     const [activeTab, setActiveTab] = useState(tabs[0]);
     const cartItems = useSelector((state) => state.cart.cartItems);
-    const isOpen = open_close === true || open_close === "true";
 
     // Total cart price
     const [totalZMK, setTotalZMK] = useState(0);
@@ -187,12 +195,12 @@ const StorePage = () => {
                     `/stores/favorites/add`
                 );
 
-                if (res.data.favorited === false) {
+                if (res?.data?.favorited === false) {
                     toast.error(res.data.message);
                 } else {
-                    setIsFavorited(res.data.favorited);
+                    setIsFavorited(res?.data?.favorited);
                     toast.success(
-                        res.data.message
+                        res?.data?.message
                     );
                 }
             } catch (err) {
@@ -283,11 +291,9 @@ const StorePage = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1 relative bg-white justify-center items-center px-4">
+        <SafeAreaView className="flex-1 relative bg-white justify-center items-center px-2">
             {/* Header */}
-            <View className='w-full'>
-                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Store' />
-            </View>
+            <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Store' />
 
             {/* Comments Modal */}
             <Modal transparent statusBarTranslucent visible={modalVisible} animationType="none">
@@ -323,15 +329,15 @@ const StorePage = () => {
 
                         <View className='px-2'>
                             <View className='flex-row items-center mt-2'>
-                                <FontAwesome name='comments' size={25}/>
-                                <Text className='text-2xl ml-1' style={{fontFamily: 'roboto-medium'}}>Comments</Text>
+                                <FontAwesome name='comments' size={23}/>
+                                <Text className='text-xl ml-1' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
                             </View>
                             <Text className='text-sm text-green1 mt-1' style={{fontFamily: 'roboto-medium', textAlign: 'justify'}}>
                                 Please take time to read what people are saying about this store
                             </Text>
                         </View>
                     </View>  
-                    <View className='w-full flex-1 justify-center mt-8 items-center'>
+                    <View className='w-full flex-1 justify-center mt-8 pb-16 items-center'>
                         {reviewsLoading ?
                             <View className='items-center justify-center mb-8'>
                                 <ActivityIndicator size={35} color={COLORS.primary}/>
@@ -398,7 +404,7 @@ const StorePage = () => {
             </Modal>
             {/* End of comments modal */}
 
-            {/* Comments location maps */}
+            {/* Start location maps */}
             <Modal
                 transparent
                 statusBarTranslucent
@@ -422,18 +428,18 @@ const StorePage = () => {
                     exit={{ translateY: 400 }}
                     transition={{ type: 'timing', duration: 400 }}
                     style={styles.mapsheet}
-                >
-                    <View className='bg-white w-full justify-center items-center rounded-md'>
+                > 
+                    <View className='w-full relative flex-1 justify-center items-center'>
+                        <View className='w-full justify-center items-center rounded-md'>
                         <TouchableOpacity
                             className='w-full justify-center items-center'
-                            style={{borderTopLeftRadius: 5, borderTopRightRadius: 4}}
+                            style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
                             onPress={() => setShowLocationMap(false)}
                         >
                             <View className='h-1.5 rounded-full my-1 bg-[#ccc] w-[30%]'/>
                         </TouchableOpacity>
-                    </View>  
-                    <View className='w-full relative flex-1 justify-center items-center'>
-                        <MapView
+                    </View> 
+                        {/* <MapView
                             ref={mapRef}
                             style={styles.map}
                             onMapReady={() => setMapReady(true)}
@@ -460,8 +466,8 @@ const StorePage = () => {
                                 strokeColor="red"
                                 strokeWidth={3}
                             />
-                        </MapView>
-                        <View className='w-full px-2 absolute bottom-0 pb-2 justify-center items-center rounded-md'>
+                        </MapView> */}
+                        <View className='w-full px-2 pb-2 mt-8 justify-center items-center rounded-md'>
                             <TouchableOpacity
                                 className='w-full justify-center flex-row items-center py-4 rounded bg-primary elevation-lg'
                                 onPress={() => openMapsChooser(pointA, pointB)}
@@ -501,12 +507,12 @@ const StorePage = () => {
                                     className='h-full w-full rounded-full border-2 border-white'
                                     source={{ uri: `${STORES_IMAGE_URI}${store_profileimage}` }}
                                 />
-                                {!isOpen && (
+                                {isClosed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
                                         <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />
                                         <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
                                     </View>
-                                )}
+                                }
                             </View>
 
                             <View className='ml-3 flex-1'>
@@ -522,67 +528,73 @@ const StorePage = () => {
                             </TouchableOpacity>
                         </View>
 
+                        {/* Store Opening Hours */}
+                        <View className='mt-1 w-full px-2 my-4 bg-grey_bg rounded py-1'>
+                            <Text className='text-sm text-green1' style={{ fontFamily: 'roboto-medium',textAlign: 'justify' }}>
+                                Open{open_time && closing_time ? ` from ${formatTime(open_time)} to ${formatTime(closing_time)}` : ' 24/7'}
+                            </Text>
+                        </View>
+
                         {/* Store Description */}
                         <View className='mt-1 w-full px-2'>
                             <Text className='text-sm text-gray-600' style={{ fontFamily: 'roboto-medium' }}>{store_description}</Text>
                         </View>
 
                         {/* Store Actions */}
-                        <View className='flex-row items-center justify-between mt-5'>
-                            <TouchableOpacity className='items-center'
-                                onPress={() => setRateStore(true)}
-                            >
-                                <View className='flex-row justify-center items-center'>
-                                    <Ionicons name='star' size={18} color={COLORS.green1} />
-                                    <Text className='text-sm' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
-                                        {average_rating} ({total_ratings})
-                                    </Text>
-                                </View>
-                                <Text className='text-lg' style={{ fontFamily: 'roboto-medium' }}>Rate Us</Text>
-                            </TouchableOpacity>
-                            
-                            <TouchableOpacity
-                                // onPress={() => router.push({ pathname: '/(routes)/maps/store-map/', params: {
-                                //     store_id,
-                                //     store_profileimage,
-                                //     store_name,
-                                //     store_description,store_phone_num } })}
-                                onPress={() => setShowLocationMap(true)}
-                                className='items-center justify-center'
-                            >
-                                <View className='flex-row items-center justify-center'>
-                                    <Ionicons name='location-outline' color={COLORS.green1} size={18} />
-                                    <Text className='text-sm text-lavender'>| </Text>
-                                    <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
-                                </View>
-                                <Text className='text-lg' style={{ fontFamily: 'roboto-medium' }}>Location</Text>
-                            </TouchableOpacity>
+                            <View className='flex-row items-center justify-between mt-8 mb-12'>
+                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                                    onPress={() => setRateStore(true)}
+                                    style={{width: '23.5%'}}
+                                >
+                                    <View className='flex-row justify-center items-center'>
+                                        <Ionicons name='star' size={13} color={COLORS.primary} />
+                                        <Text className='text-sm' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                            {' '}{average_rating} ({total_ratings})
 
-                            <TouchableOpacity className='items-center'
-                                onPress={AddToFavorites}
-                            >
-                                <MaterialCommunityIcons
-                                    name={!isFavoritedParam ? "cards-heart-outline" : "cards-heart"}
-                                    size={20}
-                                    color={COLORS.primary}
-                                />
-                                <Text className='text-lg' style={{ fontFamily: 'roboto-medium' }}>Favorites</Text>
-                            </TouchableOpacity>
-                        </View>
 
-                        <View className='flex-row items-center justify-between mt-5 mb-8'>
-                            <TouchableOpacity className='justify-center items-center'
-                                onPress={() => setModalVisible(true)}
-                            >
-                                <View className='flex-row justify-center items-center'>
-                                    <FontAwesome name='comments' size={20} color={COLORS.green1}/>
-                                    <Text className='text-sm ml-1' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
-                                        ({total_ratings})
-                                    </Text>
-                                </View>
-                                <Text className='text-lg' style={{fontFamily: 'roboto-medium'}}>Comments</Text>
-                            </TouchableOpacity>
-                        </View>
+                                        </Text>
+                                    </View>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Rate Us</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={() => setShowLocationMap(true)}
+                                    className='items-center justify-center border border-grey_bg rounded py-1'
+                                    style={{width: '23.5%'}}
+                                >
+                                    <View className='flex-row items-center justify-center'>
+                                        <FontAwesome6 name="location-dot"  size={13} color={COLORS.primary} />
+                                        <Text className='text-sm text-lavender'> | </Text>
+                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
+                                    </View>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Location</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                                    onPress={AddToFavorites}
+                                    style={{width: '23.5%'}}
+                                >
+                                    <MaterialCommunityIcons
+                                        name={!isFavoritedParam ? "cards-heart-outline" : "cards-heart"}
+                                        size={16}
+                                        color={COLORS.primary}
+                                    />
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Favorites</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity className='justify-center items-center border border-grey_bg rounded py-1'
+                                    onPress={() => setModalVisible(true)}
+                                    style={{width: '23.5%'}}
+                                >
+                                    <View className='flex-row justify-center items-center'>
+                                        <FontAwesome name='comments' size={16} color={COLORS.primary}/>
+                                        <Text className='text-sm ml-1' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                            ({total_ratings})
+                                        </Text>
+                                    </View>
+                                    <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
+                                </TouchableOpacity>
+                            </View>
 
                         {/* Tabs */}
                         <View className='mb-4 w-full'>
@@ -601,7 +613,7 @@ const StorePage = () => {
 
             {ratestore &&
                 <>
-                    <View className='absolute flex-1 bottom-2 w-full' style={{zIndex: 10000}}>
+                    <View className='absolute flex-1 bottom-2 w-full mb-12' style={{zIndex: 10000}}>
                         <MotiView
                             from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
                             animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
@@ -698,12 +710,13 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width: '100%',
-        height: '50%',
+        maxHeight: '95%',
         backgroundColor: 'white',
-        borderTopLeftRadius: 8,
-        borderTopRightRadius: 8,
+        borderTopLeftRadius: 6,
+        borderTopRightRadius: 6,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        paddingBottom: 80
     },
 
     button: {

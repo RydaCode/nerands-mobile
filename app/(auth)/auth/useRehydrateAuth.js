@@ -12,52 +12,60 @@ const useRehydrateAuth = () => {
         const restore = async () => {
             try {
                 const token = await authService.getAccessToken();
+                const refreshToken = await authService.getRefreshToken();
 
-                // ✅ No token → guest mode
+                // 1. No token → unauthenticated
                 if (!token) {
+                    dispatch(logoutUser());
                     setRehydrated(true);
                     return;
                 }
 
-                // ✅ Attach token to axios immediately
-                axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                let finalToken = token;
 
-                const decoded = authService.decode(token);
+                // 2. Token expired → try refresh
+                if (authService.isExpired(token)) {
+                    try {
+                        const res = await axiosInstance.post(
+                            '/auth/user/token/refresh',
+                            { refreshToken }
+                        );
+
+                        finalToken = res.data.accessToken;
+                        await authService.saveAccessToken(finalToken);
+
+                    } catch (err) {
+                        // ONLY here user is truly logged out
+                        await authService.clearTokens();
+                        dispatch(logoutUser());
+                        setRehydrated(true);
+                        return;
+                    }
+                }
+
+                // 3. Set auth header
+                axiosInstance.defaults.headers.common['Authorization'] =
+                    `Bearer ${finalToken}`;
+
+                // 4. Decode + login
+                const decoded = authService.decode(finalToken);
 
                 dispatch(setUserData({
-                    user_id: decoded.user_id,
-                    user_type: decoded.user_type,
-                    email_add: decoded.email_add,
-                    first_name: decoded.first_name,
-                    last_name: decoded.last_name,
-                    phone_num: decoded.phone_num,
-                    gender: decoded.gender,
-                    date_of_birth: decoded.date_of_birth,
-                    country: decoded.country,
-                    province: decoded.province,
-                    profile_image: decoded.profile_image,
-                    is_transporter: decoded.is_transporter,
-                    is_runner: decoded.is_runner,
-                    transporter_id: decoded.transporter_id,
-                    runner_id: decoded.runner_id,
+                    ...decoded,
                     isAuthenticated: true,
                 }));
 
-                // 🔐 Refresh only if token expired
-                if (authService.isExpired(token)) {
-                    await axiosInstance.get('/auth/user/token/refresh');
-                }
-
             } catch (err) {
-                console.warn('Auth rehydrate failed:', err);
-                await authService.clearTokens();
+                console.warn("Auth restore error:", err);
                 dispatch(logoutUser());
             } finally {
                 setRehydrated(true);
             }
         };
+
         restore();
     }, [dispatch]);
+
     return rehydrated;
 };
 

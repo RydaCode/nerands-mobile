@@ -62,12 +62,12 @@ const ViewAdminsCard = ({
 
     useEffect(() => {
         if (updateData?.data?.Response) {
-            const isSuccess = updateData.data.Response === 'Success';
+            const isSuccess = updateData?.data?.Response === 'Success';
 
             if (isSuccess) {
-                return toast.success(updateData.data.Response)
+                return toast.success(updateData?.data?.Response)
             } else {
-                return toast.error(updateData.data.Response)
+                return toast.error(updateData?.data?.Response)
             }
         }
 
@@ -79,8 +79,8 @@ const ViewAdminsCard = ({
 
     useEffect(() => {
         if (deleteData?.Response) {
-            const isSuccess = deleteData.Response === 'Success';
-            toast.success(updateData.data.Response);
+            const isSuccess = deleteData?.Response === 'Success';
+            toast.success(updateData?.data?.Response);
             if (isSuccess) {
                 setIsRedirecting(true);
                 setTimeout(() => setIsRedirecting(false), 5000);
@@ -88,7 +88,7 @@ const ViewAdminsCard = ({
         }
 
         if (deleteError) {
-            toast.success(updateData.data.Response);
+            toast.success(updateData?.data?.Response);
         }
     }, [deleteData, deleteError]);
 

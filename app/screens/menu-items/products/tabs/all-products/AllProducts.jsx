@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSelector } from 'react-redux';
 import { COLORS } from '../../../../../../constants/constants';
+import { Carticons } from '../../../../../../constants/icons';
 import useApi from '../../../../../../hook/useApi';
 import AllProductsCard from '../cards/AllProductsCard';
 
@@ -28,9 +29,6 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
     const loadingMoreRef = useRef(false);
     const { data, error, isLoading, get } = useApi(null);
 
-    console.log("VARIANTO", productsList)
-
-    /* ------------------ INITIAL FETCH / REFRESH ------------------ */
     /* ------------------ INITIAL FETCH / REFRESH ------------------ */
     const fetchInitialProducts = async (user_id) => {
         setIsRefreshing(true);
@@ -113,8 +111,7 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                 renderItem={({ item }) => {
                     const productImages = Array.isArray(item.product_images) ? item.product_images : [];
                     const firstImage = productImages.length > 0
-                    ? productImages[0]
-                    : 'https://yourapp.com/placeholder.png';
+                    ? productImages[0] : Carticons.placeholder;
 
                     return (
                         <AllProductsCard
@@ -123,7 +120,6 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                             product_image={firstImage}
                             product_name={item.product_name}
                             product_description={item.product_description}
-                            product_actual_price={item.product_actual_price}
                             product_price={item.product_price}
                             product_status={item.product_status}
                             store_name={item.store_name}
@@ -131,8 +127,6 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                             store_phone_num={item.store_phone_num}
                             store_category={item.store_category}
                             product_category={item.product_category}
-                            product_colors={item.colors}
-                            product_sizes={item.sizes}
                             store_profileimage={item.store_profileimage}
                             store_location={item.store_location}
                             store_latitude={item.latitude}
@@ -144,6 +138,10 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                             total_ratings={item.total_ratings}
                             favorited={item.favorited}
                             variant_groups={item.variant_groups}
+                            markup_percent={item.markup_percent}
+                            final_price={item.final_price}
+                            open_time={item.open_time}
+                            closing_time={item.closing_time}
                         />
                     );
                 }}

@@ -4,11 +4,12 @@ import {
 import { MotiView } from "moti";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+    Alert,
     Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS, SIZES } from "../../../constants/constants";
-import { addItem } from "../../../redux/store/slices/CartSlice";
+import { addItem, clearCart } from "../../../redux/store/slices/CartSlice";
 import { PRODUCTS_IMAGE_URI } from "../../../RequestMethods";
 import { toast } from "../../../utils/toast";
 import ExtraCheckbox from "./ExtraCheckbox ";
@@ -20,7 +21,7 @@ const ProductDetailsModal = ({
     item,
     extras,
     isAvailable,
-    isOpen,
+    isClosed,
     store_profileimage,
     product_iamges,
     store_description,
@@ -28,11 +29,14 @@ const ProductDetailsModal = ({
     store_latitude,
     store_longitude,
     store_location,
+    store_id,
+    store_phone_num
 }) => {
     const { width, height } = useWindowDimensions();
     const dispatch = useDispatch();
     const cartItems = useSelector((state) => state.cart.cartItems);
     const [selectedVariants, setSelectedVariants] = useState({});
+    const cartStoreId = useSelector(state => state.cart.store_id);
 
     const price = useMemo(() => {
         const variants = Object.values(selectedVariants);
@@ -58,8 +62,11 @@ const ProductDetailsModal = ({
     const extrasMap = useMemo(() => {
         return new Map(
             extras.map((extra) => [
-                extra.extra_name,
-                { price: extra.extra_price, extra_id: extra.extra_id },
+                extra.extra_id, // ✅ KEY MUST BE ID
+                {
+                    name: extra.extra_name,
+                    price: extra.extra_price,
+                },
             ]),
         );
     }, [extras]);
@@ -73,7 +80,7 @@ const ProductDetailsModal = ({
     const totalAmount = useMemo(() => {
         const variants = Object.values(selectedVariants);
 
-        let basePrice = item.product_price;
+        let basePrice = item.final_price;
 
         if (variants.length > 0) {
             const hasOverride = variants.some(v => v.is_price_override);
@@ -84,7 +91,7 @@ const ProductDetailsModal = ({
         }
 
         return (basePrice + extrasTotal) * state.quantity;
-    }, [selectedVariants, item.product_price, extrasTotal, state.quantity]);
+    }, [selectedVariants, item.final_price, extrasTotal, state.quantity]);
 
     const alreadyInCart = useMemo(() => {
         return cartItems.some(
@@ -107,33 +114,76 @@ const ProductDetailsModal = ({
     }, [item]);
 
     const handleAddToCart = useCallback(() => {
-        const selectedExtrasData = state.selectedExtras.map((name) => ({
-            name,
-            price: extrasMap.get(name)?.price,
-            extra_id: extrasMap.get(name)?.extra_id,
-        }));
+        const selectedExtrasData = state.selectedExtras.map(id => {
+            const extra = extrasMap.get(id);
 
-        dispatch(
-            addItem({
-                ...item,
-                selected_extras: selectedExtrasData,
-                total_price: totalAmount,
-                static_total_price: totalAmount,
-                product_qty: state.quantity,
-                chilioption: state.chiliOption,
-                product_image: item.product_iamges,
-                store_image: store_profileimage,
-                store_latitude: store_latitude,
-                store_longitude: store_longitude,
-                store_description,
-                product_description: item.product_description,
-                store_name,
-                store_location,
-            }),
-        );
+            return {
+                extra_id: id,
+                extra_name: extra?.name,
+                extra_price: extra?.price,
+            };
+        });
 
-        localDispatch({ type: ACTIONS.RESET });
-        toast.success("Product added to cart");
+        if (cartStoreId && cartStoreId !== store_id) {
+            Alert.alert(
+                "Start new order?",
+                "Your cart contains items from another store. Do you want to clear it and add this item?",
+                [
+                    {
+                        text: "Cancel",
+                        style: "cancel",
+                    },
+                    {
+                        text: "Clear Cart",
+                        onPress: () => {
+                            dispatch(clearCart());
+
+                            dispatch(
+                                addItem({
+                                    ...item,
+                                    product_extras: extras,
+                                    selected_extras: selectedExtrasData,
+                                    selected_variants: selectedVariants,
+                                    total_price: totalAmount,
+                                    static_total_price: totalAmount,
+                                    product_qty: state.quantity,
+                                    store_image: store_profileimage,
+                                    store_latitude: store_latitude,
+                                    store_longitude: store_longitude,
+                                    store_description,
+                                    store_name: store_name,
+                                    store_id: store_id,
+                                    store_phone_num
+                                })
+                            );
+                        },
+                    },
+                ]
+            );
+        } else {
+            dispatch(
+                addItem({
+                    ...item,
+                    product_extras: extras,
+                    // product_variants: ,
+                    selected_extras: selectedExtrasData,
+                    selected_variants: selectedVariants,
+                    total_price: totalAmount,
+                    static_total_price: totalAmount,
+                    product_qty: state.quantity,
+                    store_image: store_profileimage,
+                    store_latitude: store_latitude,
+                    store_longitude: store_longitude,
+                    store_description,
+                    store_name: store_name,
+                    store_id: store_id,
+                    store_phone_num
+                }),
+            );
+
+            localDispatch({ type: ACTIONS.RESET });
+            toast.success("Product added to cart");
+        }
     }, [state, totalAmount, dispatch, item, extrasMap]);
 
     const toggleModal = () => localDispatch({ type: ACTIONS.TOGGLE_MODAL });
@@ -170,27 +220,25 @@ const ProductDetailsModal = ({
                 style={styles.sheet}
             >
             {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
-                <View
-                    className="w-full pb-20 relative"
-                    style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
-                >
-                    <TouchableOpacity
-                        className='w-full justify-cente items-center'
-                        style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
-                        onPress={toggleModal}
-                    >
-                        <View className='h-1 rounded-full my-2 bg-[#ccc] w-[30%]'/>
-                    </TouchableOpacity>
-                    {/* Header */}
-                    <View className='w-full px-4'>
-                        <Text className="text-black text-2xl mt-1 font-semibold" style={{ fontFamily: "maven-medium" }}
-                        >Product Details</Text>
+                {/* Header */}
+                    <View className='flex-row justify-between items-center w-full px-4 pt-2'>
+                        <View className=''>
+                            <Text className="text-black text-2xl mt-1 font-semibold" style={{ fontFamily: "ubuntu-medium" }}
+                            >Product Details</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={{width: 30, height: 30}}
+                            className='justify-center items-center rounded-full bg-grey_bg'
+                            onPress={toggleModal}
+                        >
+                            <FontAwesome name="times" size={15} color={'red'}/>
+                        </TouchableOpacity>
                     </View>
                     <View className='w-full px-4 mt-1'>
                         <View className='bg-lavender' style={{height: 0.5,}}/>
                     </View>
                     <ScrollView
-                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, paddingBottom: 40, backgroundColor: 'transparent' }}
+                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, paddingBottom: 20, backgroundColor: 'transparent' }}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Product Info */}
@@ -215,7 +263,7 @@ const ProductDetailsModal = ({
                             <View className="justify-center ml-3">
                                 <Text className="text-xl" style={{ fontFamily: "roboto-medium" }}>{item.product_name}</Text>
                                 <Text className="text-primary text-xl" style={{ fontFamily: "maven-medium" }}>
-                                    K{price ?? item.product_price}
+                                    K{price ?? item.final_price}
                                 </Text>
                             </View>
                         </View>
@@ -302,22 +350,9 @@ const ProductDetailsModal = ({
                                 style={{ maxHeight: height * 0.3 }}
                                 showsHorizontalScrollIndicator={false}
                             >
-                                <View className="">
-                                    <Text className="mb-2 font-semibold text-2xl" style={{ fontFamily: "maven-medium" }}>
-                                        Extras
-                                    </Text>
-                                    <ExtraCheckbox
-                                        label="Chilli"
-                                        price={0}
-                                        checked={state.chiliOption}
-                                        onToggle={() =>
-                                            localDispatch({
-                                                type: ACTIONS.TOGGLE_CHILI,
-                                                payload: !state.chiliOption,
-                                            })
-                                        }
-                                    />
-                                </View>
+                                <Text className="mb-2 font-semibold text-2xl" style={{ fontFamily: "maven-medium" }}>
+                                    Extras
+                                </Text>
                                 {extras.map((extra) => (
                                     <ExtraCheckbox
                                         key={extra.extra_id}
@@ -327,7 +362,7 @@ const ProductDetailsModal = ({
                                         onToggle={() =>
                                             localDispatch({
                                                 type: ACTIONS.TOGGLE_EXTRA,
-                                                payload: extra.extra_name,
+                                                payload: extra.extra_id
                                             })
                                         }
                                     />
@@ -345,7 +380,9 @@ const ProductDetailsModal = ({
                     </ScrollView>
 
                     {/* Add to Cart */}
-                    <View className='absolute w-full px-4 bg-transparent bottom-2 justify-center items-center'>
+                    <View className=' w-full px-4 bg-transparent justify-center items-center'
+                        style={{marginBottom: 50}}
+                    >
                         {/* Total */}
                         <View className='w-full mb-2 bg-white'>
                             <Text className="text-2xl text-red" style={{ fontFamily: "ubuntu-bold" }}>
@@ -355,14 +392,14 @@ const ProductDetailsModal = ({
                         <View className='flex-row w-full justify-between items-center'>
                             <TouchableOpacity
                                 style={{
-                                    opacity: alreadyInCart || !isOpen || !isAvailable ? 0.7 : 1,
+                                    opacity: alreadyInCart || isClosed || !isAvailable ? 0.7 : 1,
                                     width: '100%'
                                 }}
-                                disabled={alreadyInCart || !isOpen || !isAvailable}
+                                disabled={alreadyInCart || isClosed || !isAvailable}
                                 onPress={handleAddToCart}
                                 className="bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
                             >
-                                {isOpen && isAvailable ? (
+                                {isClosed || isAvailable ? (
                                     <FontAwesome
                                         name="shopping-cart"
                                         size={20}
@@ -376,12 +413,11 @@ const ProductDetailsModal = ({
                                     style={{ fontFamily: "maven-medium" }}
                                 >
                                     {alreadyInCart
-                                    ? "Already In Cart" : !isOpen ? "Closed" : !isAvailable ? "Unavailable" : "Add To Cart"}
+                                    ? "Already In Cart" : isClosed ? "Closed" : !isAvailable ? "Unavailable" : "Add To Cart"}
                                 </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
-                </View>
                 {/* <TouchableWithoutFeedback/> */}
             </MotiView>
         </Modal>
@@ -398,6 +434,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width: '100%',
+        maxHeight: '93%',
         backgroundColor: 'white',
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,

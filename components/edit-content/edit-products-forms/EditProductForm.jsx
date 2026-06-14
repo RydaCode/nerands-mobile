@@ -1,18 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
-import BouncyCheckbox from 'react-native-bouncy-checkbox';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { useSelector } from 'react-redux';
 import LoadingIndicator from '../../../app/LoadingIndicator';
 import Redirecting from '../../../app/Redirecting';
 import DescriptionInput from '../../../components/FormFields/DescriptionInput';
 import MainHeader from '../../../components/MainHeader';
-import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
 import { PRODUCTS_IMAGE_URI } from '../../../RequestMethods';
-import CustomButton from '../../Buttons/CustomButton';
+import { toast } from '../../../utils/toast';
 import FormInputs from '../../FormFields/FormInputs';
 import CategoryPicker from './CategoryPicker';
 
@@ -22,14 +19,11 @@ const EditProductForm = ({
         product_image,
         product_name,
         product_description,
-        product_actual_price,
+        product_price,
         product_status,
         store_name,
         store_category,
         product_category,
-        product_colors,
-        product_sizes,
-        chili_option,
         product_extras_status,
         store_profileimage,
     }) => {
@@ -37,23 +31,14 @@ const EditProductForm = ({
     const router = useRouter();
 
     const [selectedcategory, setSelectedCategory] = useState(product_category);
-    const [chillieoption, setChillieOption] = useState(chili_option);
     const [productname, setProductName] = useState(product_name);
     const [productdescription, setProductDescription] = useState(product_description);
-    const [productactualprice, setProductActualPrice] = useState(product_actual_price);
+    const [productactualprice, setProductActualPrice] = useState(product_price);
     const capitalize = (str) => {
         if (typeof str !== 'string') return str;
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     };
 
-    const [productColorsText, setProductColorsText] = useState(
-    Array.isArray(product_colors)
-        ? product_colors.map(capitalize).join(', ') : (product_colors || '')
-    );
-    const [productSizesText, setProductSizesText] = useState(
-    Array.isArray(product_sizes)
-        ? product_sizes.map((s) => s.toUpperCase()).join(', ') : (product_sizes || '')
-    );
     const [errorMessage, setErrorMessage] = useState('');
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [formData, setFormData] = useState({
@@ -63,10 +48,7 @@ const EditProductForm = ({
         product_name: productname,
         product_category: selectedcategory,
         product_description: productdescription,
-        product_actual_price: productactualprice,
-        colors: productColorsText,
-        sizes: productSizesText, 
-        chili_option: chillieoption,
+        product_price: productactualprice,
     });
 
     const { data: response, patch, isLoading, error } = useApi(`/products/update/`, formData);
@@ -85,14 +67,8 @@ const EditProductForm = ({
             product_name: capitalize(productname),
             product_category: capitalize(selectedcategory),
             product_description: capitalize(productdescription),
-            product_actual_price: productactualprice,
-            colors: parseInput(productColorsText, capitalize),
-            sizes: parseInput(productSizesText, capitalize),
+            product_price: productactualprice,
         };
-
-        if (store_category === 'Restaurant') {
-            data.chili_option = chillieoption ?? false;
-        }
 
         setFormData(data);
     }, [
@@ -100,9 +76,6 @@ const EditProductForm = ({
         selectedcategory,
         productdescription,
         productactualprice,
-        productColorsText,
-        productSizesText,
-        chillieoption,
     ]);
 
     useEffect(() => {
@@ -110,62 +83,41 @@ const EditProductForm = ({
             setErrorMessage(response.message);
 
             if (!response.success) {
-                showToast('error', 'Update Failed', response.message, 'red');
+                toast.error(response.message || 'Update Failed');
             } else {
-                showToast('success', 'Update Successful', response.message, '#32CD32');
+                toast.success(response.message || 'Update Successful');
                 setIsRedirecting(true);
                 setTimeout(() => router.back(), 5000);
             }
         }
     }, [response]);
 
-    const showToast = (type, title, message, color) => {
-        Toast.show({
-            type,
-            text1: title,
-            text2: message,
-            visibilityTime: 4000,
-            animationType: 'slide',
-            position: 'bottom',
-            text1Style: {
-                color,
-                fontSize: 14,
-                fontFamily: 'roboto-bold',
-            },
-            text2Style: {
-                color,
-                fontSize: 11,
-                fontFamily: 'roboto-medium',
-            },
-        });
-    };
-
     const handleUpdateProduct = () => {
         setErrorMessage('');
 
         // Validation...
         if (!formData.product_name) {
-            return showToast('error', 'Validation Error', 'Product name cannot be empty!', 'red');
+            return toast.error('Product name cannot be empty!');
         }
 
         if (!formData.product_name) {
             setErrorMessage('Product name cannot be empty!');
-            return showToast('error', 'Response', 'Product name cannot be empty!', 'red');
+            return toast.error('Product name cannot be empty!');
         }
 
-        if (!formData.product_actual_price) {
+        if (!formData.product_price) {
             setErrorMessage('Price cannot be empty!');
-            return showToast('error', 'Response', 'Price cannot be empty!', 'red');
+            return toast.error('Price cannot be empty!');
         }
 
-        if (isNaN(formData.product_actual_price) || Number(formData.product_actual_price) <= 0) {
+        if (isNaN(formData.product_price) || Number(formData.product_price) <= 0) {
             setErrorMessage('Price must be a number greater than 0!');
-            return showToast('error', 'Response', 'Price must be a number greater than 0!', 'red');
+            return toast.error('Price must be a number greater than 0!');
         }
 
         if (!formData.product_description) {
             setErrorMessage('Description cannot be empty!');
-            return showToast('error', 'Response', 'Description cannot be empty!', 'red');
+            return toast.error('Description cannot be empty!');
         }
 
         const cleanedData = Object.fromEntries(
@@ -182,19 +134,19 @@ const EditProductForm = ({
 
     return (
         <>
-            <SafeAreaView className="flex-1 bg-white">
-                <View className="px-4 w-full">
-                    <MainHeader fontFamily="maven-medium" textStyles="text-2xl" header_name="Edit Product" />
+            <SafeAreaView className="flex-1 px-2 bg-white">
+                <View className="px-2 w-full">
+                    <MainHeader fontFamily="ubuntu-medium" textStyles="text-2xl" header_name="Edit Product" />
                 </View>
-                <View className="justify-center items-center px-4 w-full">
+                <View className="justify-center items-center w-full">
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Store Info */}
                         <View className="w-full flex-row items-center">
-                            <View style={{ height: 80, width: 80 }} className="rounded-full border-2 border-lavender">
-                                <Image className="h-full w-full rounded-full" source={{ uri: `${PRODUCTS_IMAGE_URI}${product_image}` }} />
+                            <View style={{ height: 70, width: 70 }} className="rounded-full border-2 border-lavender">
+                                <Image className="h-full w-full rounded-full border-2 border-white" source={{ uri: `${PRODUCTS_IMAGE_URI}${product_image}` }} />
                             </View>
                             <View className="w-[75%] ml-1">
-                                <Text className="text-xl" style={{ fontFamily: 'roboto-medium' }}>{product_name}</Text>
+                                <Text className="text-lg" style={{ fontFamily: 'roboto-medium' }}>{product_name}</Text>
                                 <Text className="text-sm text-slate" style={{ fontFamily: 'roboto-medium' }}>{product_category}</Text>
                             </View>
                         </View>
@@ -206,7 +158,7 @@ const EditProductForm = ({
                                 handleChangeText={setProductName}
                                 borderStyle="border border-lavender"
                             />
-                            <View className="my-5">
+                            <View className="mb-5">
                                 <Text className="text-black text-base mb-1" style={{ fontFamily: 'roboto-bold' }}>Product category</Text>
                                 <View className="rounded-md border border-lavender">
                                     <CategoryPicker
@@ -221,6 +173,7 @@ const EditProductForm = ({
                                 defaultValue={productactualprice}
                                 handleChangeText={setProductActualPrice}
                                 borderStyle="border border-lavender"
+                                keyboardType='numeric'
                             />
 
                             <DescriptionInput
@@ -231,66 +184,24 @@ const EditProductForm = ({
                                 lines={4}
                             />
 
-                            {/* Fashion Fields */}
-                            {store_category === 'Fashion' && (
-                                <>
-                                    <FormInputs
-                                        title="Product Colors"
-                                        defaultValue={productColorsText}
-                                        handleChangeText={setProductColorsText}
-                                        desc="Edit colors separated by commas"
-                                        borderStyle="border border-lavender"
-                                    />
-
-                                    <FormInputs
-                                        title="Product Sizes"
-                                        defaultValue={productSizesText}
-                                        handleChangeText={setProductSizesText}
-                                        desc="Edit sizes separated by commas"
-                                        borderStyle="border border-lavender"
-                                    />
-                                </>
-                            )}
-
-                            {/* Restaurant Extras */}
-                            {store_category === 'Restaurant' && (
-                                <>
-                                    {/* Chilli Option */}
-                                    <View className="w-full">
-                                        <Text className="text-gray-700 text-lg" style={{ fontFamily: 'maven-bold' }}>Chillie Option</Text>
-                                        <Text className="text-slate text-sm mb-4" style={{ fontFamily: 'roboto-medium' }}>
-                                            Enable / Deisable chilli selection for this item
-                                        </Text>
-                                        <BouncyCheckbox
-                                            isChecked={chillieoption}
-                                            onPress={() => setChillieOption(!chillieoption)}
-                                            text={chillieoption ? 'Available' : 'Not available'}
-                                            textStyle={{ textDecorationLine: 'none', color: COLORS.slate, marginLeft: -10, fontSize: 13 }}
-                                            size={20}
-                                            fillColor={COLORS.primary}
-                                            iconStyle={{ borderColor: COLORS.primary, borderRadius: 2 }}
-                                            innerIconStyle={{ borderWidth: 2, borderRadius: 2 }}
-                                        />
-                                    </View>
-                                </>
-                            )}
                             <View className="w-full justify-center items-center mt-4">
                                 <Text className={`text-sm ${response?.success ? 'text-green2' : 'text-red'} text-base`}>
                                     {response?.success ? 'Please wait...' : errorMessage}
                                 </Text>
                             </View>
-                            <CustomButton
-                                title={isLoading ? 'Please wait...' : 'Update'}
-                                handlePress={handleUpdateProduct}
-                                disabled={isLoading || isRedirecting}
-                                otherStyles="bg-primary p-4 mt-4"
-                                textStyles="text-2xl"
-                            />
                         </View>
-                        <View className="pb-20" />
+                        {/* <View className="pb-20" /> */}
                     </ScrollView>
+                    <TouchableOpacity
+                        onPress={handleUpdateProduct}
+                        disabled={isLoading || isRedirecting}
+                        className="w-full justify-center items-center bg-primary py-3 mb-8 elevation-sm rounded border border-white"
+                    >
+                        <Text className='text-2xl text-white' style={{fontFamily: 'maven-medium'}}>
+                            {isLoading ? 'Please wait...' : 'Update'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
-                <Toast />
                 {isRedirecting && <Redirecting title="Success" />}
             </SafeAreaView>
             {isLoading && <LoadingIndicator loading_text="Updating product..." />}

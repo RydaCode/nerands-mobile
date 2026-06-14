@@ -7,6 +7,7 @@ import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
 import { STORES_IMAGE_URI } from "../../RequestMethods";
 import { calculateDistance } from "../../utils/getDistance";
+import { isStoreOpen } from "../../utils/isStoreOpen";
 
 const MainContent = ({
   store_id,
@@ -22,7 +23,9 @@ const MainContent = ({
   store_location,
   average_rating,
   total_ratings,
-  favorited
+  favorited,
+  open_time,
+  closing_time
 }) => {
   // Get screen width and height using useWindowDimensions
   const { width, height } = Dimensions.get("window");
@@ -63,8 +66,6 @@ const MainContent = ({
   const pointA = { latitude: user_latitude, longitude: user_longitude }; // User
   const pointB = { latitude: latitude, longitude: longitude }; //Store
 
-
-
   // -------- 1️⃣ Average rating stars (half stars allowed) --------
   const renderAverageStars = (avgRating) => {
     const stars = [];
@@ -100,6 +101,10 @@ const MainContent = ({
     return stars;
   };
 
+  const isManuallyClosed = open_close === false;
+  const isTimeClosed = !isStoreOpen(open_time, closing_time);
+  const isClosed = isManuallyClosed || isTimeClosed;
+
   return (
     <MotiView
         from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
@@ -125,7 +130,9 @@ const MainContent = ({
             store_category: store_category,
             average_rating: average_rating,
             total_ratings: total_ratings,
-            favorited: favorited
+            favorited: favorited,
+            open_time: open_time,
+            closing_time: closing_time
           },
         })
       }
@@ -146,7 +153,7 @@ const MainContent = ({
             className="w-full h-full"
             source={{ uri: `${STORES_IMAGE_URI}${store_coverimage}` }}
           />
-          {!open_close && (
+          {isClosed &&
             <View className="absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50">
               <MaterialCommunityIcons
                 name="lock"
@@ -160,7 +167,7 @@ const MainContent = ({
                 Closed
               </Text>
             </View>
-          )}
+          }
 
           <View className="left-2 absolute bg-white px-1 py-1 top-2 rounded-sm elevation-lg">
             <Text

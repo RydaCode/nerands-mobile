@@ -1,199 +1,100 @@
-import { Fontisto, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
-import MainHeader from '../../../components/MainHeader';
-import { COLORS } from '../../../constants/constants';
-import useApi from '../../../hook/useApi';
-import LocalMarketCard from './LocalMarketCard';
+import { FontAwesome } from '@expo/vector-icons'
+import { useEffect } from 'react'
+import { ActivityIndicator, FlatList, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSelector } from 'react-redux'
+import MainHeader from '../../../components/MainHeader'
+import { COLORS } from '../../../constants/constants'
+import useApi from '../../../hook/useApi'
+import StoresCard from './cards/StoresCard'
 
-const index = ({category='Localmarket'}) => {
-    const router = useRouter();
-    const { width } = useWindowDimensions();
+const Index = () => {
     const { user_id  } = useSelector((state) => state.auth);
-    
-    const [productsList, setProductsList] = useState([]);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const {data, isLoading, error, get} = useApi(
+        `/stores/category?cat_name=local_market&user_id=${user_id || ''}`
+    );
 
-    const loadingMoreRef = useRef(false);
-    const { data, isLoading, error, get } = useApi(null);
-    
-    // Global refreshKey to trigger child refresh
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [refreshing, setRefreshing] = useState(false);
-        
-    // Window width for dynamic columns
-    const numColumns = width > 600 ? 3 : 2;
-    
-    /* ------------------ INITIAL FETCH / REFRESH ------------------ */
-    const fetchInitialProducts = async (user_id) => {
-        setIsRefreshing(true);
-        loadingMoreRef.current = false;
-        setPage(1);
-    
-        try {
-                // Optional parameters
-            const catParam = category ? `&store_category=${encodeURIComponent(category)}` : '';
-            const userParam = user_id ? `&user_id=${encodeURIComponent(user_id)}` : '';
-    
-            // Construct URL dynamically
-            const url = `/products/local?page=1&limit=10${catParam}${userParam}`;
-    
-            const res = await get(url);
-            const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
-    
-            setProductsList(newData);
-            setPage(1);
-            setHasMore(res?.data?.pagination?.page < res?.data?.pagination?.pages);
-        } catch (err) {
-            console.warn('Failed to fetch initial products:', err);
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
-    
     useEffect(() => {
-        fetchInitialProducts(user_id);
-    }, [refreshKey, category, user_id]);
-    
-    const onRefresh = async () => {
-        await fetchInitialProducts(user_id);
-    };
-    
-    /* ------------------ FETCH MORE PRODUCTS / PAGINATION ------------------ */
-    const fetchMoreProducts = async () => {
-        if (loadingMoreRef.current || !hasMore || isRefreshing) return;
-    
-        loadingMoreRef.current = true;
-        setIsLoadingMore(true);
-    
-        try {
-            const nextPage = page + 1;
-            // Exclude already fetched products
-            const excludeIds = productsList.map((p) => p.product_id);
-            const excludeParam = excludeIds.length > 0 ? `&excludeIds=${excludeIds.join(',')}` : '';
-    
-            // Optional parameters
-            const catParam = category ? `&store_category=${encodeURIComponent(category)}` : '';
-            const userParam = user_id ? `&user_id=${encodeURIComponent(user_id)}` : '';
-    
-            // Build URL dynamically
-            const url = `/products/local?page=${nextPage}&limit=10${catParam}${excludeParam}${userParam}`;
-    
-            const res = await get(url);
-            const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
-    
-            // Append new products to the list
-            setProductsList((prev) => [...prev, ...newData]);
-            setPage(nextPage);
-            setHasMore(res?.data?.pagination?.page < res?.data?.pagination?.pages);
-    
-        } catch (err) {
-            console.warn('Failed to fetch more products:', err);
-        } finally {
-            setIsLoadingMore(false);
-            loadingMoreRef.current = false;
-        }
-    };
+        get()
+    }, []);
+
     return (
-        <SafeAreaView className='flex-1 bg-white justify-center w-full items-center'>
+        <SafeAreaView className='flex-1 px-2 bg-white w-full items-center'>
             <View className='px-2'>
                 <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Local Market'/>
             </View>
-            
-            {/* Render */}
-            <View className='bg-grey_bg flex-1 px-2'>
-                <FlatList
-                    data={productsList}
-                    keyExtractor={(item) => item.product_id.toString()}
-                    numColumns={numColumns}
-                    renderItem={({ item }) => {
-                        const productImages = Array.isArray(item.product_images) ? item.product_images : [];
-                        const firstImage = productImages.length > 0
-                        ? productImages[0]
-                        : 'https://yourapp.com/placeholder.png';
 
-                        return (
-                            <LocalMarketCard
-                                product_id={item.product_id}
-                                product_images={productImages}
-                                product_image={firstImage}
-                                product_name={item.product_name}
-                                product_description={item.product_description}
-                                product_actual_price={item.product_actual_price}
-                                product_price={item.product_price}
-                                product_status={item.product_status}
-                                store_name={item.store_name}
-                                store_id={item.store_id}
-                                store_phone_num={item.store_phone_num}
-                                store_category={item.store_category}
-                                product_category={item.product_category}
-                                product_colors={item.colors}
-                                product_sizes={item.sizes}
-                                store_profileimage={item.store_profileimage}
-                                store_location={item.store_location}
-                                store_latitude={item.latitude}
-                                store_longitude={item.longitude}
-                                store_coverimage={item.store_coverimage}
-                                store_description={item.store_description}
-                                open_close={item.open_close}
-                                average_rating={item.average_rating}
-                                total_ratings={item.total_ratings}
-                                favorited={item.favorited}
-                            />
-                        );
-                    }}
-                    ListEmptyComponent={
-                        !isRefreshing && (
-                            <View
-                                style={{ flex: 1, width: '100%' }} className="justify-center items-center"
-                            >
-                                <Fontisto name="shopping-bag-1" size={50} color={COLORS.primary} />
-                                <Text
-                                    className="text-xl mt-2" style={{ fontFamily: 'roboto-medium' }}
-                                >
-                                    Unable To Load Products
-                                </Text>
-
-                                <TouchableOpacity
-                                    style={{ width: '70%' }}
-                                    className="flex-row bg-primary py-3 rounded-md justify-center items-center mt-4"
-                                    onPress={onRefresh}
-                                >
-                                    <MaterialCommunityIcons name="reload" size={23} color="white" />
-                                    <Text
-                                        className="text-white text-lg ml-1" style={{ fontFamily: 'roboto-medium' }}
-                                    >
-                                        Reload
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )
-                    }
-                    refreshing={isRefreshing}
-                    onRefresh={onRefresh}
-                    onEndReached={fetchMoreProducts}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={
-                        isLoadingMore
-                        ? <ActivityIndicator size={35} color={COLORS.primary} />
-                        : <View style={{ height: 20 }} />
-                    }
-                    columnWrapperStyle={{ justifyContent: 'space-between', paddingTop: 20 }}
-                    contentContainerStyle={{ paddingBottom: 40, flexGrow: 1, }}
-                    showsVerticalScrollIndicator={false}
-                    initialNumToRender={10}
-                    windowSize={7}
-                    removeClippedSubviews
-                />
+            <View
+                className='justify-center items-center w-full h-full'
+            >
+                {(isLoading || data?.length === 0) ? (
+                    <View>
+                        <ActivityIndicator size={35} color={COLORS.primary}/>
+                        <Text
+                            className='text-lg mt-4'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            Loading stores, please wait...
+                        </Text>
+                    </View>
+                ) : data?.stores?.length === 0 ? (
+                    <View className='justify-center items-center'>
+                        <FontAwesome name='search' size={36} color={COLORS.slate}/>
+                        <Text
+                            className='text-xl mt-4'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            No stores found.
+                        </Text>
+                        <Text
+                            className='text-base mt-4 text-slate'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            There are no listings yet in the local market category.
+                        </Text>
+                    </View>
+                ) : error ? (
+                    <View className='justify-center items-center'>
+                        <FontAwesome name='exclamation-triangle' size={36} color={COLORS.red}/>
+                        <Text
+                            className='text-xl mt-4'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            Error occurred.
+                        </Text>
+                        <Text
+                            className='text-base mt-4 text-slate'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >
+                            There was an error fetching the stores. Please try again later.
+                        </Text>
+                    </View>
+                ) : data?.stores.length > 0 ? (
+                    <View className='w-full flex-1 mt-8'>
+                        <FlatList
+                            data={data?.stores || []} // Required, but empty because actual content is in ListHeaderComponent
+                            keyExtractor={(item) => item.store_id.toString()}
+                            renderItem={({item}) => (
+                                <StoresCard
+                                    item={item}
+                                />
+                            )}
+                            // refreshControl={
+                            //     <RefreshControl
+                            //         refreshing={refreshing}
+                            //         onRefresh={onRefresh}
+                            //         colors={[COLORS.primary]}
+                            //         tintColor={COLORS.primary}
+                            //     />
+                            // }
+                            
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </View>
+                ) : null}
             </View>
         </SafeAreaView>
     )
 }
 
-export default index
+export default Index

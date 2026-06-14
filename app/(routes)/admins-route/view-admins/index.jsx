@@ -17,8 +17,6 @@ const index = () => {
     
     const { data, isLoading, error, get, } = useApi(`/stores/admins/${store_id}`);
 
-    console.log(data)
-
     useEffect(() => {
         if (store_id) {
             get(); // Fetch stores

@@ -1,14 +1,13 @@
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-import CustomButton from '../../../../components/Buttons/CustomButton';
 import DescriptionInput from '../../../../components/FormFields/DescriptionInput';
 import FormInputs from '../../../../components/FormFields/FormInputs';
 import MainHeader from '../../../../components/MainHeader';
 import useApi from '../../../../hook/useApi';
+import { toast } from '../../../../utils/toast';
 import LoadingIndicator from '../../../LoadingIndicator';
 import Redirecting from '../../../Redirecting';
 
@@ -24,6 +23,7 @@ const CATEGORY_OPTIONS = {
     Electronics: ['Phones', 'Sound systems', 'Tv'],
     Cosmetics: ['Lotions', 'Bathing soaps', 'Creams', 'Nails', 'Body wash', 'Scrub'],
     Liquor: ['Wisky', 'Gin', 'Spirits', 'Wine', 'Lagar', 'Brandy', 'Ram', 'Cyders'],
+    local_market: ['local_market'], // fallback
     Grocery: ['Groceries'], // fallback
 };
 
@@ -31,7 +31,7 @@ const CATEGORY_OPTIONS = {
 const FIELD_LIST = [
     { label: 'Product Name', key: 'product_name' },
     { label: 'Product Category', key: 'product_category', type: 'picker' },
-    { label: 'Product Price', key: 'product_actual_price', type: 'textarea' },
+    { label: 'Product Price', key: 'product_price', type: 'textarea' },
     { label: 'Product Description', key: 'product_description', type: 'textarea' },
     { label: 'Product Colors', key: 'product_colors', type: 'multiselect' },
     { label: 'Product Sizes', key: 'product_sizes', type: 'multiselect' },
@@ -47,15 +47,6 @@ const EditProductField = () => {
     
     let initialValue = params.product_value || '';
     const fieldLabelParam = params.product_label;
-
-    // Parse JSON if editing colors or sizes
-    if (fieldLabelParam?.toLowerCase().includes('color') || fieldLabelParam?.toLowerCase().includes('size')) {
-        try {
-            initialValue = JSON.parse(params.product_value);
-        } catch {
-            initialValue = [];
-        }
-    }
   
     const field = FIELD_LIST.find(f => f.label.toLowerCase() === fieldLabelParam?.toLowerCase());
     const fieldType = field?.type || 'text';
@@ -71,28 +62,15 @@ const EditProductField = () => {
     useEffect(() => {
         if (response?.message) {
             if (!response.success) {
-                showToast('error', 'Update Failed', response.message, 'red');
+                toast.error(response.message || 'Update Failed');
                 setErrorMessage(response.message);
             } else {
-                showToast('success', 'Update Successful', response.message, '#32CD32');
+                toast.success(response.message || 'Update Successful');
                 setIsRedirecting(true);
                 setTimeout(() => router.back(), 3000);
             }
         }
     }, [response]);
-
-    const showToast = (type, title, message, color) => {
-        Toast.show({
-            type,
-            text1: title,
-            text2: message,
-            position: 'bottom',
-            visibilityTime: 3000,
-            animationType: 'slide',
-            text1Style: { fontSize: 14, fontFamily: 'roboto-bold', color },
-            text2Style: { fontSize: 11, fontFamily: 'roboto-medium', color },
-        });
-    };
 
     const handleSubmit = async () => {
         if (!value) {
@@ -102,12 +80,8 @@ const EditProductField = () => {
 
         let cleanedValue = value;
 
-        if (fieldKey === 'product_actual_price') {
+        if (fieldKey === 'product_price') {
             // Remove any non-digit or decimal characters (e.g. "K10,000" → "10000")
-            cleanedValue = value.replace(/[^\d.]/g, '');
-        }
-
-        if (fieldKey === 'product_actual_price') {
             cleanedValue = value.replace(/[^\d.]/g, '');
         }
 
@@ -142,7 +116,6 @@ const EditProductField = () => {
         const options = CATEGORY_OPTIONS[storeCategory] || CATEGORY_OPTIONS['Grocery'];
             return (
                 <View style={styles.fieldWrapper}>
-                    <Text style={styles.label}>{fieldLabel}</Text>
                     <Text style={styles.desc}>Please select the product category.</Text>
                     <View style={styles.pickerContainer}>
                         <Picker
@@ -161,23 +134,6 @@ const EditProductField = () => {
             );
         }
 
-        if (fieldType === 'multiselect') {
-            return (
-                <View style={styles.fieldWrapper}>
-                    <Text style={styles.label}>{fieldLabel}</Text>
-                    <Text style={styles.desc}>Tap to remove or add more items manually.</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                        {value.map((item, idx) => (
-                        <View key={idx} style={{ backgroundColor: '#E5E5F0', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, marginRight: 6, marginBottom: 6 }}>
-                            <Text style={{ fontFamily: 'roboto-medium' }}>{item}</Text>
-                        </View>
-                        ))}
-                    </View>
-                    {/* Optional: Add a TextInput here to add more items dynamically */}
-                </View>
-            );
-        }
-
         // Default: simple text input
         return (
             <FormInputs
@@ -190,13 +146,13 @@ const EditProductField = () => {
     };
 
     return (
-        <SafeAreaView className="flex-1 justify-center bg-white items-center">
-            <View className="w-full px-4">
-                <MainHeader fontFamily="maven-bold" header_name={`Edit ${fieldLabel}`} />
+        <SafeAreaView className="flex-1 px-4 justify-center bg-white items-center">
+            <View className="w-full">
+                <MainHeader fontFamily="ubuntu-medium" textStyles='text-2xl' header_name='Edit Product' />
             </View>
 
-            <View className="flex-1 justify-center w-full px-4 my-10">
-                <Text className="text-lg" style={{ fontFamily: 'maven-bold' }}>{fieldLabel}</Text>
+            <View className="flex-1 justify-center w-full my-10">
+                <Text className="text-lg font-semibold" style={{ fontFamily: 'roboto-medium', marginBottom: -15 }}>{fieldLabel}</Text>
                 {renderInputField()}
 
                 {errorMessage && (
@@ -205,15 +161,16 @@ const EditProductField = () => {
                     </Text>
                 )}
 
-                <CustomButton
-                    title={isLoading ? 'Updating...' : 'Update'}
-                    handlePress={handleSubmit}
-                    disabled={isLoading}
-                    otherStyles={`bg-primary p-4 mt-4 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
-                    textStyles="text-lg"
-                />
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={isLoading || isRedirecting}
+                    className="w-full justify-center items-center bg-primary py-3 mb-8 elevation-sm rounded border border-white"
+                >
+                    <Text className='text-2xl text-white' style={{fontFamily: 'maven-medium'}}>
+                        {isLoading ? 'Please wait...' : 'Update'}
+                    </Text>
+                </TouchableOpacity>
             </View>
-            <Toast />
             {isLoading && <LoadingIndicator loading_text="Updating..." />}
             {isRedirecting && <Redirecting redirect_text="Please wait..." />}
         </SafeAreaView>
@@ -244,7 +201,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
     },
     picker: {
-        height: 48,
+        height: 50,
         width: '100%',
     },
     pickerItem: {

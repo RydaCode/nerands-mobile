@@ -1,13 +1,14 @@
-import { Entypo, EvilIcons, FontAwesome, FontAwesome5, FontAwesome6, MaterialIcons, SimpleLineIcons } from '@expo/vector-icons'
+import { Entypo, FontAwesome, FontAwesome5, FontAwesome6, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { STORES_IMAGE_URI } from '../../../RequestMethods'
 import AdminStoreSingleCard from '../../../components/admin-store-single/cards/AdminStoreSingleCard'
 import DeleteSelectedProductsOthers from '../../../components/delete-content/delete-store-others/DeleteSelectedProductsOthers'
 import PublishStoreOthers from '../../../components/publish-content/publish-store/PublishStoreOthers'
 import { COLORS, SIZES } from '../../../constants/constants'
 import useApi from '../../../hook/useApi'
+import { toast } from '../../../utils/toast'
 
 const AdminStoreSingle = ({
     store_id,
@@ -53,9 +54,13 @@ const AdminStoreSingle = ({
     const [deleteSelectedProductsmodalVisible, setDeleteSelectedProductsModalVisible] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
 
-    const { data: orderdata, isLoading: isLoadingOrder, error: errororder, get: getOrders } = useApi(`/orders/adminorders/${store_id}`);
+    const { data: orderdata, isLoading: isLoadingOrder, error: errororder, get: getOrders } = useApi(
+        `/orders/adminorders/${store_id}?order_status=pending`
+    );
 
-    const { data, isLoading, error, get: getProducts } = useApi(`/products/admin/store?store_id=${store_id}&page=1&limit=10`);
+    const { data, isLoading, error, get: getProducts } = useApi(
+        `/products/admin/store?store_id=${store_id}&page=1&limit=10`
+    );
 
     const {data: storereviews, isLoading: reviewsLoading, error: reviewsError, get: reviewsGet } = useApi(
         `/stores/${store_id}/reviews/`
@@ -96,7 +101,55 @@ const AdminStoreSingle = ({
                 ? prevSelectedItems.filter((id) => id !== product_id) // Remove if already selected
                 : [...prevSelectedItems, product_id] // Add if not selected
         );
-    };  
+    };
+
+    const goToStoreSettings = () => {
+        router.push({
+            pathname: '/(routes)/edit-stores/stores-settings-others',
+            params: {
+                active_status,
+                city_town,
+                closing_time,
+                created_date,
+                delivery_status,
+                store_latitude,
+                store_longitude,
+                open_close,
+                open_time,
+                store_category,
+                store_country,
+                store_coverimage,
+                store_description,
+                store_email,
+                store_id,
+                store_location,
+                store_name,
+                store_phone_num,
+                store_profileimage,
+                store_province,
+                store_ratings,
+                user_id,
+                router
+            }
+        });
+    };
+
+    const DeleteMessage = () => {
+        toast.error('Select one or more products to delete.');
+    }
+
+    const formatReviews = (count) => {
+        if (!count) return 0;
+
+        if (count >= 1_000_000) {
+            return (count / 1_000_000).toFixed(1).replace('.0', '') + 'M';
+        }
+
+        if (count >= 1000) {
+            return (count / 1000).toFixed(1).replace('.0', '') + 'K';
+        }
+        return count;
+    }
 
     return (
         <>
@@ -182,17 +235,25 @@ const AdminStoreSingle = ({
         <View className=''>
             <View>
                 <View className='w-full justify-center items-center relative'>
-                    
-                    {/*  } */}
-                    <View className='pb-10 mt-4 relative w-full flex-row flex-wrap items-center justify-between'
-                        animation='slideInRight'
-                        iterationCount={1}
-                    >
+                    {isLoading ? (
+                        <View className='w-full h-full justify-center items-center'>
+                            <ActivityIndicator size={40} color={COLORS.primary}/>
+                            <Text className='text-base text-slate mt-4' style={{fontFamily: 'roboto-medium'}}>
+                                Loading products from {store_name}
+                            </Text>
+                        </View>
+                    ) : error ? (
+                        <View className='w-full h-full justify-center items-center'>
+                            <Text className='text-base text-red' style={{fontFamily: 'roboto-medium'}}>
+                                An error occured, please restart the app. 
+                            </Text>
+                        </View>
+                    ) : (
+
+                    <View className='pb-10 relative w-full flex-row flex-wrap items-center justify-between'>
                         <FlatList
                             data={productsList}
                             renderItem={({ item }) => {
-                                const productSizes = Array.isArray(item.sizes) ? item.sizes : [];
-                                const productColors = Array.isArray(item.colors) ? item.colors : [];
                                 const productImages = Array.isArray(item.product_images) ? item.product_images : [];
                                 const firstImage = productImages.length > 0 ? `${productImages[0]}` : null;
                                 return (
@@ -203,15 +264,12 @@ const AdminStoreSingle = ({
                                         product_images={productImages}
                                         product_name={item.product_name}
                                         product_description={item.product_description}
-                                        product_actual_price={item.product_actual_price}
+                                        product_price={item.product_price}
                                         product_status={item.product_status}
                                         store_name={store_name}
                                         store_id={item.store_id}
                                         store_category={item.store_category}
                                         product_category={item.product_category}
-                                        product_colors={productColors}
-                                        product_sizes={productSizes}
-                                        chili_option={item.chili_option}
                                         product_extras_status={item.product_extras_status}
                                         store_profileimage={store_profileimage}
                                         handleCheckboxChange={handleCheckboxChange}
@@ -220,6 +278,8 @@ const AdminStoreSingle = ({
                                         active_status={active_status}
                                         is_available={item.is_available}
                                         variant_groups={item.variant_groups}
+                                        markup_percent={item.markup_percent}
+                                        final_price={item.final_price}
                                     />
                                 );
                             }}
@@ -250,55 +310,61 @@ const AdminStoreSingle = ({
                                                     <Text style={{fontFamily: 'roboto-medium'}} className='ml-1, text-sm text-slate'>{store_category}</Text>
                                                 </View>
                                             </View>
-                                            {dropdownmenu === false ?
-                                                <TouchableOpacity
-                                                    onPress={() => setDropdownMenu(true)}
-                                                    className='bg-grey_bg w-12 h-12 border-2 border-lavender rounded-full items-center justify-center'>
-                                                    <View className='w-full h-full border-2 border-white justify-center items-center rounded-full'>
-                                                        <Entypo name="menu" size={25} color={COLORS.black} />
-                                                    </View>
-                                                </TouchableOpacity> :
-                                                <TouchableOpacity
-                                                    onPress={() => setDropdownMenu(false)}
-                                                    className='bg-grey_bg w-12 h-12 border-2 border-lavender rounded-full items-center justify-center'>
-                                                    <View className='w-full h-full border-2 border-white justify-center items-center rounded-full'>
-                                                        <Entypo name="menu" size={25} color={COLORS.black} />
-                                                    </View>
-                                                </TouchableOpacity>
-                                            }
+                                            <TouchableOpacity
+                                                onPress={goToStoreSettings}
+                                                className='bg-[#DFF6E6] w-12 h-12 border border-lavender rounded-full items-center justify-center'>
+                                                <View className='w-full h-full border-2 border-white justify-center items-center rounded-full'>
+                                                    <Entypo name="menu" size={25} color={COLORS.green2} />
+                                                </View>
+                                            </TouchableOpacity>
                                         </View>
                                         <View className='w-full'>
                                             <Text className='mt-1 text-sm'>{store_description}</Text>
                                         </View>
                                     </View>
-                                    <View
-                                        className='flex-row w-full justify-between items-center mt-10'>
-                                        <TouchableOpacity className='justify-center items-center'>
+                                    <View className='flex-row w-full justify-between items-center mt-10 mb-4'>
+                                        <TouchableOpacity className='justify-center items-center rounded py-1 border border-lavender' style={{width: '23.5%'}}>
                                             <View className='flex-row justify-center items-center'>
-                                                <MaterialIcons name="star" size={15} />
-                                                <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}> {reviews?.stats?.average_rating}({reviews?.stats?.total_reviews})</Text>
+                                                <MaterialIcons name="star" size={15} color={COLORS.primary} />
+                                                <Text className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}> {reviews?.stats?.average_rating} ({formatReviews(reviews?.stats?.total_reviews)})</Text>
                                             </View>
-                                            <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Ratings</Text>
+                                            <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Ratings</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity className='justify-center items-center'>
-                                            <EvilIcons name="location" size={24} />
-                                            <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Location</Text>
+                                        <TouchableOpacity className='justify-center items-center rounded py-1 border border-lavender' style={{width: '23.5%'}}>
+                                            <FontAwesome6 name="location-dot"  size={16} color={COLORS.green1} />
+                                            <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Location</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity className='justify-center items-center'>
+                                        <TouchableOpacity className='justify-center items-center rounded py-1 border border-lavender' style={{width: '23.5%'}}>
                                             <View className='flex-row justify-center items-center'>
-                                                <SimpleLineIcons name="user-follow" size={15} />
-                                                <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>(100K)</Text>
+                                                <MaterialCommunityIcons
+                                                    name={"cards-heart-outline"}
+                                                    // name={!favorited ? "cards-heart-outline" : "cards-heart"}
+                                                    size={15}
+                                                    color={COLORS.primary}
+                                                />
+                                                <Text className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}> (100K)</Text>
                                             </View>
-                                            <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Followers</Text>
+                                            <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Followers</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity className='items-center rounded py-1 border border-lavender' style={{width: '23.5%'}}>
+                                            <View className='flex-row justify-center items-center'>
+                                                <View className='flex-row justify-center items-center'>
+                                                    <FontAwesome name="comments" size={15} color={COLORS.primary}/>
+                                                    <Text className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>
+                                                        {' '}({formatReviews(reviews?.stats?.total_reviews)})
+                                                    </Text>
+                                                </View>
+                                                <Text className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}></Text>
+                                            </View>
+                                            <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
                                         </TouchableOpacity>
                                     </View>
                                     
-                                    {/* {dropdownmenu === false ? <></> : */}
                                     <View className='mt-6 w-full flex-row justify-between items-center'
                                         duration={1000}  //1 second
                                         easing="ease-in-out"  //Easing for smoother animation
                                     >
-                                        <TouchableOpacity className='flex-row justify-center  rounded-md border border-lavender items-center py-3 bg-grey_bg relative'
+                                        <TouchableOpacity className='flex-row justify-center  rounded border border-white items-center elevation-sm py-3 bg-purple-600 relative'
                                             style={{width: '29%'}}
                                             onPress={() => router.push({pathname: '/(routes)/admin-orders/main-orders/', params: {
                                                 store_id: store_id,
@@ -312,6 +378,7 @@ const AdminStoreSingle = ({
                                                 city_town: city_town,
                                                 store_description: store_description,
                                                 store_location: store_location,
+                                                store_latitude: store_latitude,
                                                 store_longitude: store_longitude,
                                                 open_time: open_time,
                                                 closing_time: closing_time,
@@ -324,72 +391,54 @@ const AdminStoreSingle = ({
                                                 delivery_status: delivery_status
                                             }})}
                                         >
-                                            <Entypo name='box' size={14} />
-                                            <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-black ml-1' >Orders</Text>
+                                            <Entypo name='box' size={14} color='white' />
+                                            <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white ml-1' >Orders</Text>
                                             <View className='rounded-full bg-red border-2 justify-center items-center border-white absolute' style={{height: 28, width: 28, right: -2, top: -12}}>
-                                                <Text className='text-sm text-white'>{orderdata?.count || 0}</Text>
+                                                <Text className='text-base text-white'>{orderdata?.data?.length || 0}</Text>
                                             </View>
                                         </TouchableOpacity>
-                                        <TouchableOpacity className='flex-row justify-center border  rounded-md border-lavender items-center py-3 bg-grey_bg'
+                                        <TouchableOpacity className='flex-row justify-center border rounded border-white elevation-sm items-center py-3 bg-green2'
                                             style={{width: '29%'}}
-                                            onPress={() => router.push({pathname: '/(routes)/edit-stores/stores-settings-others/', params: {
-                                                active_status: active_status,
-                                                city_town: city_town,
-                                                closing_time: closing_time,
-                                                created_date: created_date,
-                                                delivery_status: delivery_status,
-                                                store_latitude: store_latitude,
-                                                location: location,
-                                                store_longitude: store_longitude,
-                                                open_close: open_close,
-                                                open_time: open_time,
-                                                store_category: store_category,
-                                                store_country: store_country,
-                                                store_coverimage: store_coverimage,
-                                                store_description: store_description,
-                                                store_email: store_email,
-                                                store_id: store_id,
-                                                store_location: store_location,
-                                                store_name: store_name,
-                                                store_phone_num: store_phone_num,
-                                                store_profileimage: store_profileimage,
-                                                store_province: store_province,
-                                                store_ratings: store_ratings,
-                                                user_id: user_id,
-                                                router: router
-                                            }})}
+                                            onPress={goToStoreSettings}
                                         >
-                                            <FontAwesome name='gear' size={14} />
-                                            <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-black ml-1' >Dashboard</Text>
+                                            <FontAwesome name='gear' size={14} color='white' />
+                                            <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white ml-1' >Dashboard</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity className='flex-row justify-center rounded-md border border-lavender items-center py-3 bg-red'
-                                            style={{width: '38%'}}
-                                            onPress={() => setDeleteSelectedProductsModalVisible(true)}
+                                        <TouchableOpacity className='flex-row justify-center rounded border border-white elevation-sm items-center py-3 bg-red'
+                                            style={{ width: '38%' }}
+                                            // disabled={selectedItems.length === 0}
+                                            onPress={() => 
+                                                selectedItems.length === 0 ? DeleteMessage() :
+                                                setDeleteSelectedProductsModalVisible(true)
+                                            }
                                         >
                                             <FontAwesome5 name='trash' color={COLORS.white} size={14} />
                                             <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white ml-1' >Delete Selected</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
-
-                                // <View>
-                                //     <Categories />
-                                //     <TopRatedStores />
-                                //     <View className='mb-4 mt-10 mx-2'>
-                                //         <Text style={{fontFamily: 'maven-bold'}} className='text-xl'>All Stores</Text>
-                                //     </View>
-                                // </View>
                             )}
 
-                            // ListEmptyComponent={() => (
-                            //     <EmptyState
-                            //         title='Items founds'
-                            //         subtitle='Create store'
-                            //     />
-                            // )}
+                            ListEmptyComponent={() => (
+                                <View className="justify-center items-center" style={{marginTop: 100}}>
+                                    <Text className='text-base' style={{ fontFamily: 'roboto-medium'}}>
+                                        You haven't posted any products yet.
+                                    </Text>
+                                    <Text className='text-slate text-sm' style={{ fontFamily: 'roboto-medium'}}>Go to the dashboad and post new products</Text>
+
+                                    <TouchableOpacity
+                                        style={{width: '55%'}}
+                                        className='bg-primary justify-center items-center mt-4 py-3 rounded elevation-sm border border-white'
+                                        onPress={goToStoreSettings}
+                                    >
+                                        <Text className='text-white text-lg' style={{ fontFamily: 'outfit-medium'}}>Dashboard</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                             showsVerticalScrollIndicator={false}
                         />
                     </View>
+                    )}
                 </View>
             </View>
         </View>

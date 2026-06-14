@@ -6,7 +6,14 @@ import {
 } from "react-native";
 import { COLORS } from "../../../constants/constants";
 
-const ProductModal = ({openModal, setOpenModal}) => {
+const ProductModal = ({
+    openModal,
+    setOpenModal,
+    item_name,
+    estimatedPrice,
+    qty,
+    productNotes
+}) => {
     const { width, height } = useWindowDimensions();
     const [activeTab, setActiveTab] = useState('description');
 
@@ -15,7 +22,7 @@ const ProductModal = ({openModal, setOpenModal}) => {
     const imageDimensions = useMemo(() =>
         isLandscape
             ? { width: "35%", height: 170, marginRight: 10 }
-            : { width: width * 0.25, height: height * 0.09 },
+            : { width: width * 0.21, height: height * 0.08 },
         [isLandscape, width, height],
     );
 
@@ -36,7 +43,7 @@ const ProductModal = ({openModal, setOpenModal}) => {
                 exit={{ opacity: 0 }}
                 style={styles.overlay}
             >
-                <Pressable className="flex-1 inset-0 top-0 bottom-0 left-0 right-0 bg-transparentBlack"
+                <Pressable className="flex-1 inset-0 top-0 bottom-0 left-0 right-0"
                     onPress={() => setOpenModal(false)}
                 />
             </MotiView>
@@ -49,7 +56,7 @@ const ProductModal = ({openModal, setOpenModal}) => {
             >
             {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
                 <View
-                    className="w-full pb-20 relative"
+                    className="w-full pb-12 relative"
                     style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
                 >
                     <TouchableOpacity
@@ -68,7 +75,7 @@ const ProductModal = ({openModal, setOpenModal}) => {
                         <View className='bg-lavender' style={{height: 0.5,}}/>
                     </View>
                     <ScrollView
-                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, paddingBottom: 40, backgroundColor: 'transparent' }}
+                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, marginBottom: 60, backgroundColor: 'transparent' }}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Product Info */}
@@ -81,18 +88,21 @@ const ProductModal = ({openModal, setOpenModal}) => {
                                 /> */}
 
                                 <View className='border border-lavender bg-grey_bg rounded justify-center items-center w-full h-full'>
-                                    <Entypo name='box' size={35} color={COLORS.slate}/>
+                                    <Entypo name='box' size={30} color={COLORS.slate}/>
                                 </View>
                             </View>
                             <View className="justify-center ml-3">
-                                <Text className="text-xl" style={{ fontFamily: "roboto-medium" }}>Bag</Text>
-                                <Text className="text-primary text-xl" style={{ fontFamily: "maven-medium" }}>
-                                    K20
+                                <Text className="text-base" style={{ fontFamily: "roboto-medium" }}>
+                                    {item_name}
+                                </Text>
+                                <Text className="text-primary text-sm" style={{ fontFamily: "roboto-medium" }}>
+                                    Qty: {qty}
+                                </Text>
+                                <Text className="text-primary text-base" style={{ fontFamily: "roboto-medium" }}>
+                                    Est. Price: K{Number(estimatedPrice || 0).toLocaleString()}
                                 </Text>
                             </View>
                         </View>
-                        <Text className="text-lg my-2" style={{ fontFamily: "roboto-medium" }}>Store: Nerands</Text>
-                        
                         <View className='flex-row justify-between mt-4 mb-2 relative'>
                             {/* Sliding Indicator */}
                             <MotiView
@@ -152,34 +162,31 @@ const ProductModal = ({openModal, setOpenModal}) => {
                         >
                             {/* Description Screen */}
                             <View style={{ width: tabWidth }}>
-                                <Text className="text-sm text-slate mb-4" style={{ fontFamily: "roboto-medium" }}>
-                                    Description
+                                <Text className="text-base text-slate mb-4" style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}>
+                                    {productNotes ? productNotes : 'No Description'}
                                 </Text>
                             </View>
 
                             {/* Map Screen */}
                             <View style={{ width: tabWidth }}>
-                                <Text className="text-sm text-slate mb-4" style={{ fontFamily: "roboto-regular" }}>
-                                    Map
+                                <Text className="text-base text-slate mb-4" style={{ fontFamily: "roboto-regular", textAlign: 'justify' }}>
+                                    No Map
                                 </Text>
                             </View>
                         </MotiView>
                     </ScrollView>
 
                     {/* Add to Cart */}
-                    <View className='absolute w-full px-4 bg-transparent bottom-2 justify-center items-center'>
+                    <View className='w-full px-4 mb-10 bg-transparent justify-center items-center'>
                         {/* Total */}
                         <View className='w-full mb-2 bg-white'>
-                            <Text className="text-2xl text-red" style={{ fontFamily: "ubuntu-bold" }}>
-                                Total: K300
+                            <Text className="text-2xl text-red" style={{ fontFamily: "ubuntu-medium" }}>
+                                Total: K{Number(estimatedPrice * qty || 0).toLocaleString()}
                             </Text>
                         </View>
-                        <View className='flex-row w-full justify-between items-center'>
+                        {/* <View className='flex-row w-full justify-between items-center'>
                             <TouchableOpacity
-                                style={{
-                                    width: '100%'
-                                }}
-                                className="bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
+                                className="w-full bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
                             >
                                 <Text
                                     className="ml-2 text-white text-2xl font-semibold"
@@ -188,7 +195,7 @@ const ProductModal = ({openModal, setOpenModal}) => {
                                     Collect
                                 </Text>
                             </TouchableOpacity>
-                        </View>
+                        </View> */}
                     </View>
                 </View>
                 {/* <TouchableWithoutFeedback/> */}
