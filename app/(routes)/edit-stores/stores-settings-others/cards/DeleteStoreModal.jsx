@@ -1,4 +1,5 @@
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons'
+import { MotiView } from 'moti'
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import DeleteStoreOthers from '../../../../../components/delete-content/delete-store-others/DeleteStoreOthers'
 import { COLORS, SIZES } from '../../../../../constants/constants'
@@ -32,24 +33,29 @@ const DeleteStoreModal = ({deleteStoreModalVisible, setDeleteStoreModalVisible, 
                 >
                     <Pressable
                         style={styles.centeredView}
-                        onPress={() => setDeleteStoreModalVisible(false)}
                     />
-                    <View style={styles.centeredView}>
-                        <View
-                            className='bg-white p-2 w-full'
-                            style={[styles.modalView, {borderRadius: SIZES.radius, maxWidth: width}]}
-                        >
-                            {/* Container */}
-                            <View className='p-1 flex-row justify-between items-center'>
-                                <View className='flex-row justify-center items-center'>
-                                    <FontAwesome6 name="edit" size={22}/>
-                                    <Text className='text-2xl ml-1' style={{fontFamily: 'roboto-medium'}}>Delete store</Text>
+                    <MotiView className='mt-5 w-full items-center'
+                        from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
+                        animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
+                        transition={{ duration: 1000 }}
+                    >
+                        <View style={styles.centeredView}>
+                            <View
+                                className='bg-white p-2 w-full'
+                                style={[styles.modalView, {borderRadius: SIZES.radius, maxWidth: width}]}
+                            >
+                                {/* Container */}
+                                <View className='p-1 flex-row justify-between items-center'>
+                                    <View className='flex-row justify-center items-center'>
+                                        <FontAwesome6 name="trash" size={19}/>
+                                        <Text className='text-2xl ml-1' style={{fontFamily: 'roboto-medium'}}>Delete store</Text>
+                                    </View>
                                 </View>
+                                {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
+                                <DeleteStoreOthers setDeleteStoreModalVisible={setDeleteStoreModalVisible} params={params} />
                             </View>
-                            {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
-                            <DeleteStoreOthers setDeleteStoreModalVisible={setDeleteStoreModalVisible} params={params} />
                         </View>
-                    </View>
+                    </MotiView>
                 </Modal>
             </TouchableOpacity>
             {/* End  delete store modal */}

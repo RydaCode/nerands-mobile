@@ -399,14 +399,14 @@ const ProductDetailsModal = ({
                                 onPress={handleAddToCart}
                                 className="bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
                             >
-                                {isClosed || isAvailable ? (
+                                {isClosed || !isAvailable  ? (
+                                    <Feather name="lock" size={19} style={{ color: COLORS.red }} />
+                                ) :  (
                                     <FontAwesome
                                         name="shopping-cart"
                                         size={20}
                                         color={COLORS.white}
                                     />
-                                ) : (
-                                    <Feather name="lock" size={19} style={{ color: COLORS.red }} />
                                 )}
                                 <Text
                                     className="ml-2 text-white text-2xl font-semibold"

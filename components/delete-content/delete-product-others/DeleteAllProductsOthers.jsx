@@ -42,10 +42,10 @@ const DeleteAllProductsOthers = ({ setDeleteAllProductsModalVisible, params }) =
     return (
         <View className="w-full items-center justify-center mt-6 mb-0">
         <View>
-            <Text className="text-base text-black" style={{ fontFamily: 'roboto-medium' }}>
+            <Text className="text-base text-red" style={{ fontFamily: 'roboto-medium', textAlign: 'center' }}>
             Are you sure you want to delete all products from {params?.store_name}?
             </Text>
-            <Text className="text-base text-red mt-3" style={{ fontFamily: 'roboto-medium' }}>
+            <Text className="text-sm text-slate mt-3" style={{ fontFamily: 'roboto-medium', textAlign: 'center' }}>
             When you press yes, the process cannot be undone.
             </Text>
         </View>
@@ -53,7 +53,7 @@ const DeleteAllProductsOthers = ({ setDeleteAllProductsModalVisible, params }) =
         <View className="flex-row justify-between items-center w-full mt-5">
             <TouchableOpacity
             onPress={handleDeleteAllProducts}
-            className="p-4 rounded-md w-[48%] items-center justify-center bg-red"
+            className="py-3 rounded w-[48%] items-center justify-center bg-red"
             >
             <Text className="text-xl text-white" style={{ fontFamily: 'roboto-medium' }}>
                 Yes
@@ -62,7 +62,7 @@ const DeleteAllProductsOthers = ({ setDeleteAllProductsModalVisible, params }) =
 
             <TouchableOpacity
             onPress={() => setDeleteAllProductsModalVisible(false)}
-            className="p-4 rounded-md w-[48%] items-center justify-center bg-green2"
+            className="py-3 rounded w-[48%] items-center justify-center bg-green2"
             >
             <Text className="text-xl text-white" style={{ fontFamily: 'roboto-medium' }}>
                 No

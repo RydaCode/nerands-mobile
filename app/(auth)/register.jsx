@@ -601,7 +601,7 @@ const Register = () => {
                     <View className="w-full flex-row justify-start items-center my-5">
                         <Text className="text-slate text-sm">Already have an account?</Text>
                         <TouchableOpacity onPress={() => router.push('/login/')} className="ml-2">
-                            <Text className="font-bold text-primary">Click here</Text>
+                            <Text className="font-bold text-primary">Tap here</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

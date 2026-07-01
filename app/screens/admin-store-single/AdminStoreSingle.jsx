@@ -1,5 +1,6 @@
 import { Entypo, FontAwesome, FontAwesome5, FontAwesome6, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { MotiView } from 'moti'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { STORES_IMAGE_URI } from '../../../RequestMethods'
@@ -202,32 +203,32 @@ const AdminStoreSingle = ({
                 >
                     <Pressable
                         style={styles.centeredView}
-                        onPress={() => {setDeleteSelectedProductsModalVisible(false)}}
                     />
-                    <View style={styles.centeredView}>
-                        <View
-                            style={[styles.modalView, { backgroundColor: '#fff', borderRadius: SIZES.radius, padding: 10, width: '100%', maxWidth: width }]} >
-                            {/* Container */}
-                            <View className='p-1 flex-row justify-between items-center'>
-                                <View className='flex-row justify-center items-center'>
-                                    <FontAwesome6 name="edit" size={22}/>
-                                    <Text className='text-2xl ml-1' style={{fontFamily: 'ubuntu-medium'}}>Delete selected products</Text>
+                    <MotiView className='mt-5 w-full items-center'
+                        from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
+                        animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
+                        transition={{ duration: 1000 }}
+                    >
+                        <View style={styles.centeredView}>
+                            <View
+                                style={[styles.modalView, { backgroundColor: '#fff', borderRadius: SIZES.radius, padding: 10, width: '100%', maxWidth: width }]} >
+                                {/* Container */}
+                                <View className='p-1 flex-row justify-between items-center'>
+                                    <View className='flex-row justify-center items-center'>
+                                        <FontAwesome6 name="trash" size={19}/>
+                                        <Text className='text-xl ml-1' style={{fontFamily: 'roboto-medium'}}>Delete selected products</Text>
+                                    </View>
                                 </View>
-                                <Pressable
-                                    onPress={() => {setDeleteSelectedProductsModalVisible(false)}}
-                                    className='h-[30px] w-[30px] rounded-full justify-center items-center bg-red'>
-                                    <FontAwesome5 name='times' color={COLORS.white} size={15} />
-                                </Pressable>
-
+                                {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
+                                <DeleteSelectedProductsOthers
+                                    setDeleteSelectedProductsModalVisible={setDeleteSelectedProductsModalVisible}
+                                    selectedItems={selectedItems}
+                                    setSelectedItems={setSelectedItems}
+                                    store_id={store_id}
+                                />
                             </View>
-                            {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
-                            <DeleteSelectedProductsOthers
-                                setDeleteSelectedProductsModalVisible={setDeleteSelectedProductsModalVisible}
-                                selectedItems={selectedItems}
-                                store_id={store_id}
-                            />
                         </View>
-                    </View>
+                    </MotiView>
                 </Modal>
             </TouchableOpacity>
             {/* End delete selected products modal */}

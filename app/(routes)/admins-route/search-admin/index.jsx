@@ -1,16 +1,16 @@
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-import CustomButton from '../../../../components/Buttons/CustomButton';
 import FormInputs from '../../../../components/FormFields/FormInputs';
-import MainHeader from '../../../../components/MainHeader';
+import Headers from '../../../../components/Headers';
+import { COLORS } from '../../../../constants/constants';
 import useApi from '../../../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../../../RequestMethods';
 import { toast } from '../../../../utils/toast';
-import LoadingIndicator from '../../../LoadingIndicator';
-import Redirecting from '../../../Redirecting';
+import AuthLayout from '../../../AuthLayout';
+import OverLay from '../../../OverLay';
 
 const Index = () => {
     const params = useLocalSearchParams();
@@ -50,7 +50,7 @@ const Index = () => {
 
         if (data?.success && Array.isArray(data?.data) && data?.data?.length > 0) {
             setErrorMessage('Success');
-            toast.success(`Found ${data?.data?.length} user(s).`);
+            toast.success(`Found ${data?.data?.length} ${data?.data?.length === 1 ? 'user' : 'users'}.`);
 
             setHasNavigated(true);
             setTimeout(() => {
@@ -62,10 +62,12 @@ const Index = () => {
                         store_description: params.store_description,
                         store_id: params.store_id,
                         user_id: data?.data[0]?.user_id,
+                        profile_image: data?.data[0]?.profile_image,
                         first_name: data?.data[0]?.first_name,
                         last_name: data?.data[0]?.last_name,
                         phone_num: data?.data[0]?.phone_num,
                         status: data?.data[0]?.status,
+                        is_verified: data?.data[0]?.is_verified
                     },
                 });
             }, 1000);
@@ -88,30 +90,32 @@ const Index = () => {
     }, [errorMessage]);
 
     return (
-        <SafeAreaView className="items-center flex-1 bg-white">
-            <View className="px-4 w-full">
-                <MainHeader fontFamily="maven-bold" header_name="User Search" />
-            </View>
+        <AuthLayout>
+        <SafeAreaView className="justify-center items-center flex-1 bg-white px-4">
+            <Headers fontFamily="maven-medium" textStyles='text-2xl' header_name="User Search"
+                icon={<FontAwesome name='user' size={15} color={COLORS.slate}/>}
+            />
 
-            <View className="flex-1 px-4 justify-center items-center">
+            <View className="flex-1 justify-center items-center">
                 <View className="mt-8 justify-center items-center w-full">
                     <ScrollView showsVerticalScrollIndicator={false}>
                         <View className="w-full flex-row justify-start items-center">
                             <View
-                                style={{ height: 80, width: 80 }}
+                                style={{ height: 60, width: 60 }}
                                 className="border-2 border-lavender rounded-full justify-center items-center"
                             >
-                                <Image
-                                    className="h-full w-full border-2 border-white rounded-full"
-                                    source={{
-                                        uri: `${STORES_IMAGE_URI}${params.store_profileimage || 'default.jpg'}`,
-                                    }}
-                                    onError={(e) => {
-                                        console.warn('Image load failed:', e.nativeEvent);
-                                    }}
-                                />
+                                {!params.store_profileimage ? (
+                                    <FontAwesome5 name="store-alt" size={24} color="black" />
+                                ) : (
+                                    <Image
+                                        className="h-full w-full border-2 border-white rounded-full"
+                                        source={{
+                                            uri: `${STORES_IMAGE_URI}${params.store_profileimage}`,
+                                        }}
+                                    />
+                                )}
                             </View>
-                            <Text className="ml-2 text-xl" style={{ fontFamily: 'maven-bold' }}>
+                            <Text className="ml-2 text-xl" style={{ fontFamily: 'roboto-medium' }}>
                                 {params.store_name}
                             </Text>
                         </View>
@@ -136,26 +140,29 @@ const Index = () => {
                                 </Text>
                             </View>
 
-                            <View className="w-full">
-                                <CustomButton
-                                    title={isLoading ? 'Please wait...' : 'Search'}
-                                    handlePress={handleSearchAdmin}
-                                    disabled={isLoading}
-                                    otherStyles={`bg-primary p-4 mt-4 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
-                                    textStyles="text-2xl"
-                                />
-                            </View>
+                            <TouchableOpacity
+                                className='bg-primary py-3 justify-center items-center rounded-xl'
+                                onPress={() => handleSearchAdmin()}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <ActivityIndicator size={27} color='white'/>
+                                ) : (
+                                    <Text
+                                        style={{fontFamily: 'maven-medium'}}
+                                        className='text-white text-2xl'
+                                    >
+                                        Search
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
                         </View>
-                        <View className="pb-20" />
                     </ScrollView>
                 </View>
             </View>
-
-            <Toast />
-
-            {isLoading && <LoadingIndicator loading_text="Searching user..." />}
-            {showRedirecting && <Redirecting title="Success" />}
+            {isLoading && <OverLay />}
         </SafeAreaView>
+        </AuthLayout>
     );
 };
 

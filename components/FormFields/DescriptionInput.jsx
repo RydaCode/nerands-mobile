@@ -12,7 +12,7 @@ const DescriptionInput = ({ title, value, handleChangeText, otherStyles, borderS
             <View className={`w-full h-28 px-2 border ${borderStyle} border-lavender rounded-md`}>
                 <TextInput
                     style={{fontFamily: 'roboto-medium', textAlignVertical: 'top', height: 100}}
-                    className='flex-1 font-semibold text-base text-slate'
+                    className='flex-1 font-semibold text-base text-slate w-full'
                     defaultValue={defaultValue}
                     placeholder={placeholder}
                     onChangeText={handleChangeText}

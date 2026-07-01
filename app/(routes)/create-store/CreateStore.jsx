@@ -113,7 +113,6 @@ const CreateStore = () => {
             toast.error("An error occurred. Please try again.");
         }
 
-        console.log(error);
     }, [response, error]);
 
     const handleChangeText = useCallback((key, value) => {
