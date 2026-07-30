@@ -1,4 +1,5 @@
-import { FontAwesome5, FontAwesome6, Ionicons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
+import { MotiView } from 'moti'
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import UpdateStoreLocation from '../../../../../components/edit-content/update-location/UpdateStoreLocation'
 import { COLORS, SIZES } from '../../../../../constants/constants'
@@ -19,45 +20,44 @@ const UpdateStoreLocationBtn = ({params, updateStoreLocationModalVisible, setUpd
     return (
         <>
             {/* Start store location modal */}
-            <TouchableOpacity
-                className='flex-1 justify-center items-center'
-                onPress={() => setUpdateStoreLocationModalVisible(false)}
+            <Modal
+                visible={updateStoreLocationModalVisible}
+                transparent
+                animationType="none"
+                onRequestClose={() => setUpdateStoreLocationModalVisible(false)}
             >
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    statusBarTranslucent={true}
-                    visible={updateStoreLocationModalVisible}
-                    onRequestClose={() => setUpdateStoreLocationModalVisible(false)}
+                {/* Overlay */}
+                <Pressable
+                    className="flex-1 bg-transparentBlack justify-end"
+                    onPress={() => setUpdateStoreLocationModalVisible(false)}
                 >
-                    <Pressable
-                        style={styles.centeredView}
-                        onPress={() => setUpdateStoreLocationModalVisible(false)}
-                    />
-                    <View style={styles.centeredView}>
-                        <View
-                            className='bg-white w-full p-[10px] rounded-md'
-                            style={[styles.modalView, {maxWidth: width}]}
+                    {/* Inner content wrapper (prevents closing when tapped) */}
+                    <View
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <MotiView
+                            from={{ opacity: 0, translateY: 80 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: "timing", duration: 300 }}
+                            style={{borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 60}}
+                            className="bg-white px-4 pt-3"
                         >
-                            {/* Container */}
-                            <View className='p-1 flex-row justify-between items-center'>
-                                <View className='flex-row justify-center items-center'>
-                                    <FontAwesome6 name="edit" size={22}/>
-                                    <Text className='text-2xl ml-1' style={{fontFamily: 'maven-medium'}}>Update Store Location</Text>
-                                </View>
-                                <Pressable
-                                    onPress={() => setUpdateStoreLocationModalVisible(false)}
-                                    className='h-[30px] w-[30px] rounded-full justify-center items-center bg-red'>
-                                    <FontAwesome5 name='times' color={COLORS.white} size={15} />
-                                </Pressable>
-
+                            {/* Header */}
+                            <View className="flex-row justify-start items-center">
+                                {/* <FontAwesome6 name="edit" size={22}/> */}
+                                <Text className='text-2xl ml-1' style={{fontFamily: 'outfit-medium'}}>
+                                    Update Store Location
+                                </Text>
                             </View>
-                            {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
+    
+                            <View className='w-full bg-lavender my-3' style={{height: 1}} />
+                            {/* Start Content */}
                             <UpdateStoreLocation params={params} setUpdateStoreLocationModalVisible={setUpdateStoreLocationModalVisible} />
-                        </View>
+                            {/* End Content */}
+                        </MotiView>
                     </View>
-                </Modal>
-            </TouchableOpacity>
+                </Pressable>
+            </Modal>
             {/* End store location modal */}
 
             <TouchableOpacity
@@ -65,7 +65,7 @@ const UpdateStoreLocationBtn = ({params, updateStoreLocationModalVisible, setUpd
                 style={{borderRadius: SIZES.border}}
                 className='h-full items-center justify-center border-1 border-lavender bg-white w-full'
             >
-                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                     <Ionicons name='location-sharp' size={20} color={"#54C571"} />
                 </View>
                 <View className='justify-center items-center'>
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
         bottom: 0,
         width: '100%',
         backgroundColor: 'white',
-        borderTopRightRadius: 10,
-        borderTopLeftRadius: 10,
+        borderTopRightRadius: 20,
+        borderTopLeftRadius: 20,
         padding: 10,
         shadowColor: '#000',
         shadowOffset: {

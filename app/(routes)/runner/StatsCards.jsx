@@ -1,11 +1,11 @@
 import { Text, View } from 'react-native';
 
-const StatsCards = ({ stats, runner }) => {
+const StatsCards = ({ stats, purchasedTrips, runner }) => {
     return (
         <View className="bg-white">
             <View className="w-full flex-row justify-between items-center">
-                <Card value={stats.available} label="Active Errands" text='Purchased errands to be used' />
-                <Card value={stats.completed} label="Completed Errands" text='Errands completed for a particular month' />
+                <Card value={purchasedTrips?.count || 0} label="Active Errands" text='Purchased errands to be used' />
+                <Card value={stats?.completedTotal || 0} label="Completed Errands" text='Errands completed for a particular month' />
             </View>
 
             <View className="mt-4 rounded border border-lavender elevation-sm bg-white p-2 justify-center items-center w-full" style={{ height: 90 }}>
@@ -21,8 +21,8 @@ const StatsCards = ({ stats, runner }) => {
             </View>
 
             <View className="w-full flex-row justify-between items-center mt-4">
-                <Card value={stats.daily} label="Daily Errands" text='Completed errands for a particular day' />
-                <Card value={stats.cancelled} label="Cancelled Errands" text='Cancellled errands for a particular day' />
+                <Card value={stats.completedToday || 0} label="Daily Errands" text='Completed errands for a particular day' />
+                <Card value={stats.cancelledToday || 0} label="Cancelled Errands" text='Cancellled errands for a particular day' />
             </View>
         </View>
     );

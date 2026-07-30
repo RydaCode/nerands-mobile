@@ -10,11 +10,13 @@ import { useSelector } from 'react-redux';
 import useLogout from '../../(auth)/auth/useLogout';
 import agoTimeStamp from '../../../components/agoTimeStamp';
 import CustomButton from '../../../components/Buttons/CustomButton';
-import HomeHeader from '../../../components/home/HomeHeader';
+import MainHeader from '../../../components/MainHeader';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
 import { SERVER_URI, USER_IMAGE_URI } from '../../../RequestMethods';
 import { formatDate, formatTime } from '../../../utils/formatDateTime';
+import { openAboutUs } from '../../../utils/openAboutUs';
+import { requestAppReview } from '../../../utils/requestAppReview';
 import { toast } from '../../../utils/toast';
 import LoadingIndicator from '../../LoadingIndicator';
 
@@ -54,15 +56,31 @@ const Index = () => {
         }
     }, [isAuthenticated]);
 
-    const {data, isLoading: isLoadingUserData, error, get} = useApi(
-        `/users/user/${user_id}`
-    );
+    const {data, isLoading: isLoadingUserData, error, get} = useApi();
 
     useEffect(() => {
         if (user_id) {
-            get();
+            get(`/users/user/${user_id}`);
         }
     }, [user_id]);
+
+    const {data: businesses, isLoading: isLoadingBusinesses, error: businessError, get: getUserBusinesses} = useApi();
+
+    useEffect(() => {
+        if (user_id) {
+            getUserBusinesses(`/businesses/${user_id}`);
+        }
+    }, [user_id]);
+
+    const {data: stores, isLoading: isLoadingStores, error: storesError, get: getUserStores} = useApi(
+        `/stores/user/stores`
+    );
+
+    useEffect(() => {
+        getUserStores();
+    }, []);
+
+    // console.log("USER STORES",stores?.stores?.length)
 
     const reload = () => {
         get();
@@ -174,6 +192,7 @@ const Index = () => {
             toast.success('Image uploaded successfully!');
             setErrorMessage('Success');
             setImage(null);
+            reload();
 
         } catch (error) {
             console.error('Upload error:', error);
@@ -206,7 +225,7 @@ const Index = () => {
         <SafeAreaView className='flex-1 px-2 bg-white relative'>
             {/* HEADER */}
             <View className=''>
-                <HomeHeader title="Home Header" location={displayCurrentLocation} />
+                <MainHeader header_name='Profile' fontFamily='maven-medium' textStyles='text-2xl'/>
             </View>
                 {(isLoadingUserData) ? (
                     <View className='flex-1 justify-center items-center'>
@@ -288,7 +307,7 @@ const Index = () => {
                                         }
                                     </View>
                                 </TouchableOpacity>
-                                <View className=''>
+                                <View className='w-full justify-center items-center'>
                                     <Text
                                         className={`${!data?.is_verified ? 'text-lg text-red' : 'text-2xl text-black'}`}
                                         style={{ fontFamily: 'ubuntu-medium' }}
@@ -298,6 +317,66 @@ const Index = () => {
                                             : data?.first_name + ' ' + data?.last_name
                                         }
                                     </Text>
+                                    <Text
+                                        className='text-sm text-slate mt-2'
+                                    >{data?.email_add}</Text>
+                                    <Text
+                                        className='text-sm text-slate'
+                                    >{data?.phone_num}</Text>
+                                </View>
+
+                                <View className='w-full flex-row mt-12 justify-between items-center'>
+                                    <TouchableOpacity
+                                        style={{width: '30%'}} className='justify-center items-center'
+                                        onPress={() => router.push({
+                                            pathname: '/(routes)/business/',
+                                            params: {
+                                                user_id: data?.user_id,
+                                                is_verified: data?.is_verified,
+                                            }
+                                        })}
+                                        disabled={!data?.is_verified}
+                                    >
+                                        <View className='flex-row justify-center items-center'>
+                                            <MaterialIcons name="business-center" size={19} color={COLORS.slate} />
+                                            <Text
+                                                className='ml-1 text-sm text-slate'
+                                                style={{fontFamily: 'roboto-medium'}}
+                                            >{businesses?.data?.length}</Text>
+                                        </View>
+                                        <Text
+                                            className='text-sm text-slate'
+                                            style={{fontFamily: 'roboto'}}
+                                        >Businesses</Text>
+                                    </TouchableOpacity>
+                                    <View style={{height: 25, width: 1}} className='bg-grey_bg'/>
+                                    <View style={{width: '30%'}} className='justify-center items-center'>
+                                        <View className='flex-row justify-center items-center'>
+                                            <FontAwesome5 name="store-alt" size={13} color={COLORS.slate} />
+                                            <Text
+                                                className='ml-1 text-sm text-slate'
+                                                style={{fontFamily: 'roboto-medium'}}
+                                            >{stores?.stores?.length}</Text>
+                                        </View>
+                                        <Text
+                                            className='text-sm text-slate'
+                                            style={{fontFamily: 'roboto'}}
+                                        >Stores</Text>
+                                    </View>
+                                    <View style={{height: 25, width: 1}} className='bg-grey_bg'/>
+                                    <View style={{width: '30%'}} className='justify-center items-center'>
+                                        <View className='flex-row justify-center items-center'>
+                                            <MaterialIcons name="business-center" size={19} color={COLORS.slate} />
+                                            <Text
+                                                className='ml-1 text-sm text-slate'
+                                                style={{fontFamily: 'roboto-medium'}}
+                                            >0</Text>
+                                        </View>
+                                        <Text
+                                            className='text-sm text-slate'
+                                            style={{fontFamily: 'roboto'}}
+                                        >Products</Text>
+                                    </View>
                                 </View>
 
                                 {!data?.is_verified &&
@@ -330,36 +409,22 @@ const Index = () => {
                         <View className='justify-start w-full border border-grey_bg rounded-lg bg-white p-4'>
                                 <View className='flex-row items-center mb-6'>
                                     <View className='flex-row items-center'>
-                                        <FontAwesome6 name='envelope' color={COLORS.primary} size={20}/>
-                                        <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>Email: </Text>
-                                    </View>
-                                    <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>{email_add}</Text>
-                                </View>
-                                <View className='flex-row items-center mb-6'>
-                                    <View className='flex-row items-center'>
-                                        <FontAwesome6 name='phone' color={COLORS.primary} size={20}/>
-                                        <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>Phone: </Text>
-                                    </View>
-                                    <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>{phone_num}</Text>
-                                </View>
-                                <View className='flex-row items-center mb-6'>
-                                    <View className='flex-row items-center'>
                                         <FontAwesome6 name='user' color={COLORS.primary} size={20}/>
-                                        <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>User Type: </Text>
+                                        <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>TYPE: </Text>
                                     </View>
-                                    <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>
-                                        {user_type} |
-                                        <Text className='text-green-600'> {is_runner && 'Runner'} </Text>
-                                        |<Text className='text-red'> {is_transporter && 'Transporter'}</Text>
+                                    <Text numberOfLines={1} className='text-slate self-center text-base ml-2' style={{fontFamily: 'roboto-medium'}}>
+                                        {data?.user_type} {data?.is_runner ? '|' : ''}
+                                        <Text className='text-green-600'> {data?.is_runner && 'RUNNER'} </Text>
+                                        {data?.is_transporter ? '|' : ''}<Text className='text-red'> {data?.is_transporter && 'TRANSPORTER'}</Text>
                                     </Text>
                                 </View>
-                                <View className='flex-row items-center mb-6'>
+                                <View className='flex-row items-center'>
                                     <View className='flex-row items-center'>
                                         <FontAwesome6 name='clock' color={COLORS.primary} size={20}/>
                                         <Text className='text-black text-base ml-2' style={{fontFamily: 'roboto-bold'}}>Joined: </Text>
                                     </View>
                                     <Text numberOfLines={1} className='text-slate text-base ml-2' style={{fontFamily: 'roboto-medium'}}>
-                                        {formatDate(created_at)} • {formatTime(created_at)} ({agoTimeStamp(created_at)})
+                                        {formatDate(data?.created_at)} • {formatTime(data?.created_at)} ({agoTimeStamp(data?.created_at)})
                                     </Text>
                                 </View>
                             </View>
@@ -404,17 +469,17 @@ const Index = () => {
                             {data?.is_verified &&
                                 <>
                                     <TouchableOpacity
-                                    style={{width: '32%'}}
-                                    className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
-                                    onPress={() => router.push({
-                                        pathname: '/(routes)/business/',
-                                        params: {
-                                            user_id: data?.user_id,
-                                            is_verified: data?.is_verified,
-                                        }
-                                    })}
-                                    disabled={!data?.is_verified}
-                                >
+                                        style={{width: '32%'}}
+                                        className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
+                                        onPress={() => router.push({
+                                            pathname: '/(routes)/business/',
+                                            params: {
+                                                user_id: data?.user_id,
+                                                is_verified: data?.is_verified,
+                                            }
+                                        })}
+                                        disabled={!data?.is_verified}
+                                    >
                                     <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
                                         {/* <Ionicons name="business-sharp" size={25} color={COLORS.primary} /> */}
                                         <MaterialIcons name="business-center" size={25} color={COLORS.primary} />
@@ -490,6 +555,7 @@ const Index = () => {
                             <TouchableOpacity
                                 style={{width: '32%'}}
                                 className='justify-center items-center borde py-5 rounded-md'
+                                onPress={() => requestAppReview()}
                             >
                                 <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
                                     <Entypo name='thumbs-up' size={24} color={COLORS.primary} />
@@ -500,6 +566,7 @@ const Index = () => {
                             <TouchableOpacity
                                 style={{width: '32%'}}
                                 className='justify-center items-center borde py-5 rounded-md'
+                                onPress={() => openAboutUs('about-us')}
                             >
                                 <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
                                     <Entypo name='info-with-circle' size={24} color={COLORS.primary} />

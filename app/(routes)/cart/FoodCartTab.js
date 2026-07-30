@@ -74,6 +74,7 @@ const FoodCartTab = () => {
         if (!acc[storeId]) {
             acc[storeId] = {
                 store_id: storeId,
+                business_id: item.business_id,
                 store_name: item.store_name,
                 store_category: item.store_category,
                 store_phone_num: item.store_phone_num,
@@ -111,6 +112,7 @@ const FoodCartTab = () => {
 
             stores: storesArray.map(store => ({
                 store_id: store.store_id,
+                business_id: store.business_id,
                 store_name: store.store_name,
                 store_category: store.store_category,
                 store_phone_num: store.store_phone_num,

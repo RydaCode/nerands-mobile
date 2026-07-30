@@ -35,6 +35,7 @@ const ProductScreen = () => {
                                 product_status={params.product_status}
                                 store_name={params.store_name}
                                 store_id={params.store_id}
+                                business_id={params.business_id}
                                 store_phone_num={params.store_phone_num}
                                 store_category={params.store_category}
                                 product_category={params.product_category}

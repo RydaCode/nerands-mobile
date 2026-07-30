@@ -5,15 +5,11 @@ import { useSelector } from 'react-redux'
 import { COLORS, SIZES } from '../../../../constants/constants'
 import { STORES_IMAGE_URI } from '../../../../RequestMethods'
 import { calculateDistance } from '../../../../utils/getDistance'
-import { isStoreOpen } from '../../../../utils/isStoreOpen'
+import { formatText } from '../../../../utils/getInitials'
 
 const StoresCard = (item) => {
     const { latitude, longitude } = useSelector((state) => state.location) || {};
     const router = useRouter();
-
-    const isManuallyClosed = item?.item?.open_close === false;
-    const isTimeClosed = !isStoreOpen(item?.item?.open_time, item?.item?.closing_time);
-    const isClosed = isManuallyClosed || isTimeClosed;
     
     return (
         <TouchableOpacity className="w-full items-center justify-center"
@@ -21,6 +17,7 @@ const StoresCard = (item) => {
                 pathname: '../local-market-store-details/',
                 params: {
                     store_id: item?.item?.store_id,
+                    business_id: item?.item?.business_id,
                     store_profileimage: item?.item?.store_profileimage,
                     store_name: item?.item?.store_name,
                     store_location: item?.item?.store_location,
@@ -50,7 +47,7 @@ const StoresCard = (item) => {
                         className="h-full w-full rounded-sm"
                         source={{ uri: `${STORES_IMAGE_URI}${item?.item?.store_profileimage}` }}
                     />
-                    {isClosed &&
+                    {item?.item?.is_closed &&
                         <View className="absolute w-full h-full bg-black opacity-70 rounded flex-row justify-center items-center z-50">
                             <MaterialCommunityIcons name="lock" size={16} color={COLORS.primary} />
                             <Text className="text-sm text-white ml-1">Closed</Text>
@@ -62,7 +59,7 @@ const StoresCard = (item) => {
                 <View className="flex-row justify-between" style={{width: '69%'}}>
                     <View style={{width: '86%'}} className=''>
                         <Text numberOfLines={1} className="text-base" style={{ fontFamily: 'roboto-medium' }}>
-                            {item?.item?.store_name}
+                            {formatText(item?.item?.store_name)}
                         </Text>
 
                         <View className="flex-row justify-start items-center">
@@ -95,7 +92,7 @@ const StoresCard = (item) => {
                                 className="items-center justify-center rounded px-2 py-1"
                                 style={{ backgroundColor: COLORS.grey_bg }}
                             >
-                                <Text className="text-sm text-slate">{item?.item?.store_category}</Text>
+                                <Text className="text-sm text-slate" numberOfLines={1}>{formatText(item?.item?.store_category)}</Text>
                             </View>
 
                             <View className="flex-row items-center" style={{width: '49%'}}>

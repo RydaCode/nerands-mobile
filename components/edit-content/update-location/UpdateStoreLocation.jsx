@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
-import LoadingIndicator from '../../../app/LoadingIndicator';
-import Redirecting from '../../../app/Redirecting';
+import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
+import { usePermissions } from '../../../hook/usePermissions';
+import { toast } from '../../../utils/toast';
 
 const UpdateStoreLocation = ({ params, setUpdateStoreLocationModalVisible }) => {
+    const {can} = usePermissions();
     const { latitude, longitude } = useSelector(state => state.location);
 
     const [isRedirecting, setIsRedirecting] = useState(false);
@@ -17,82 +18,34 @@ const UpdateStoreLocation = ({ params, setUpdateStoreLocationModalVisible }) => 
         isLoading,
         error,
         patch: updateStoreLocation,
-    } = useApi(`/stores/update/`);
+    } = useApi(`/stores/update`);
 
     useEffect(() => {
-        if (update?.response) {
-            const message = update.response;
-
-            if (message === 'Success') {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Store location updated!',
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: '#32CD32',
-                        fontSize: 18,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: '#32CD32',
-                        fontSize: 14,
-                        fontFamily: 'maven-medium',
-                    },
-                });
-
+        if (update) {
+            if (update?.success) {
+                toast.success('Store location updated!');
                 setIsRedirecting(true);
-                setTimeout(() => {
-                    setUpdateStoreLocationModalVisible(false);
-                }, 5000);
+                setUpdateStoreLocationModalVisible(false);
             } else {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: message,
-                    visibilityTime: 4000,
-                    animationType: 'slide',
-                    position: 'bottom',
-                    text1Style: {
-                        color: 'red',
-                        fontSize: 18,
-                        fontFamily: 'maven-bold',
-                    },
-                    text2Style: {
-                        color: 'red',
-                        fontSize: 14,
-                        fontFamily: 'maven-medium',
-                    },
-                });
+                toast.error(update?.message || 'failed to update location.');
+                setUpdateStoreLocationModalVisible(false);
             }
         }
 
         if (error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'An error occurred. Please try again.',
-                visibilityTime: 4000,
-                animationType: 'slide',
-                position: 'bottom',
-                text1Style: {
-                    color: 'red',
-                    fontSize: 18,
-                    fontFamily: 'maven-bold',
-                },
-                text2Style: {
-                    color: 'red',
-                    fontSize: 14,
-                    fontFamily: 'maven-medium',
-                },
-            });
+            toast.error(error?.message || 'An error occurred. Please try again.');
+            setUpdateStoreLocationModalVisible(false);
         }
     }, [update, error]);
 
     const handleUpdateStoreLocation = () => {
+        if (!can('update_store')) {
+            toast.error('You do not have permissions to update stores location.');
+            setPublishStoreModalVisible(false);
+            return;
+        }
         const payload = {
+            business_id: params.business_id,
             store_id: params.store_id,
             store_latitude: latitude || params.store_latitude,
             store_longitude: longitude || params.store_longitude,
@@ -101,18 +54,34 @@ const UpdateStoreLocation = ({ params, setUpdateStoreLocationModalVisible }) => 
         updateStoreLocation(payload);
     };
 
-    console.log(error)
+    console.log(update)
 
     return (
-        <View className='w-full items-center justify-center mt-10 mb-0'>
-            <Text className='text-sm text-black' style={{ fontFamily: 'roboto-medium' }}>
+        <View className='w-full items-center justify-center mt-2'>
+            <Text className='text-base text-red' style={{ fontFamily: 'roboto-medium', textAlign: 'center' }}>
                 Are you sure you want to update the store location?
             </Text>
+            <Text className='text-sm text-slate' style={{ fontFamily: 'roboto-medium', textAlign: 'justify' }}>
+                If yes, the location will be updated to this device's current location.
+            </Text>
 
-            <View className='flex-row justify-between items-center w-full mt-5'>
+            {isLoading && (
+                <View className='w-full flex-row bg-white my-5 justify-center items-center'>
+                    <ActivityIndicator color={COLORS.primary}/>
+                    <Text
+                        className='text-primary ml-1'
+                        style={{fontFamily: 'roboto-medium'}}
+                    >Updating to current location...</Text>
+                </View>
+            )}
+
+            <View
+                style={{marginTop: isLoading ? 0 : 20 }}
+                className='flex-row justify-between items-center w-full'>
                 <TouchableOpacity
                     onPress={handleUpdateStoreLocation}
-                    className='p-4 rounded-md w-[48%] items-center justify-center bg-red'
+                    className='py-3 rounded w-[48%] items-center justify-center bg-red'
+                    disabled={isLoading}
                 >
                     <Text className='text-xl text-white' style={{ fontFamily: 'maven-medium' }}>
                         Yes
@@ -121,17 +90,14 @@ const UpdateStoreLocation = ({ params, setUpdateStoreLocationModalVisible }) => 
 
                 <TouchableOpacity
                     onPress={() => setUpdateStoreLocationModalVisible(false)}
-                    className='p-4 rounded-md w-[48%] items-center justify-center bg-green2'
+                    className='p-3 rounded w-[48%] items-center justify-center bg-green2'
+                    disabled={isLoading}
                 >
                     <Text className='text-xl text-white' style={{ fontFamily: 'maven-medium' }}>
                         No
                     </Text>
                 </TouchableOpacity>
             </View>
-
-            <Toast />
-            {isLoading && <LoadingIndicator loading_text="Updating location..." />}
-            {isRedirecting && <Redirecting />}
         </View>
     );
 };

@@ -7,7 +7,7 @@ import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
 import { STORES_IMAGE_URI } from "../../RequestMethods";
 import { calculateDistance } from "../../utils/getDistance";
-import { isStoreOpen } from "../../utils/isStoreOpen";
+import { formatText } from "../../utils/getInitials";
 
 const MainContent = ({
   store_id,
@@ -25,7 +25,8 @@ const MainContent = ({
   total_ratings,
   favorited,
   open_time,
-  closing_time
+  close_time,
+  is_closed
 }) => {
   // Get screen width and height using useWindowDimensions
   const { width, height } = Dimensions.get("window");
@@ -101,10 +102,6 @@ const MainContent = ({
     return stars;
   };
 
-  const isManuallyClosed = open_close === false;
-  const isTimeClosed = !isStoreOpen(open_time, closing_time);
-  const isClosed = isManuallyClosed || isTimeClosed;
-
   return (
     <MotiView
         from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
@@ -132,7 +129,7 @@ const MainContent = ({
             total_ratings: total_ratings,
             favorited: favorited,
             open_time: open_time,
-            closing_time: closing_time
+            close_time: close_time
           },
         })
       }
@@ -153,15 +150,15 @@ const MainContent = ({
             className="w-full h-full"
             source={{ uri: `${STORES_IMAGE_URI}${store_coverimage}` }}
           />
-          {isClosed &&
+          {is_closed &&
             <View className="absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50">
               <MaterialCommunityIcons
                 name="lock"
                 size={16}
-                style={{ color: COLORS.primary }}
+                style={{ color: COLORS.white }}
               />
               <Text
-                style={{ fontFamily: "roboto-medium" }}
+                style={{ fontFamily: "roboto" }}
                 className="text-sm text-white"
               >
                 Closed
@@ -177,7 +174,7 @@ const MainContent = ({
                 fontFamily: "roboto-medium"
               }}
             >
-              {store_category}
+              {formatText(store_category)}
             </Text>
           </View>
 

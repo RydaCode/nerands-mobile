@@ -111,14 +111,11 @@ const AddBusinessMember = () => {
 
                         <TouchableOpacity
                             className='bg-red py-3 rounded-xl justify-center items-center w-full mt-4'
-                            style={{
-                                opacity: isLoading ? 0.4 : 0.9
-                            }}
                             onPress={() => searchUser()}
                             disabled={isLoading}
                         >
                             {isLoading ? (
-                                <ActivityIndicator size={27} color={COLORS.primary}/>
+                                <ActivityIndicator size={27} color={COLORS.white}/>
                             ) : (
                                 <Text
                                     style={{fontFamily: 'outfit-medium'}}

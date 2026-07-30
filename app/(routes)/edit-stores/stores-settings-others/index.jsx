@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import MainHeader from '../../../../components/MainHeader';
+import Headers from '../../../../components/Headers';
 import { COLORS } from '../../../../constants/constants';
 import { STORES_IMAGE_URI } from '../../../../RequestMethods';
 import StoreSettingsCard from './StoreSettingsCard';
@@ -13,8 +13,8 @@ const Index = () => {
     const params = useLocalSearchParams();
 
     const storeName = params?.store_name ?? "Unknown Store";
-    const storeDescription = params?.store_description ?? "";
     const storeImage = params?.store_profileimage ?? null;
+    const storeLocation = params?.store_location ?? 'No location';
 
     const imageUri =
     storeImage && STORES_IMAGE_URI
@@ -25,23 +25,30 @@ const Index = () => {
     // Use useSelector to get location data from Redux store
     const { latitude, longitude, displayCurrentLocation, locationServicesEnabled } = useSelector(state => state.location) ?? {};
     return (
-        <SafeAreaView className='flex-1 justify-between bg-white items-center'>
-            <View className='px-4'>
-                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Dashboard' />
+        <SafeAreaView className='flex-1 justify-between px-2 bg-white'>
+            <View className=''>
+                <Headers
+                    header_name='Branch Dashboard'
+                    fontFamily='outfit-medium'
+                    textStyles='text-2xl'
+                    icon={
+                        <FontAwesome5 name="store-alt" size={15} color={'#54C571'} />
+                    }
+                />
             </View>
             <View className='w-full justify-center items-center'>
-                <View style={{height: 80, width: 80}} className='rounded-full border-2 border-lavender'>
+                <View style={{height: 70, width: 70}} className='rounded-full justify-center items-center bg-grey_bg border-2 border-lavender'>
                     {imageUri ? (
                         <Image
                             className='h-full w-full rounded-full border-2 border-white'
                             source={{ uri: imageUri }}
                         />
                     ) : (
-                        <View className="h-full w-full rounded-full bg-gray-200" />
+                        <FontAwesome5 name='store-alt' size={20} color={COLORS.slate}/>
                     )}
                 </View>
-                <Text className='text-xl mb-2' style={{fontFamily: 'roboto-medium'}}>{storeName}</Text>
-                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>{storeDescription}</Text>
+                <Text className='text-xl' style={{fontFamily: 'roboto-medium'}}>{storeName}</Text>
+                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>{storeLocation}</Text>
                 
                 <View className='items-center justify-center my-6 w-full'>
                     <View className='justify-center items-center w-full'>
@@ -53,7 +60,11 @@ const Index = () => {
                     </View>
                 </View>
             </View>
-            <StoreSettingsCard router={router} params={params} />
+            <View
+                className=''
+            >
+                <StoreSettingsCard router={router} params={params} />
+            </View>
         </SafeAreaView>
     )
 }

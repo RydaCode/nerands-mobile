@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from "react-native";
 import useApi from "../../../hook/useApi";
 import { toast } from "../../../utils/toast";
 
-const AssignmentModal = ({ pendingorders, onClose, refreshOrders, stopLoopSound }) => {
-    const customorder = pendingorders?.data?.[0] ?? null;
-    const status = customorder?.order_status;
-    if (!customorder || status !== 'Pending') return null;
+const AssignmentModal = ({ runner_id, onClose, stopLoopSound }) => {
+    const router = useRouter();
+    const {data: pendingApi, pendingLoading, pendingError, get} = useApi();
+
+    useEffect(() => {
+        if (runner_id) {
+            get(`/trips/runner/errands?runner_id=${runner_id}&order_status=Pending&page=1&limit=1`);
+        }
+    }, [runner_id]);
+
     const [activeAction, setActiveAction] = useState(null);
     const { data, isLoading, error, post } = useApi("/runner/accept_errand");
-
+    
+    const customorder = pendingApi?.data?.[0] ?? null;
+    const status = customorder?.order_status;
+    if (!customorder || status !== 'Pending') return null;
+    
     const fee = 50/100 * customorder?.service_fee;
 
     // Map backend state to mobile UI
@@ -53,11 +64,10 @@ const AssignmentModal = ({ pendingorders, onClose, refreshOrders, stopLoopSound 
 
                 if (uiState === 'ACTIVE') {
                     // Optional: navigate to active task screen
-                    // navigation.navigate('ActiveErrand', { order: res.data });
+                    router.push('ActiveErrand', { order: res?.data });
                 }
 
                 onClose(false);
-                refreshOrders?.();
                 return;
             }
 
@@ -67,7 +77,6 @@ const AssignmentModal = ({ pendingorders, onClose, refreshOrders, stopLoopSound 
                     res.message || 'This order has already been taken by another runner.'
                 );
                 onClose(false);
-                refreshOrders?.();
                 return;
             }
 

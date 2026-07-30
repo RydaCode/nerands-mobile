@@ -10,13 +10,15 @@ import StoresCard from './cards/StoresCard'
 
 const Index = () => {
     const { user_id  } = useSelector((state) => state.auth);
-    const {data, isLoading, error, get} = useApi(
-        `/stores/category?cat_name=local_market&user_id=${user_id || ''}`
-    );
+    const {data, isLoading, error, get} = useApi();
 
     useEffect(() => {
-        get()
-    }, []);
+        if (user_id) {
+            get(`/stores/category?cat_name=local_market&user_id=${user_id || ''}`)   
+        }
+    }, [user_id]);
+
+    console.log("LOCAL MARKETmmm", data?.stores)
 
     return (
         <SafeAreaView className='flex-1 px-2 bg-white w-full items-center'>
@@ -87,6 +89,8 @@ const Index = () => {
                             //         tintColor={COLORS.primary}
                             //     />
                             // }
+
+                            ListFooterComponent={<View className='mb-8'/>}
                             
                             showsVerticalScrollIndicator={false}
                         />

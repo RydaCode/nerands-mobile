@@ -52,6 +52,7 @@ const localMarketCartSlice = createSlice({
         addLocalMarketItem: (state, action) => {
             const {
                 store_id,
+                business_id,
                 store_name,
                 product_id,
                 product_name,
@@ -96,6 +97,7 @@ const localMarketCartSlice = createSlice({
                 state.localMarketCartItems.push({
                     cart_id,
                     store_id,
+                    business_id,
                     store_name,
                     product_id,
                     product_name,
@@ -122,6 +124,7 @@ const localMarketCartSlice = createSlice({
             const {
                 cart_id,
                 store_id,
+                business_id,
                 product_qty,
                 selected_variants,
                 selected_extras,

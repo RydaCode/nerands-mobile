@@ -1,4 +1,4 @@
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather, FontAwesome6 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
@@ -14,10 +14,13 @@ const LocalMarketCard = (props) => {
     const dispatch = useDispatch();
     const localMarketCartItems = useSelector((state) => state.localmarketcart.localMarketCartItems);
 
-    
-
     // ✅ Add item to Local Market Cart
     const handleAddItem = () => {
+        // if (props.is_closed) {
+        //     toast.info('Store is currently closed.');
+        //     return;
+        // }
+
         dispatch(addLocalMarketItem({ 
             product_id: props.product_id,
             product_images: props.product_image,
@@ -30,6 +33,7 @@ const LocalMarketCard = (props) => {
             product_status: props.product_status,
             store_name: props.store_name,
             store_id: props.store_id,
+            business_id: props.business_id,
             store_phone_num: props.store_phone_num,
             store_category: props.store_category,
             product_category: props.product_category,
@@ -80,7 +84,11 @@ const LocalMarketCard = (props) => {
                     opacity: localMarketCartItems.some(item => item.product_id === props.product_id) ? 0.5 : 0.9
                 }}
             >
-                <FontAwesome color={COLORS.white} name='shopping-cart' size={17} />
+                {props.is_closed ? (
+                    <Feather name="lock" size={17} color={COLORS.white} />
+                ) : (
+                    <FontAwesome6 color={COLORS.white} name='bag-shopping' size={14} />
+                )}
                 <Text style={{fontFamily: 'roboto-medium'}} className='ml-2 text-white'>
                     {localMarketCartItems.some(item => item.product_id === props.product_id) ? "Already In Cart" : "Add To cart"}
                 </Text>

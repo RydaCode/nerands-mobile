@@ -24,16 +24,17 @@ const UpdateStoreProfileImageOthers = ({router, params}) => {
                 store_province: params.store_province,
                 store_ratings: params.store_ratings,
                 user_id: params.user_id,
+                business_id: params.business_id,
                 router: router
             }})}
             style={{borderRadius: SIZES.border}}
             className='h-full w-full items-center justify-center border-1 border-lavender bg-white'
         >
-            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+            <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                 <FontAwesome5 name="camera" color="#54C571" size={20} />
             </View>
             <View className='justify-center items-center'>
-                <Text className='text-sm'>Change Profile</Text>
+                <Text className='text-sm'>Update Image</Text>
             </View>
         </TouchableOpacity>
     )

@@ -9,7 +9,7 @@ import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
-import { isStoreOpen } from '../../utils/isStoreOpen';
+import { formatText } from '../../utils/getInitials';
 
 const FoodsAndLiquor = (refreshKey) => {
     const router = useRouter();
@@ -17,17 +17,21 @@ const FoodsAndLiquor = (refreshKey) => {
     const { latitude, longitude } = useSelector(state => state.location);
     // This enpoint can be used to fetched and filter stores by category, open_close
     // const { data, isLoading, error, get, del } = useApi(`/stores/toprated?cat_name=food&limit=10&open_close=true`);
-    // const { data, isLoading, error, get, del } = useApi(`/stores/toprated?cat_name=food&limit=10&user_id=${user_id}`);
+    // const { data, isLa, ioading, error, get, del } = useApi(`/stores/toprated?cat_name=food&limit=10&user_id=${user_id}`);
     
-    const url = user_id
-    ? `/stores/toprated?cat_name=food&limit=10&user_id=${user_id}`
-    : `/stores/toprated?cat_name=food&limit=10`;
-
-    const { data, isLoading, error, get, del } = useApi(url);
+    const { data, isLoading, error, get, del } = useApi();
 
     useEffect(() => {
-        get();
-    }, [refreshKey]);
+        if (latitude != null && longitude != null) {
+            let url = `/stores/nearby-stores?cat_name=food&limit=10&user_lat=${latitude}&user_lang=${longitude}`;
+
+            if (user_id) {
+                url += `&user_id=${user_id}`;
+            }
+
+            get(url);
+        }
+    }, [user_id, latitude, longitude, refreshKey]);
 
     const storesList = data?.stores ?? [];
     // Get screen width and height using useWindowDimensions
@@ -59,10 +63,6 @@ const FoodsAndLiquor = (refreshKey) => {
                 data={storesList}
                 keyExtractor={(item) => item.store_id}
                 renderItem={({ item }) => {
-
-                    const isManuallyClosed = item.open_close === false;
-                    const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
-                    const isClosed = isManuallyClosed || isTimeClosed;
                     return (
                     <View>
                         <TouchableOpacity className="items-center mr-4 rounded-md border"
@@ -108,10 +108,10 @@ const FoodsAndLiquor = (refreshKey) => {
                                     contentFit="cover"
                                     transition={200}
                                 />
-                                {isClosed &&
+                                {item.is_closed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50'>
-                                        <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.primary, opacity: 0.5}} />
-                                        <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
+                                        <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.white, opacity: 0.5}} />
+                                        <Text style={{fontFamily: 'roboto'}} className='text-sm text-white'>Closed</Text>
                                     </View>
                                 }
                             </View>
@@ -157,7 +157,7 @@ const FoodsAndLiquor = (refreshKey) => {
                             <View
                                 className="absolute left-2 top-2 bg-white rounded-sm py-1 px-2 justify-center items-center"
                             >
-                                <Text className='text-sm text-green1'>{item.store_category}</Text>
+                                <Text className='text-sm text-green1'>{formatText(item.store_category)}</Text>
                             </View>
                             <TouchableOpacity
                                 className="absolute right-2 top-2 bg-[#DFF6E6] rounded-full h-[30px] w-[30px] justify-center items-center"
@@ -188,7 +188,7 @@ const FoodsAndLiquor = (refreshKey) => {
                                     total_ratings: item.review_count,
                                     favorited: item.favorited,
                                     open_time: item.open_time,
-                                    closing_time: item.closing_time
+                                    close_time: item.close_time
                                 }})}
                             >
                                 <Text className='text-white text-sm' style={{fontFamily: 'ubuntu-medium'}}>Visit</Text>
@@ -212,7 +212,7 @@ const FoodsAndLiquor = (refreshKey) => {
                                         contentFit="cover"
                                         transition={200}
                                     />
-                                    {isClosed &&
+                                    {item.is_closed &&
                                         <View className='absolute w-full h-full bg-black opacity-70 rounded-full'/>
                                     }
                                 </View>

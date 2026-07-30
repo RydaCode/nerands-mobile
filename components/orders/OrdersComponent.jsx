@@ -12,6 +12,7 @@ import {
 import { useSelector } from "react-redux";
 import { COLORS } from "../../constants/constants";
 import useApi from "../../hook/useApi";
+import socket from "../../socket-io/socket";
 import EmptyState from "../EmptyState";
 import agoTimeStamp from "../agoTimeStamp";
 
@@ -19,8 +20,8 @@ import agoTimeStamp from "../agoTimeStamp";
 const OrdersData = ({ order, router, user_id }) => {
   const statusColorMap = {
     pending: "bg-rose-700",
-    accepted: "bg-violet-500",
-    in_progress: "bg-indigo-500",
+    accepted: "bg-violet-600",
+    in_progress: "bg-indigo-600",
     completed: "bg-green2",
     cancelled: "bg-red",
   };
@@ -149,6 +150,36 @@ const OrdersComponent = ({ title }) => {
   useEffect(() => {
     if (!user_id) return;
     fetchInitialOrders();
+  }, [user_id]);
+
+  useEffect(() => {
+      if (!user_id) return;
+
+      socket.emit("join_user", user_id);
+
+      console.log("Joining user room:", user_id);
+
+      const handleOrderUpdated = (data) => {
+          console.log("ORDER UPDATED RECEIVED:", data);
+
+          setOrders(prev =>
+              prev.map(order =>
+                  order.order_id === data.order_id
+                      ? {
+                          ...order,
+                          order_status: data.status
+                      }
+                      : order
+              )
+          );
+      };
+
+      socket.on("order_updated", handleOrderUpdated);
+
+      return () => {
+          socket.off("order_updated", handleOrderUpdated);
+      };
+
   }, [user_id]);
 
   // Fetch page 1

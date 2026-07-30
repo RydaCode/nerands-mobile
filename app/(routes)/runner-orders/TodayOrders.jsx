@@ -9,21 +9,27 @@ import useApi from '../../../hook/useApi';
 import { calculateDistance } from '../../../utils/getDistance';
 
 const TodayOrders = (params) => {
-    const { user_id, runner_id, is_runner } = useSelector((s) => s.auth);
+    const { user_id, runner_id, is_runner } = useSelector(state => state.auth);
     const { latitude, longitude } = useSelector(state => state.location);
     const router = useRouter();
 
     const pointA = { latitude: latitude, longitude: longitude }; // User
-   
-    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi(
-        `/runner/errands/${runner_id}?order_status=Accepted,Processing,In_Transit&limit=10`
-    );
+    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi();
+    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi();
 
     console.log('Normal Orders:', normalOrderError);
 
     useEffect(() => {
-        getNormalOrders();
-    }, []);
+        if (user_id) {
+            getUserData(`/runner/get_runner/${user_id}`);   
+        }
+    }, [user_id]);
+
+    useEffect(() => {
+        if (runnerApi?.runner_id) {
+            getNormalOrders(`/runner/errands/${runnerApi?.runner_id}?order_status=Accepted,Processing,In_Transit&limit=10`);   
+        }
+    }, [runnerApi?.runner_id]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -43,7 +49,7 @@ const TodayOrders = (params) => {
     };
 
     return (
-        (normalOrderLoading) ? (
+        (normalOrderLoading || getUserLoading) ? (
             <View className='h-full justify-center items-center'>
                 <ActivityIndicator size={40} color={COLORS.primary}/>
                 <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>Loading orders, please wait...</Text>
@@ -65,7 +71,7 @@ const TodayOrders = (params) => {
                                 onPress={() => router.push({
                                     pathname: 'runner-single-order',
                                     params: {
-                                        runner_id,
+                                        runner_id: runnerApi?.runner_id,
                                         order_id: item.order_id,
                                         order_number: item.order_number,
                                         order_type: item.order_type,

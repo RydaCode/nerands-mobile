@@ -1,20 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { SplashScreen, Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { Provider, useDispatch } from "react-redux";
 
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import * as Notifications from 'expo-notifications';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { CustomToast } from "../components/CustomToast";
+import { NotificationContext } from "../components/home/NotificationContext";
+import NotificationModal from "../components/NotificationModal";
 import { COLORS } from "../constants/constants";
 import "../global.css";
 import { loadDeliveryCharges } from '../hook/pricing/loadDeliveryCharges';
+import { addNotification } from "../redux/store/slices/notificationSlice";
 import store from "../redux/store/store";
 import LocationComponent from "../services/LocationComponent";
 
@@ -29,12 +32,68 @@ const AppContent = () => {
             shouldSetBadge: false,
         }),
     });
+    const notificationRef = useRef(null);
 
     const dispatch = useDispatch();
+    const router = useRouter();
 
     useEffect(() => {
         dispatch(loadDeliveryCharges());
     }, [dispatch]);
+
+    useEffect(() => {
+
+        // Notification received while app is open
+        const receivedSubscription = Notifications.addNotificationReceivedListener(
+            notification => {
+                console.log(
+                    "NOTIFICATION RECEIVED:",
+                    notification
+                );
+
+                console.log(
+                    "NOTIFICATION DATA:",
+                    notification.request.content.data
+                );
+
+                const data = notification.request.content.data;
+                dispatch(
+                    addNotification({
+                        notification_id: data.order_id,
+                        title: notification.request.content.title,
+                        message: notification.request.content.body,
+                        ...data,
+                        read:false,
+                        created_at: new Date().toISOString()
+                    })
+                );
+            }
+        );
+
+        // User taps notification
+        const responseSubscription = Notifications.addNotificationResponseReceivedListener(
+            response => {
+
+                const data = response.notification.request.content.data;
+
+                console.log(
+                    "NOTIFICATION CLICKED DATA:",
+                    data
+                );
+
+                // router.push('/(tabs)/orders');
+                if (data?.action_url) {
+                    router.push(data.action_url);
+                }
+            }
+        );
+
+        return () => {
+            receivedSubscription.remove();
+            responseSubscription.remove();
+        };
+
+    }, []);
 
     // Only mount Stack when user is authenticated
     return (
@@ -42,11 +101,19 @@ const AppContent = () => {
             <LocationComponent />
             <StatusBar style="dark" backgroundColor={APP_PRIMARY_COLOR} />
 
+            <NotificationContext.Provider
+                value={{
+                    openNotifications: () =>
+                        notificationRef.current?.present()
+                }}
+            >
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(routes)" />
             </Stack>
+            <NotificationModal ref={notificationRef}/>
+            </NotificationContext.Provider>
 
             <Toast
                 config={{

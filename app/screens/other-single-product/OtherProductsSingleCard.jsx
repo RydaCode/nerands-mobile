@@ -21,6 +21,7 @@ const OtherProductsSingleCard = ({
     product_status,
     store_name,
     store_id,
+    business_id,
     store_phone_num,
     store_category,
     product_category,
@@ -49,14 +50,6 @@ const OtherProductsSingleCard = ({
         get();
     }, []);
 
-
-
-
-
-
-
-
-
     // Object.values(selectedVariants).forEach(group => {
     //     console.log("GROUPS:", group.group_name);
 
@@ -64,8 +57,6 @@ const OtherProductsSingleCard = ({
     //         console.log("OPTIONS:", option.name);
     //     });
     // });
-
-    console.log('SELECTED VARIANTS',selectedVariants)
 
     // Auto select variants
     // useEffect(() => {
@@ -118,30 +109,6 @@ const OtherProductsSingleCard = ({
     // };
 
     // const finalPrices = Number(final_price) + getVariantPrices();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     useEffect(() => {
         if (!variant_groups?.length) return;
@@ -326,6 +293,7 @@ const isDisabled = alreadyInCart || missing.length > 0;
             product_notes: productnotes,
             available_variants: variant_groups,
             store_id: store_id,
+            business_id: business_id,
             store_phone_num: store_phone_num,
             store_category: store_category,
             product_category: product_category,

@@ -9,6 +9,7 @@ import OpenCloseStore from './cards/OpenCloseStore';
 import PublishStoreBtn from './cards/PublishStoreBtn';
 import SearchAdmin from './cards/SearchAdmin';
 import StoreExtras from './cards/StoreExtras';
+import StoreHours from './cards/StoreHours';
 import StoreVariants from './cards/StoreVariants';
 import UpdateStoreLocationBtn from './cards/UpdateStoreLocationBtn';
 import UpdateStoreProfileImageOthers from './cards/UpdateStoreProfileImageOthers';
@@ -32,13 +33,14 @@ const StoreSettingsCard = ({ params, router }) => {
         { Component: EditStoresOthers, props: { router, params, editstorelistmodalvisible, setEditStoreListModalVisible } },
         { Component: PublishStoreBtn, props: { router, params, publishStoremodalVisible, setPublishStoreModalVisible } },
         { Component: UpdateStoreProfileImageOthers, props: { router, params } },
+        { Component: StoreHours, props: { router, params } },
         { Component: UpdateStoreLocationBtn, props: { router, params, updateStoreLocationModalVisible, setUpdateStoreLocationModalVisible } },
         { Component: DeleteAllProductsModal, props: { router, params, deleteAllProductsModalVisible, setDeleteAllProductsModalVisible } },
         { Component: DeleteStoreModal, props: { router, params, deleteStoreModalVisible, setDeleteStoreModalVisible } },
     ];
 
     // Only add this if condition is met
-    if (params.store_category === 'Restaurant' || params.store_category === 'Liquor') {
+    if (params.store_category === 'restaurant' || params.store_category === 'liquor' || params.store_category === 'fast_foods') {
         settingsCards.splice(1, 0, {
             Component: StoreExtras,
             props: {
@@ -71,12 +73,12 @@ const StoreSettingsCard = ({ params, router }) => {
                 transition={{ duration: 1000 }}
                 className='flex-1 justify-end'
             >
-                <View className='flex-row flex-wrap items-center justify-between mx-4'>
+                <View className='flex-row flex-wrap items-center justify-between rounded mb-2'>
                     {settingsCards.map(({ Component, props }, index) => (
                         <View
                             key={index}
                             style={{width: '31%', height: 75 }}
-                            className='mb-3 items-center justify-center bg-grey_bg border border-lavender rounded'>
+                            className='mb-3 items-center justify-center'>
                             <Component {...props} />
                         </View>
                     ))}

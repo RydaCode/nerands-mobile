@@ -1,5 +1,5 @@
 import { COLORS } from '@/constants/constants';
-import { FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { SIZES } from '../../constants/constants';
 import { Carticons } from '../../constants/icons';
+import { useNotificationModal } from './NotificationContext';
 // import { useLocation } from '../../LocationContext';
 // import { useSelector } from 'react-redux';
 
@@ -17,6 +18,14 @@ const HomeHeader = ({ location }) => {
 
     const othersCartItems = useSelector(state => state.otherscart.othersCartItems);
     const cartItems = useSelector(state => state.cart.cartItems);
+    const localMarketCart = useSelector(state => state.localmarketcart.localMarketCartItems);
+    const unreadCount = useSelector(state => state.notifications.notifications);
+
+    const {
+        openNotifications
+    } = useNotificationModal();
+
+    const finalNotCount = (unreadCount?.length > 99 ? '99+' : unreadCount?.length) || 0;
 
     const totalOtherCartItems = othersCartItems.reduce(
         (sum, item) => sum + (item.product_qty || 0),
@@ -27,6 +36,13 @@ const HomeHeader = ({ location }) => {
         (sum, item) => sum + (item.product_qty || 0),
         0
     );
+
+    const totaLocalMarketCartItems = localMarketCart.reduce(
+        (sum, item) => sum + (item.product_qty || 0),
+        0
+    );
+
+    const cartNum = totalFoodCartItems + totalOtherCartItems + totaLocalMarketCartItems || 0;
     return (
         <View className='items-center w-full'>
             <View className='w-full flex-row justify-between items-center'>
@@ -48,57 +64,35 @@ const HomeHeader = ({ location }) => {
                         style={{ backgroundColor: COLORS.navBtnBgHome }}
                         className='w-8 h-8 rounded-full justify-center items-center'
                     >
-                        <Ionicons name='search' size={20} color={COLORS.slate} />
+                        <Ionicons name='search' size={20} color={COLORS.black} />
                     </TouchableOpacity>
 
-                    {cartItems.length > 0 &&
-                        <TouchableOpacity
-                            onPress={() => router.push('../../cart/')}
-                            style={{ backgroundColor: COLORS.navBtnBgHome }}
-                            className='w-8 h-8 bg-blue-500 rounded-full mx-4 justify-center items-center relative'
+                    <TouchableOpacity
+                        onPress={openNotifications}
+                        style={{ backgroundColor: COLORS.navBtnBgHome }}
+                        className='w-8 h-8 bg-blue-500 rounded-full ml-4 justify-center items-center relative'
+                    >
+                        <FontAwesome name="bell" size={17} color={COLORS.black} />
+                        {/* <Text className='text-2xl'>🥗</Text> */}
+                        <View
+                            className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
                         >
-                            {/* <FontAwesome name="bell" size={17} color={COLORS.slate} /> */}
-                            <Text className='text-2xl'>🥗</Text>
-                            <View
-                                className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
-                            >
-                                <Text className='text-white text-sm'>{totalFoodCartItems}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    }
-                    {othersCartItems.length > 0 &&
-                        <TouchableOpacity
-                            onPress={() => router.push('../../cart/')}
-                            style={{
-                                backgroundColor: COLORS.navBtnBgHome,
-                                marginLeft: cartItems.length > 0 ? 4 : 16
-                            }}
-                            className='w-8 h-8 bg-blue-500 rounded-full ml-4 justify-center items-center relative'
+                            <Text className='text-white' style={{fontSize: 11}}>{finalNotCount}</Text>
+                        </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('../../cart/')}
+                        style={{ backgroundColor: COLORS.navBtnBgHome }}
+                        className='w-8 h-8 rounded-full ml-4 mr-2 justify-center items-center relative'
+                    >
+                        {/* <FontAwesome name="bell" size={17} color={COLORS.slate} /> */}
+                        <FontAwesome6 name="bag-shopping" size={17} color={COLORS.black} />
+                        <View
+                            className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
                         >
-                            <Text className='text-2xl'>📦</Text>
-                            {/* <FontAwesome name="shopping-cart" size={20} color={COLORS.slate} /> */}
-                            <View
-                                className='absolute left-5 -top-[5px] size-[21px] rounded-full bg-red bottom-0 border-white border-[1px] justify-center items-center'
-                            >
-                                <Text className='text-white text-sm'>{totalOtherCartItems}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    }
-                    {othersCartItems.length > 0 || cartItems.length > 0 ? <></> :
-                        <TouchableOpacity
-                            onPress={() => router.push('../../cart/')}
-                            style={{ backgroundColor: COLORS.navBtnBgHome }}
-                            className='w-8 h-8 rounded-full mx-4 justify-center items-center relative'
-                        >
-                            {/* <FontAwesome name="bell" size={17} color={COLORS.slate} /> */}
-                            <FontAwesome6 name="bag-shopping" size={17} color="grey" />
-                            <View
-                                className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
-                            >
-                                <Text className='text-white text-sm'>0</Text>
-                            </View>
-                        </TouchableOpacity>
-                    }
+                            <Text className='text-white text-sm'>{cartNum}</Text>
+                        </View>
+                    </TouchableOpacity>
                 </View>
             </View>
             <TouchableOpacity

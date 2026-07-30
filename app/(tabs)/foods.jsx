@@ -191,6 +191,9 @@ const Foods = () => {
             </View>
         ) : null;
 
+    
+    console.log("stores FOODSSS", stores)
+
     return (
         <SafeAreaView className="flex-1 h-full bg-white px-2" edges={["top"]} style={{paddingBottom: 80}}>
             <HomeHeader title="Home Header" location={displayCurrentLocation} />

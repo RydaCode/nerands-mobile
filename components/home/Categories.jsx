@@ -76,35 +76,34 @@ const Categories = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             setTimeOfDay(getTimeOfDay());
-        }, 60000); // every 1 min
+        }, 60000); // Update every minute
 
         return () => clearInterval(interval);
     }, []);
 
-    const greeting = `Good ${timeOfDay}`;
-    const name = first_name || "Guest";
-
     const getPersonalizedGreeting = () => {
         const name = first_name || "Guest";
 
-        if (timeOfDay === "morning") {
-            return {
-                text: "Good morning",
-                sub: "What would you like to explore today?"
-            };
-        }
+        switch (timeOfDay) {
+            case "morning":
+                return {
+                    text: `Good morning, ${name}`,
+                    sub: "What are you looking for today?"
+                };
 
-        if (timeOfDay === "afternoon") {
-            return {
-                text: "Good afternoon",
-                sub: "What are you in the mood for this afternoon?"
-            };
-        }
+            case "afternoon":
+                return {
+                    text: `Good afternoon, ${name}`,
+                    sub: "Ready to discover something great nearby?"
+                };
 
-        return {
-            text: "Good evening",
-            sub: "Relax and explore something new on Nerands"
-        };
+            case "evening":
+            default:
+                return {
+                    text: `Good evening, ${name}`,
+                    sub: "Browse, order, and relax—we'll handle the rest."
+                };
+        }
     };
 
     useEffect(() => {
@@ -120,19 +119,19 @@ const Categories = () => {
     return (
         <View>
             <View className="mt-6">
-                <Animated.View className='rounded mb-8'>
+                <Animated.View className="rounded mb-8">
                     <Animated.Text
-                        style={{ opacity: fadeAnim, fontFamily: 'roboto-medium' }}
-                        className="text-base text-slate mb-1"
+                        style={{ opacity: fadeAnim, fontFamily: "roboto-medium" }}
+                        className="text-base text-green1 mb-1"
                     >
-                        {text},{' '}
-                        <Text className="text-primary">{first_name || "Guest"}</Text>
+                        {text}
                     </Animated.Text>
-                    <Text className="text-sm text-green1"
-                        style={{fontFamily: 'roboto-medium'}}
-                    >
-                        {sub}
-                    </Text>
+                    <Animated.Text
+                            style={{ opacity: fadeAnim, fontFamily: "roboto-medium" }}
+                            className="text-sm text-slate"
+                        >
+                            {sub}
+                        </Animated.Text>
                 </Animated.View>
 
                 <Text className='text-2xl' style={{fontFamily: 'roboto-medium'}}>Explore</Text>

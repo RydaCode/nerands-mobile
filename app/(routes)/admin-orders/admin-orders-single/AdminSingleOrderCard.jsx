@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { Dimensions, FlatList, Text, View, useWindowDimensions } from 'react-native'
 import { useSelector } from 'react-redux'
 import useApi from '../../../../hook/useApi'
+import socket from '../../../../socket-io/socket'
+import { toast } from '../../../../utils/toast'
 import LoadingIndicator from '../../../LoadingIndicator'
 import ClientDetails from './ClientDetails'
 import CustomTransporter from './CustomTransporter'
@@ -17,7 +19,12 @@ const AdminSingleOrderCard = ({params}) => {
     const itemWidth = screenWidth * 0.40; // ~34% of screen width
     const router = useRouter();
 
-const STATUS = 'pending';
+    const [searchingTransporter, setSearchingTransporter] = useState(false);
+    const [searchFailed, setSearchFailed] = useState(false);
+    const [assignedTransporter, setAssignedTransporter] = useState(null);
+    const [searchResults, setSearchResults] = useState(null);
+
+    const STATUS = 'pending';
     const { get, isLoading } = useApi();
     const [orderData, setOrders] = useState({});
     const [page, setPage] = useState(1);
@@ -42,6 +49,138 @@ const STATUS = 'pending';
     useEffect(() => {
         getMainOrder();
     }, []);
+
+    useEffect(() => {
+        if (!params?.store_id) return;
+
+        socket.emit("join_store", params.store_id);
+
+        console.log("Joining store room:", params.store_id);
+
+        const handleStarted = (payload) => {
+            console.log(
+                "TRANSPORTER SEARCH STARTED:",
+                payload
+            );
+
+            setSearchResults(payload);
+
+            setSearchingTransporter(true);
+            setSearchFailed(false);
+        };
+
+        const handleProgress = (payload) => {
+            console.log(
+                "TRANSPORTER SEARCH PROGRESS:",
+                payload
+            );
+
+            setSearchResults(payload);
+            setSearchingTransporter(true);
+        };
+
+        const handleFound = (payload) => {
+            console.log("Transporter found", payload);
+
+            setSearchingTransporter(false);
+            setSearchFailed(false);
+
+            setAssignedTransporter(payload.transporter);
+
+            toast.success(
+                "Transporter found",
+                `${payload.transporter.first_name} assigned`
+            );
+        };
+
+
+        const handleFailed = (payload) => {
+            setSearchingTransporter(false);
+            setSearchFailed(true);
+            toast.error(payload.message);
+        };
+
+
+        socket.on(
+            "transporter_search_started",
+            handleStarted
+        );
+
+        socket.on(
+            "transporter_search_progress",
+            handleProgress
+        );
+
+        socket.on(
+            "transporter_found",
+            handleFound
+        );
+
+        socket.on(
+            "transporter_search_failed",
+            handleFailed
+        );
+
+
+        return () => {
+
+            socket.off(
+                "transporter_search_started",
+                handleStarted
+            );
+
+            socket.off(
+                "transporter_search_progress",
+                handleProgress
+            );
+
+            socket.off(
+                "transporter_found",
+                handleFound
+            );
+
+            socket.off(
+                "transporter_search_failed",
+                handleFailed
+            );
+        };
+
+    }, [params?.store_id]);
+
+    useEffect(() => {
+
+        if (!params?.store_id) return;
+
+        socket.emit("join_store", params.store_id);
+
+
+        const handleStatusUpdate = (payload) => {
+
+            console.log("ORDER STATUS UPDATE:", payload);
+
+            setOrders(prev => ({
+                ...prev,
+                status: payload.status
+            }));
+
+        };
+
+
+        socket.on(
+            "order_status_updated",
+            handleStatusUpdate
+        );
+
+
+        return () => {
+            socket.off(
+                "order_status_updated",
+                handleStatusUpdate
+            );
+        };
+
+
+    }, [params?.store_id]);
     
     const items = orderData?.items || [];
 
@@ -133,8 +272,6 @@ const STATUS = 'pending';
     const grandTotal = Object.values(productTotals).reduce(
         (sum, total) => sum + total, 0
     );
-
-    console.log("orderData", orderData)
 
     // const grandTota = Number(summary.finalTotal) + Number(orderData?.shipping_fee);
 
@@ -232,6 +369,10 @@ const STATUS = 'pending';
                                             isRunnerActive={orderData?.runner_active}
                                             params={params}
                                             data={orderData}
+                                            searching={searchingTransporter}
+                                            searchFailed={searchFailed}
+                                            transporter={assignedTransporter}
+                                            searchResults={searchResults}
                                         />
                                     </>
                                 )}
@@ -262,6 +403,7 @@ const STATUS = 'pending';
                         status={orderData?.status}
                         grandTotal={grandTotal}
                         params={orderData?.items}
+                        store={orderData}
                         courier_type={orderData?.shipping_mode}
                         onUpdate={(newStatus) => console.log("Order updated:", newStatus)}
                         onTransporterAssigned={setTransporter} // ✅ lift transporter up

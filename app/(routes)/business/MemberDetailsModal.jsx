@@ -1,11 +1,13 @@
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons'
 import { MotiView } from 'moti'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { Dropdown } from 'react-native-element-dropdown'
 import { USER_IMAGE_URI } from '../../../RequestMethods'
 import { COLORS } from '../../../constants/constants'
 import useApi from '../../../hook/useApi'
+import { usePermissions } from '../../../hook/usePermissions'
+import { getAvatarColor, getInitials } from '../../../utils/getInitials'
 import { toast } from '../../../utils/toast'
 
 const MemberDetailsModal = ({
@@ -15,12 +17,18 @@ const MemberDetailsModal = ({
     roles,
     user_id,
     business_id,
-    reload
+    reload,
+    loggedInUserRole
 }) => {
+    const { can } = usePermissions();
     const [errors, setErrors] = useState({});
     const [removeerrors, setRemoveErrors] = useState({});
     const {data, isLoading, error, patch} = useApi(
         `/businesses/members-roles/update`
+    );
+
+    const {data: deletemember, isLoading: loadingDeleteMember, error: errorDeleteMember, del} = useApi(
+        `/businesses/members/delete`
     );
 
     const [formData, setFormData] = useState({
@@ -29,28 +37,95 @@ const MemberDetailsModal = ({
         role_id: ''
     });
 
+    useEffect(() => {
+        if (item?.member?.user_id) {
+            setFormData(prev => ({
+                ...prev,
+                user_id: item.member.user_id
+            }));
+        }
+    }, [item]);
+
     const availableRoles = roles?.data?.map((r) => ({
         value: r.id,
         label: r.name
     })) || [];
 
+    // Filter owner role
+    const availableRolesForAssignment = availableRoles.filter(
+        role => role?.label !== "OWNER"
+    );
+
+    // Can remove member?
+    const canRemove =
+        item?.member?.user_id !== user_id && item?.role?.name !== "OWNER" && can("remove_member");
+
+    // Delete member
     const removeMember = async () => {
         let newErrors = {};
 
-        if (!formData.role_id || (formData.role_id === item.role.id)) {
-            newErrors.role_id = "You can not remove your self from this business.";
+        // Must have permission
+        if (!can("remove_member")) {
+            newErrors.role_id =
+                "You do not have permission to remove members from this business.";
+        }
+
+        // Cannot remove yourself
+        if (item?.member?.user_id === user_id) {
+            newErrors.role_id =
+                "You cannot remove yourself from this business.";
+        }
+
+        // Cannot remove business owner
+        if (item?.role?.name === "OWNER") {
+            newErrors.role_id =
+                "The business owner cannot be removed.";
         }
 
         setRemoveErrors(newErrors);
 
         if (Object.keys(newErrors).length > 0) {
             toast.error(newErrors.role_id);
+            setOpenMemberDetails(false);
+            return;
+        }
+
+        try {
+            const res = await del({
+                business_id,
+                member_id: item?.member?.user_id
+            });
+
+            if (res?.success) {
+                toast.success(res?.message || "Member deleted successfully.");
+                setOpenMemberDetails(false);
+                reload();
+                return;
+            }
+            else if (!res?.success) {
+                toast.error(res?.message || "Member was not deleted");
+                setOpenMemberDetails(false);
+                return;
+            }
+            else if (error) {
+                toast.error(error.message || "Member was not deleted, try again later");
+                setOpenMemberDetails(false);
+                return;
+            }
+        } catch (err) {
+            toast.error(err.message || "Failed to delete member");
+            setOpenMemberDetails(false);
             return;
         }
     }
 
+    // Update member roles
     const updateRole = async () => {
         let newErrors = {};
+
+        if (!can('update_member')) {
+            newErrors.role_id = "You have no permissions to update members roles in this business.";
+        }
 
         if (!formData.role_id) {
             newErrors.role_id = "Select a role to update.";
@@ -61,7 +136,7 @@ const MemberDetailsModal = ({
         }
 
         if (item?.member?.user_id === user_id) {
-            newErrors.role_id = "Can not chnage your role";
+            newErrors.role_id = "Can not change your own role";
         }
 
         setErrors(newErrors);
@@ -73,13 +148,14 @@ const MemberDetailsModal = ({
 
         try {
             const res = await patch(formData);
-            if (res?.success) {
-                toast.success(res?.message || "Role updated");
+
+            if (res?.data?.success) {
+                toast.success(res?.data?.message || "Role updated");
                 setOpenMemberDetails(false);
                 reload();
             }
-            else if (!res?.success) {
-                toast.error(res?.message || "Role was not upatad");
+            else if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Role was not upatad");
             }
             else if (error) {
                 toast.error(error.message || "Role was not upatad, try again later");
@@ -135,10 +211,17 @@ const MemberDetailsModal = ({
                             <View className='w-full flex-row items-center justify-between'>
                                 <View
                                     className='border-2 border-lavender justify-center items-center rounded-full'
-                                    style={{width: 63, height: 63}}
+                                    style={{width: 63, height: 63, backgroundColor: getAvatarColor(item?.member?.user_id)}}
                                 >
                                     {item?.member?.profile_image === null ?
-                                        <FontAwesome name="user" size={24} color={COLORS.slate} />
+                                        <Text
+                                            className='text-white'
+                                            numberOfLines={1}
+                                            style={{
+                                                fontFamily: 'roboto-medium',
+                                                fontSize: 30,
+                                            }}
+                                        >{getInitials(item?.member?.first_name)}</Text>
                                         : <Image
                                             source={{ uri: `${USER_IMAGE_URI}${item?.member?.profile_image}` }}
                                             style={{ height: '100%', width: '100%' }}
@@ -161,25 +244,36 @@ const MemberDetailsModal = ({
                                 </View>
                             </View>
 
-                            <View className='w-full my-4'>
-                                <View
-                                    className='w-full flex-row items-center mb-2'
-                                >
-                                    <FontAwesome name='phone' size={17} color={COLORS.primary}/>   
+                            <View className='w-full mb-4'>
+                                <View className='w-full flex-row items-center mb-6 mt-2'>
                                     <Text
-                                        className='ml-2'
-                                        style={{fontFamily: 'roboto-medium'}}
-                                    > {item?.member?.phone_num}</Text>
+                                        className='text-black text-sm'
+                                        style={{fontFamily: 'roboto'}}
+                                    >{item?.role?.description}</Text>
                                 </View>
-                                <View
-                                    className='w-full flex-row items-center mb-2'
-                                >
-                                    <FontAwesome name='envelope' size={15} color={COLORS.primary}/>
-                                    <Text
-                                        className='ml-2'
-                                        style={{fontFamily: 'roboto-medium'}}
-                                    > {item?.member?.email_add}</Text>
-                                </View>
+
+                                {can('view_member_contact') && (
+                                    <>
+                                        <View
+                                            className='w-full flex-row items-center mb-2'
+                                        >
+                                            <FontAwesome name='phone' size={17} color={COLORS.primary}/>   
+                                            <Text
+                                                className='ml-2'
+                                                style={{fontFamily: 'roboto-medium'}}
+                                            > {item?.member?.phone_num}</Text>
+                                        </View>
+                                        <View
+                                            className='w-full flex-row items-center mb-2'
+                                        >
+                                            <FontAwesome name='envelope' size={15} color={COLORS.primary}/>
+                                            <Text
+                                                className='ml-2'
+                                                style={{fontFamily: 'roboto-medium'}}
+                                            > {item?.member?.email_add}</Text>
+                                        </View>  
+                                    </>
+                                )}
                                 <View
                                     className='w-full flex-row items-center mb-2'
                                 >
@@ -194,12 +288,12 @@ const MemberDetailsModal = ({
                                 </View>
                             </View>
 
-                            {(item?.role?.name === 'OWNER' || item?.role?.name === 'ADMIN') && (item?.member?.user_id !== user_id) && (
+                            {can('update_member_role') && (
                                 <View className='w-full bg-lavender my-1' style={{height: 1}} />
                             )}
                             
                             {/* Update member roles */}
-                            {(item?.role?.name === 'OWNER' || item?.role?.name === 'ADMIN') && (item?.member?.user_id !== user_id) && (
+                            {can('update_member_role') && item?.member?.user_id !== user_id && item?.role?.name !== 'OWNER' && (
                                 <View className="my-5">
                                     <Text className="text-base mb-1" style={{ fontFamily: "roboto-bold" }}>Update Role</Text>
                                     <Text
@@ -209,11 +303,12 @@ const MemberDetailsModal = ({
                                         Please select the new role for this member.
                                     </Text>
                                     <Dropdown
-                                        data={availableRoles}
+                                        data={availableRolesForAssignment}
                                         labelField="label"
                                         valueField="value"
                                         placeholder={item?.role?.name}
                                         value={formData.role_id}
+                                        mode="modal"
                                         onChange={(item) => {
                                             setFormData(prev => ({
                                                 ...prev,
@@ -238,14 +333,13 @@ const MemberDetailsModal = ({
                                     <TouchableOpacity
                                         className='mt-4 py-3 rounded-2xl justify-center items-center'
                                         style={{
-                                            backgroundColor: COLORS.extra_blue,
-                                            opacity: isLoading ? 0.4 : 0.9
+                                            backgroundColor: COLORS.extra_blue
                                         }}
                                         onPress={() => updateRole()}
                                         disabled={isLoading}
                                     >
                                         {isLoading ? (
-                                            <ActivityIndicator size={27} color={COLORS.primary}/>
+                                            <ActivityIndicator size={27} color={COLORS.white}/>
                                         ) : (
                                             <Text
                                                 style={{fontFamily: 'outfit-medium'}}
@@ -257,7 +351,7 @@ const MemberDetailsModal = ({
                             )}
 
                             {/* Remove member */}
-                            {(item?.role?.name === 'OWNER') && (
+                            {canRemove && (
                                 <View>
                                     <Text className="text-base mb-1 mt-4" style={{ fontFamily: "roboto-bold" }}>Remove Member</Text>
                                     <Text
@@ -276,10 +370,14 @@ const MemberDetailsModal = ({
                                         className='bg-red py-3 rounded-2xl justify-center items-center'
                                         onPress={() => removeMember()}
                                     >
-                                        <Text
-                                            style={{fontFamily: 'outfit-medium'}}
-                                            className='text-white text-2xl'
-                                        >Remove</Text>
+                                        {loadingDeleteMember ? (
+                                            <ActivityIndicator size={28} color={COLORS.white}/>
+                                        ) : (
+                                            <Text
+                                                style={{fontFamily: 'outfit-medium'}}
+                                                className='text-white text-2xl'
+                                            >Remove</Text>
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             )}

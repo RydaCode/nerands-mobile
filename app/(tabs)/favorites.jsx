@@ -27,13 +27,13 @@ const Favorites = () => {
     }
 
     return (
-        <SafeAreaView className='flex-1 px-4 justify-start items-center bg-white'>
-            <View className=''>
+        <SafeAreaView className='flex-1 justify-start items-center bg-white'>
+            <View className='px-2'>
                 <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Favorites'/>
             </View>
 
             {!isAuthenticated ? (
-                <View className="w-full h-full justify-center items-center bg-white">
+                <View className="w-full h-full justify-center items-center bg-white px-2">
                     
                     <Fontisto name="locked" size={30} color={COLORS.slate} />
                     <Text className="text-base my-4 text-slate" style={{fontFamily: 'roboto-medium'}}>
@@ -54,7 +54,7 @@ const Favorites = () => {
                 </View>
             ) : isAuthenticated ? (
                 <>
-                    <View className='w-full mt-1'>
+                    <View className='w-full mt-1 px-2'>
                         <FavoritesTabs
                             tabs={tabs}
                             activeTab={activeTab}

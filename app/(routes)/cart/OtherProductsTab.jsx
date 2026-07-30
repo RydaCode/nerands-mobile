@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, SectionList, Text, TouchableOpacity, View } from 'react-native';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { useDispatch, useSelector } from 'react-redux';
+import LogingBtn from '../../../components/cart/LogingBtn';
 import OrderBtn from '../../../components/cart/OrderBtn';
 import OthersCartData from '../../../components/cart/OthersCartData';
 import DeliveryOptions1 from '../../../components/DeliveryOptions1';
@@ -15,7 +16,6 @@ import { USER_IMAGE_URI } from '../../../RequestMethods';
 import { toast } from '../../../utils/toast';
 import DeliveryZones from './DeliveryZones';
 import GetAvailableRunners from './GetAvailableRunners';
-import LogingBtn from '../../../components/cart/LogingBtn';
 
 const OtherProductsTab = () => {
     const { user_id, phone_num, province, city_town } = useSelector((state) => state.auth);
@@ -104,6 +104,7 @@ const OtherProductsTab = () => {
             acc[storeId] = {
                 store_id: storeId,
                 store_name: item.store_name,
+                business_id: item.business_id,
                 store_category: item.store_category,
                 store_phone_num: item.store_phone_num,
                 store_province: item.store_province,
@@ -153,6 +154,7 @@ const OtherProductsTab = () => {
 
             stores: storesArray.map(store => ({
                 store_id: store.store_id,
+                business_id: store.business_id,
                 store_name: store.store_name,
                 store_category: store.store_category,
                 store_phone_num: store.store_phone_num,

@@ -72,6 +72,7 @@ const EditStoreData = ({ router, params, setEditStoreListModalVisible }) => {
                                         field_key: key,
                                         field_value: edit_data[key] || '',
                                         store_id: edit_data.store_id,
+                                        business_id: edit_data.business_id,
                                     },
                                 })
                             }

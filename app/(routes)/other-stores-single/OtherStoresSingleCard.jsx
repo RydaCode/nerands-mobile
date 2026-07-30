@@ -31,7 +31,8 @@ const OtherStoresSingleCard = ({
     store_longitude,
     variant_groups,
     markup_percent,
-    final_price
+    final_price,
+    is_available
 }) => {
     const router = useRouter();
     const dispatch = useDispatch();
@@ -69,6 +70,11 @@ const OtherStoresSingleCard = ({
 
     // ✅ Add item to Other Cart
     const handleAddItem = () => {
+        if (!is_available) {
+            toast.info('Product unavailable');
+            return;
+        }
+
         const getVariantPrice = () => {
             let extra = 0;
             variant_groups.forEach(group => {
@@ -97,6 +103,7 @@ const OtherStoresSingleCard = ({
             store_name: params.store_name,
             available_variants: variant_groups,
             store_id: params.store_id,
+            business_id: params.business_id,
             store_phone_num: params.store_phone_num,
             store_category: params.store_category,
             product_category: product_category,
@@ -117,30 +124,39 @@ const OtherStoresSingleCard = ({
 
     return (
         <TouchableOpacity
-            onPress={() => router.push({ pathname: '../(routes)/other-single-product/', params: {
-                product_id: product_id,
-                product_image: product_image,
-                product_name: product_name,
-                product_description: product_description,
-                product_actual_price: product_actual_price,
-                product_price: product_price,
-                final_price: Number(final_price),
-                // product_qty: quantity,
-                // total_price: totalprice,
-                product_status: product_status,
-                store_name: params.store_name,
-                store_id: params.store_id,
-                store_phone_num: params.store_phone_num,
-                store_category: params.store_category,
-                product_category: product_category,
-                product_colors: product_colors,
-                product_sizes: product_sizes,
-                store_profileImage: params.store_profileImage,
-                store_location: params.store_location,
-                store_latitude: params.store_latitude,
-                store_longitude: params.store_longitude,
-                variant_groups: JSON.stringify(variant_groups)
-            }})}
+            onPress={() => {
+                if (!is_available) {
+                    toast.info('Product unavailable');
+                    return;
+                }
+
+                router.push({ pathname: '../(routes)/other-single-product/', params: {
+                    product_id: product_id,
+                    product_image: product_image,
+                    product_name: product_name,
+                    product_description: product_description,
+                    product_actual_price: product_actual_price,
+                    product_price: product_price,
+                    final_price: Number(final_price),
+                    // product_qty: quantity,
+                    // total_price: totalprice,
+                    product_status: product_status,
+                    store_name: params.store_name,
+                    store_id: params.store_id,
+                    business_id: params.business_id,
+                    store_phone_num: params.store_phone_num,
+                    store_category: params.store_category,
+                    product_category: product_category,
+                    product_colors: product_colors,
+                    product_sizes: product_sizes,
+                    store_profileImage: params.store_profileImage,
+                    store_location: params.store_location,
+                    store_latitude: params.store_latitude,
+                    store_longitude: params.store_longitude,
+                    variant_groups: JSON.stringify(variant_groups),
+                    is_available: params.is_available
+                }})}
+            }
             activeOpacity={0.7}
             className='w-[49%] rounded-md items-center justify-center relative'
         >
@@ -154,9 +170,17 @@ const OtherStoresSingleCard = ({
                 </View>
             </View> */}
             <View className='relative w-full' style={{height: 170}}>
-                <Image resizeMode='cover' className='relative h-full w-full rounded-[3px]'
-                    source={{uri: `${PRODUCTS_IMAGE_URI}${product_image}`}}
-                />
+                <View className='relative justify-center items-center h-full w-full rounded-[3px]'>
+                    <Image resizeMode='cover' className='h-full w-full rounded-[3px]'
+                        source={{uri: `${PRODUCTS_IMAGE_URI}${product_image}`}}
+                    />
+                    {!is_available && (
+                        <View className='absolute rounded-[3px] bg-transparentBlack w-full h-full justify-center items-center'>
+                            <MaterialCommunityIcons name="lock" size={15} style={{color: COLORS.lite}} />
+                            <Text className='text-white text-sm'>Unavailable</Text>
+                        </View>
+                    )}
+                </View>
                 <TouchableOpacity className='absolute h-7 w-7 top-2 right-2 items-center justify-center bg-[#fff] rounded-full'>
                     <MaterialCommunityIcons color={COLORS.primary} name='heart-outline' size={17} />
                 </TouchableOpacity>
@@ -167,10 +191,10 @@ const OtherStoresSingleCard = ({
                 </TouchableOpacity> */}
             </View>
             <View className='w-full justify-center items-center p-1'>
-                <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className='text-lg'>{product_name}</Text>
+                <Text numberOfLines={1} style={{fontFamily: 'roboto-medium'}} className='text-base'>{product_name}</Text>
             </View>
             <View className='w-full justify-center items-center p-1'>
-                <Text className='text-lg text-primary' style={{fontFamily: 'roboto-medium'}}>K{final_price}</Text>
+                <Text className='text-base text-primary' style={{fontFamily: 'roboto-medium'}}>K{final_price}</Text>
             </View>
             <TouchableOpacity
                 disabled={othersCartItems.some(item => product_id === item.product_id)}
@@ -178,7 +202,7 @@ const OtherStoresSingleCard = ({
                 className='flex-row rounded-full h-[30px] w-[100%] bottom-0 items-center justify-center border border-1 border-red'
             >
                 <FontAwesome color={COLORS.primary} name='shopping-cart' size={20} />
-                <Text style={{fontFamily: 'roboto-medium'}} className='ml-2 text-primary'>
+                <Text style={{fontFamily: 'roboto-medium', opacity: is_available ? 1 : 0.5}} className='ml-2 text-primary'>
                     {othersCartItems.some(item => product_id === item.product_id) ? "Already In Cart" : "Add To cart"}
                 </Text>
             </TouchableOpacity>

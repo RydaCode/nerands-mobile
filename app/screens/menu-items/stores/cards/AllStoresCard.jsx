@@ -6,9 +6,11 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { STORES_IMAGE_URI } from '../../../../../RequestMethods';
 import { calculateDistance } from '../../../../../utils/getDistance';
+import { formatText } from '../../../../../utils/getInitials';
 
 const AllStoresCard = ({
     store_id,
+    business_id,
     store_profileimage,
     store_coverimage,
     store_name,
@@ -22,21 +24,25 @@ const AllStoresCard = ({
     average_rating,
     total_ratings,
     favorited,
-    isClosed,
+    is_closed,
     open_time,
-    closing_time
+    close_time
 }) => {
     const router = useRouter();
     const { latitude, longitude } = useSelector((state) => state.location);
 
-    const specialCategories = ['Restaurant', 'Liquor'];
+    const specialCategories = ['restaurant', 'liquor'];
     const isSpecial = specialCategories.includes(store_category);
     return (
         <TouchableOpacity
             onPress={() =>
                 router.push({
-                    pathname: isSpecial ? '../home-single-store/' : '../other-stores-single/', params: {
+                    pathname: isSpecial ? "../home-single-store/" : store_category === "local_market"
+                        ? "../local-market-store-details"
+                        : "../other-stores-single/",
+                    params: {
                         store_id,
+                        business_id,
                         store_profileimage,
                         store_coverimage,
                         store_name,
@@ -51,7 +57,7 @@ const AllStoresCard = ({
                         total_ratings,
                         favorited,
                         open_time,
-                        closing_time
+                        close_time
                     }
                 })
             }
@@ -64,7 +70,7 @@ const AllStoresCard = ({
                         className='w-full h-full rounded'
                         source={{uri:`${STORES_IMAGE_URI}${store_profileimage}`}}
                     />
-                    {isClosed &&
+                    {is_closed &&
                         <View className="absolute w-full h-full bg-black opacity-70 rounded flex-row justify-center items-center z-50">
                             <MaterialCommunityIcons name="lock" size={16} color={COLORS.primary} />
                             <Text className="text-sm text-white ml-1">Closed</Text>
@@ -80,7 +86,7 @@ const AllStoresCard = ({
                         className="items-center justify-center rounded-sm py-1 my-1"
                         style={{ width: '33%', backgroundColor: COLORS.grey_bg }}
                     >
-                        <Text className="text-sm text-green1">{store_category}</Text>
+                        <Text className="text-sm text-green1" numberOfLines={1}>{formatText(store_category)}</Text>
                     </View>
                     <View className="flex-row justify-between items-center">
                         <View className="flex-row items-center" style={{width: '27%'}}>

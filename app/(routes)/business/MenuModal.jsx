@@ -4,6 +4,8 @@ import { MotiView } from 'moti'
 import { useState } from 'react'
 import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native'
 import { COLORS } from '../../../constants/constants'
+import { usePermissions } from '../../../hook/usePermissions'
+import { toast } from '../../../utils/toast'
 
 const MenuModal = ({
     openActionBtns,
@@ -11,11 +13,24 @@ const MenuModal = ({
     business_id,
     roles,
     user_id,
-    business_name,
-    business_type
+    legal_name,
+    display_name,
+    business_type,
+    business_category,
+    email,
+    country,
+    logo_url,
+    phone,
+    province,
+    registration_number,
+    status,
+    t_pin,
+    tax_number,
+    city
 }) => {
     const router = useRouter();
     const [errors, setErrors] = useState({});
+    const { can } = usePermissions();
 
     return (
         <Modal
@@ -44,9 +59,9 @@ const MenuModal = ({
                         <View className="flex-row justify-between items-center">
                             <Text
                                 className="text-2xl"
-                                style={{ fontFamily: "ubuntu-medium" }}
+                                style={{ fontFamily: "outfit-medium" }}
                             >
-                            Settings
+                            Dashboard
                             </Text>
                             <TouchableOpacity
                                 className='bg-grey_bg rounded-full justify-center items-center'
@@ -83,15 +98,71 @@ const MenuModal = ({
                                 <TouchableOpacity
                                     className='bg-white border py-4 border-lavender rounded justify-center items-center'
                                     style={{width: '32%'}}
+                                    onPress={() => {
+                                        if (!can('create_store')) {
+                                            toast.error('You do not have permission to create branches / stores');
+                                            setOpenActionBtns(false);
+                                            return;
+                                        }
+
+                                        router.push({
+                                            pathname: '../create-store',
+                                            params: {
+                                                business_id: business_id,
+                                                display_name,
+                                                business_type,
+                                                business_category: business_category,
+                                                email: email,
+                                                country: country,
+                                                logo_url: logo_url,
+                                                phone: phone,
+                                                province: province,
+                                                registration_number: registration_number,
+                                                status: status,
+                                                t_pin: t_pin,
+                                                tax_number: tax_number,
+                                                city: city
+                                            }
+                                        });
+                                    }}
                                 >
                                     <Ionicons name="create-outline" size={25} color={COLORS.primary} />
                                     <Text
                                         className='text-sm'
-                                    >Create Branches</Text>
+                                    >Create Branch</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     className='bg-white border py-5 border-lavender rounded justify-center items-center'
                                     style={{width: '32%'}}
+
+                                    onPress={() => {
+                                        if (!can('view_stores')) {
+                                            toast.error('You do not have permission to view branches / stores');
+                                            setOpenActionBtns(false);
+                                            return;
+                                        }
+
+                                        router.push({
+                                            pathname: '../admin-stores',
+                                            params: {
+                                                business_id: business_id,
+                                                display_name: display_name,
+                                                legal_name: legal_name,
+                                                business_type: business_type,
+                                                business_category: business_category,
+                                                email: email,
+                                                country: country,
+                                                logo_url: logo_url,
+                                                phone: phone,
+                                                province: province,
+                                                registration_number: registration_number,
+                                                status: status,
+                                                t_pin: t_pin,
+                                                tax_number: tax_number,
+                                                city: city
+                                            }
+                                        });
+                                    }}
                                 >
                                     <FontAwesome5 name="store-alt" size={17} color={COLORS.primary} />
                                     <Text
@@ -101,6 +172,35 @@ const MenuModal = ({
                                 <TouchableOpacity
                                     className='bg-red border py-4 border-grey_bg rounded justify-center items-center'
                                     style={{width: '32%'}}
+                                    disabled={true}
+
+                                    onPress={() => {
+                                        if (!can('deactivate_business')) {
+                                            toast.error('You do not have permission to deactivate business');
+                                            setOpenActionBtns(false);
+                                            return;
+                                        }
+
+                                        router.push({
+                                            pathname: '../stores',
+                                            params: {
+                                                business_id: business_id,
+                                                display_name: display_name,
+                                                business_type: business_type,
+                                                business_category: business_category,
+                                                email: email,
+                                                country: country,
+                                                logo_url: logo_url,
+                                                phone: phone,
+                                                province: province,
+                                                registration_number: registration_number,
+                                                status: status,
+                                                t_pin: t_pin,
+                                                tax_number: tax_number,
+                                                city: city
+                                            }
+                                        });
+                                    }}
                                 >
                                     <Ionicons name="business-sharp" size={25} color={COLORS.white} />
                                     <Text
@@ -136,14 +236,18 @@ const MenuModal = ({
                                 <TouchableOpacity
                                     className='bg-white border py-4 border-lavender rounded justify-center items-center'
                                     style={{width: '32%'}}
-                                    onPress={() => router.push({
-                                        pathname: './AddBusinessMember',
-                                        params: {
-                                            business_id: business_id,
-                                            roles: roles,
-                                            user_id: user_id
+                                    onPress={() => {
+                                        if (!can('add_member')) {
+                                            toast.error('You do not have permission to add members');
+                                            setOpenActionBtns(false);
+                                            return;
                                         }
-                                    })}
+
+                                        router.push({
+                                            pathname: './AddBusinessMember',
+                                            params: { business_id, roles, user_id }
+                                        });
+                                    }}
                                 >
                                     <AntDesign name="user-add" size={23} color={COLORS.primary} />
                                     <Text
@@ -180,15 +284,22 @@ const MenuModal = ({
                                 <TouchableOpacity
                                     className='bg-white border py-4 border-lavender rounded justify-center items-center'
                                     style={{width: '32%'}}
-                                    onPress={() => router.push({
-                                        pathname: './CreateRole',
-                                        params: {
-                                            user_id: user_id,
-                                            business_id: business_id,
-                                            business_name,
+                                    onPress={() => {
+                                        if (!can('create_role')) {
+                                            toast.error('You do not have permission to create roles');
+                                            setOpenActionBtns(false);
+                                            return;
+                                        }
+
+                                        router.push({
+                                            pathname: './CreateRole',
+                                            params: {
+                                                user_id: user_id,
+                                                business_id: business_id,
+                                                business_name: legal_name,
                                             business_type
                                         }
-                                    })}
+                                    })}}
                                 >
                                     <AntDesign name="team" size={23} color={COLORS.primary} />
                                     <Text
@@ -198,13 +309,20 @@ const MenuModal = ({
                                 <TouchableOpacity
                                     className='bg-white border py-4 border-lavender rounded justify-center items-center mt-4'
                                     style={{width: '32%'}}
-                                    onPress={() => router.push({
+                                    onPress={() => {
+                                        if (!can('view_roles')) {
+                                            toast.error('You do not have permission to view roles');
+                                            setOpenActionBtns(false);
+                                            return;
+                                        }
+
+                                        router.push({
                                         pathname: './BusinessRoles',
                                         params: {
                                             business_id: business_id,
                                             user_id: user_id
                                         }
-                                    })}
+                                    })}}
                                 >
                                     <AntDesign name="team" size={21} color={COLORS.primary} />
                                     <Text

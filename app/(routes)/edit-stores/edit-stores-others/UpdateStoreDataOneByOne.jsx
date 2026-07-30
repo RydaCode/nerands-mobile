@@ -81,21 +81,15 @@ const UpdateStoreDataOneByOne = () => {
     const { data, isLoading, error, patch } = useApi(`/stores/update`);
 
     useEffect(() => {
-        if (data?.response) {
-            const { response } = data;
-            const isSuccess = response === 'Success';
-
-            if (isSuccess) {
-                toast.success(response || `Successfully updated ${fieldLabel}`);
-            } else {
-                toast.error(response || `Failed To Upate  ${fieldLabel}`);
-            }
-
-            if (isSuccess) {
+        if (data) {
+            if (data?.success) {
+                toast.success(data?.message || `Successfully updated ${fieldLabel}`);
                 setIsRedirecting(true);
                 setTimeout(() => {
                     router.back();
                 }, 3000);
+            } else {
+                toast.error(data?.message || `Failed To Upate  ${fieldLabel}`);
             }
         }
     }, [data]);
@@ -114,6 +108,7 @@ const UpdateStoreDataOneByOne = () => {
         }
 
         const payload = {
+            business_id: params.business_id,
             store_id: storeId,
             [fieldKey]: currentValue,
         };

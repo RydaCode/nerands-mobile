@@ -40,7 +40,7 @@ const AllProductsCard = ({ store_data, item }) => {
         item={item}
         extras={extras}
         isAvailable={isAvailable}
-        isClosed={store_data.isClosed}
+        is_closed={store_data.is_closed}
         store_profileimage={store_data.store_profileimage}
         product_iamges={productImage}
         store_description={store_data.store_description}
@@ -50,6 +50,7 @@ const AllProductsCard = ({ store_data, item }) => {
         store_location={store_data.store_location}
         store_id={store_data.store_id}
         store_phone_num={store_data.store_phone_num}
+        business_id={store_data.business_id}
       />
 
       {/* Product Card */}

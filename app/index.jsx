@@ -8,6 +8,7 @@ import { COLORS } from "../constants/constants";
 import { Carticons } from "../constants/icons";
 import { loadDeliveryCharges } from '../hook/pricing/loadDeliveryCharges';
 import useApi from "../hook/useApi";
+import { setNotifications } from "../redux/store/slices/notificationSlice";
 import { useNetworkStatus } from "../utils/useNetworkStatus";
 import useRehydrateAuth from "./(auth)/auth/useRehydrateAuth";
 
@@ -24,6 +25,33 @@ const Index = () => {
     const charges = useSelector(state => state.delivery.charges);
 
     const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+
+    const loadNotifications = async () => {
+        try {
+
+            if (!isAuthenticated) return;
+
+            console.log("Fetching notifications...");
+            const res = await api.get('/notifications/all?limit=10&offset=1');
+
+            
+console.log("Notifications response:", res.data.result);
+
+            dispatch(
+                setNotifications(
+                    res.data.result
+                )
+            );
+
+        } catch(error) {
+
+            console.log(
+                "Loading notifications failed:",
+                error.message
+            );
+
+        }
+    };
 
     useEffect(() => {
         if (!rehydrated) return;
@@ -69,6 +97,11 @@ const Index = () => {
                 if (hasUpdateAvailable) {
                     setVersionNumber(version);
                     setShowUpdateAlert(true);
+                }
+
+                // LOAD NOTIFICATIONS
+                if (isAuthenticated) {
+                    await loadNotifications();
                 }
 
                 // 🚀 CONTINUE NORMAL FLOW (THIS WAS MISSING BEFORE)

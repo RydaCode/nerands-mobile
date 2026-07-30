@@ -1,12 +1,15 @@
 import { Entypo, Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import Headers from '../../../components/Headers';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
+import { STORES_IMAGE_URI } from '../../../RequestMethods';
+import { formatDate } from '../../../utils/formatDateTime';
+import { getAvatarColor, getFirstLetter } from '../../../utils/getInitials';
 
 const Index = () => {
     const router = useRouter();
@@ -29,23 +32,16 @@ const Index = () => {
         get();
     }
 
+    console.log(data)
+
     return (
-        <SafeAreaView className='flex-1 bg-white px-2'>
-            <Headers header_name='Business Hub' fontFamily='outfit-medium' textStyles='text-2xl' icon={<Ionicons name='business-sharp' size={15} color={COLORS.slate}/>}/>
-            <View className='mt-4'>
-                <TouchableOpacity
-                    className='border-2 justify-center items-center py-2 rounded bg-white'
-                    style={{borderColor: COLORS.extra_blue, width: '37%'}}
-                >
-                    <Entypo name='plus' size={24} color={COLORS.extra_blue}/>
-                    <Text
-                        style={{fontFamily: 'roboto-medium', color: COLORS.extra_blue}}
-                    >Create Business</Text>
-                </TouchableOpacity>
+        <SafeAreaView className='flex-1 bg-white'>
+            <View className='px-2'>
+                <Headers header_name='Business Hub' fontFamily='outfit-medium' textStyles='text-2xl' icon={<Ionicons name='business-sharp' size={15} color={COLORS.slate}/>}/>
             </View>
-            <View className='pt-4 justify-center h-full'>
+            <View className='flex-1 pt-4 px-2'>
                 {isLoading ? (
-                    <View className='justify-center items-center'>
+                    <View className='justify-center items-center flex-1'>
                         <ActivityIndicator size={40} color={COLORS.primary}/>
                         <Text
                             className='text-lg pt-2'
@@ -53,7 +49,7 @@ const Index = () => {
                         >Loading businesses...</Text>
                     </View>
                 ) : error && (error.status === 500 || error.message === 'Server is unreachable. Please try again later.') ? (
-                    <View className='justify-center items-center'>
+                    <View className='justify-center items-center flex-1'>
                         <MaterialCommunityIcons name="connection" size={40} color={COLORS.slate} />
                         <Text
                             className='text-lg text-red mt-2'
@@ -75,12 +71,12 @@ const Index = () => {
                             >Reload</Text>
                         </TouchableOpacity>
                     </View>
-                ) : (!data) ? (
+                ) : (data?.length === 0) ? (
                     <View className='flex-1 justify-center items-center'>
                         <Text
                             className='text-lg text-red pt-2'
                             style={{fontFamily: 'roboto-medium'}}
-                        >Failed to load account data.</Text>
+                        >Failed to load business data.</Text>
                         <Text
                             className='text-base text-slate pt-2'
                             style={{fontFamily: 'roboto-medium', textAlign: 'center'}}
@@ -103,14 +99,29 @@ const Index = () => {
                         keyExtractor={(item) => item.id}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                className='mb-6 flex-row items-center border border-lavender p-2 rounded-xl elevation-sm bg-white'
+                                className='mb-6 flex-row items-center border border-lavender p-2 rounded-xl bg-white'
                                 onPress={() => router.push(`/business/${item.id}`)}
                             >
                                 <View
                                     className='border-2 border-lavender justify-center items-center rounded-full'
-                                    style={{ width: 60, height: 60 }}
+                                    style={{ width: 60, height: 60, backgroundColor: getAvatarColor(item.id) }}
                                 >
-                                    <Ionicons name="business-sharp" size={24} color={COLORS.primary} />
+                                    {!item?.logo_url ? (
+                                        <Text
+                                            className='text-white'
+                                            numberOfLines={1}
+                                            style={{
+                                                fontFamily: 'roboto-medium',
+                                                fontSize: 20,
+                                            }}
+                                        >{getFirstLetter(item?.legal_name)}</Text>
+                                    ) : (
+                                        <Image
+                                            source={{ uri: `${STORES_IMAGE_URI}${item?.logo_url}` }}
+                                            style={{ height: '100%', width: '100%' }}
+                                            className='rounded-full border-2 border-white'
+                                        />
+                                    )}
                                 </View>
 
                                 <View className='ml-2' style={{width: '80%'}}>
@@ -118,12 +129,12 @@ const Index = () => {
                                         className='text-base'
                                         style={{ fontFamily: 'roboto-medium', color: COLORS.black }}
                                     >
-                                        {item.name}
+                                        {item.legal_name}
                                     </Text>
 
                                     <View className='w-full flex-row justify-between items-center'>
                                         <Text className='text-slate text-sm'>
-                                            {item.type.replace('_', ' ')
+                                            {item.business_type.replace('_', ' ')
                                                 .replace(/\b\w/g, c => c.toUpperCase())
                                             }
                                         </Text>
@@ -131,11 +142,7 @@ const Index = () => {
                                     </View>
                                     <View className='w-full flex-row justify-end'>
                                         <Text className='text-green1 text-sm'>
-                                            Created on: {new Date(item.created_at).toLocaleDateString('en-GB', {
-                                                day: '2-digit',
-                                                month: 'short',
-                                                year: 'numeric'
-                                            })}
+                                            Created on: {formatDate(item?.created_at)}
                                         </Text>
                                     </View>
                                 </View>
@@ -160,6 +167,8 @@ const Index = () => {
                                 </View>
                             </View>
                         }
+                        showsVerticalScrollIndicator={false}
+                        ListFooterComponent={<View className='mb-6'/>}
                     />
                 ): (
                     <View className='flex-1 justify-center items-center'>
@@ -173,7 +182,26 @@ const Index = () => {
                 )}
             </View>
             {/* Reserved for tabs */}
-            {/* <Text>Tabs</Text> */}
+            
+            {/* Bottom create business button */}
+            <View className='bg-white relative border-r border-l border-grey_bg py-5'>
+                <View className='absolute top-0 left-0 h-[1px] w-[41%] bg-grey_bg' />
+                <View className='absolute top-0 right-0 h-[1px] w-[41%] bg-grey_bg' />
+
+                <TouchableOpacity
+                    className='absolute -top-7 self-center'
+                    onPress={() => router.push({
+                        pathname: '/business/CreateBusiness',
+                        params: {
+                            user_id: user_id,
+                        }
+                    })}
+                >
+                    <View className='bg-white w-14 h-14 elevation-sm rounded-full justify-center items-center border-2 border-white'>
+                        <Entypo name='plus' size={25} color={COLORS.primary}/>
+                    </View>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     )
 }

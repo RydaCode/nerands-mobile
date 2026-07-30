@@ -25,6 +25,8 @@ const AddUserModal = ({
         `/businesses/roles/${business_id}`
     );
 
+    console.log("ADD", error)
+
     useEffect(() => {
         if (business_id) {
             getRoles();
@@ -38,8 +40,6 @@ const AddUserModal = ({
         role_id: '',
         name: ''
     });
-
-    console.log("FORM DATA", formData)
 
     useEffect(() => {
         if (user && business_id) {
@@ -65,16 +65,29 @@ const AddUserModal = ({
         return () => clearTimeout(timer);
     }, [openAddMember]);
 
-    const availableRoles = roles?.data?.map((r) => ({
-        value: r.id,
-        label: r.name
-    })) || [];
+    const availableRoles = roles?.data
+        ?.filter((r) => r.name !== "OWNER")
+        ?.map((r) => ({
+            value: r.id,
+            label: r.name,
+            is_system: r.is_system
+        })) || [];
+
+        console.log(availableRoles)
 
     const addMember = async() => {
         let newErrors = {};
-        
+
         if (!formData.role_id) {
             newErrors.role_id = "Please select member role";
+        }
+
+        const selectedRole = roles?.data?.find(
+            r => r.id === formData.role_id
+        );
+
+        if (selectedRole?.name === "OWNER") {
+            newErrors.role_id = "The OWNER role cannot be assigned to new members.";
         }
 
         setErrors(newErrors);
@@ -87,16 +100,21 @@ const AddUserModal = ({
         try {
             const result = await post(formData);
 
+            console.log("U", result)
+
             if (!result?.success) {
                 toast.error(result?.message || 'User not found');
                 newErrors.search_id = result?.message || 'User not found';
+                setOpenAddMember(false);
                 setErrors(newErrors);
                 return;
             }
 
+            setOpenAddMember(false);
             toast.success(`${user?.first_name} is now added as a business member`);
         } catch (error) {
             console.error(error);
+            setOpenAddMember(false);
             toast.error('Network error');
             newErrors.search_id = 'Network error';
             setErrors(newErrors);
@@ -248,6 +266,7 @@ const AddUserModal = ({
                                         valueField="value"
                                         placeholder={'Select Role'}
                                         value={formData.role_id}
+                                        mode='modal'
                                         onChange={(item) => {
                                             setFormData(prev => ({
                                                 ...prev,
@@ -282,10 +301,10 @@ const AddUserModal = ({
                                             // opacity: isLoading ? 0.4 : 0.9
                                         }}
                                         onPress={() => addMember()}
-                                        // disabled={isLoading}
+                                        disabled={isLoading}
                                     >
                                         {isLoading ? (
-                                            <ActivityIndicator size={27} color={COLORS.primary}/>
+                                            <ActivityIndicator size={27} color={COLORS.white}/>
                                         ) : (
                                             <Text
                                                 style={{fontFamily: 'outfit-medium'}}

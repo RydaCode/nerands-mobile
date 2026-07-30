@@ -11,6 +11,7 @@ import Headers from '../../components/Headers';
 import { COLORS } from '../../constants/constants';
 import useApi from '../../hook/useApi';
 import { setUserData } from '../../redux/store/slices/authSlice';
+import { registerDevice } from '../../services/notificationService';
 import { toast } from '../../utils/toast';
 import AuthLayout from '../AuthLayout';
 import OverLay from '../OverLay';
@@ -103,6 +104,8 @@ const Login = () => {
                 })
             );
 
+            // Register device AFTER login is confirmed
+            await registerDevice();
             toast.success('Logged in successfully');
         } catch (err) {
             toast.error('Invalid login token');

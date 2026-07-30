@@ -23,12 +23,15 @@ const SearchAdmin = ({router, params}) => {
                 store_province: params.store_province,
                 store_ratings: params.store_ratings,
                 user_id: params.user_id,
-                router: router
+                router: router,
+                business_id: params.business_id,
+                business_name: params.business_name,
+                business_type: params.business_type
             }})}
             style={{borderRadius: SIZES.border}}
             className='h-full items-center justify-center bg-white border-1 border-lavender w-full'
         >
-            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+            <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                 <FontAwesome6 name="user-plus" color='#54C571' size={17} />
             </View>
             <Text className='text-sm'>New Admin</Text>

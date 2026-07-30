@@ -49,7 +49,7 @@ const EditStoresOthers = ({router, params, editstorelistmodalvisible, setEditSto
                 style={{borderRadius: SIZES.border}}
                 className='h-full items-center justify-center border-1 border-lavender bg-white w-full'
             >
-                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                     <Ionicons name="create-outline" color={"#54C571"} size={22} />
                 </View>
                 <Text className='text-sm'>Edit Store</Text>

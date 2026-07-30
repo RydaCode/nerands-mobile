@@ -9,7 +9,8 @@ import { Carticons, COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../../RequestMethods';
 import { makeCall } from '../../../utils/getDistance';
-import { formatTime, isStoreOpen } from '../../../utils/isStoreOpen';
+import { formatText } from '../../../utils/getInitials';
+import { formatTime } from '../../../utils/isStoreOpen';
 import LocalMarketCard from './LocalMarketCard';
 
 const Index = ({category='Localmarket'}) => {
@@ -29,6 +30,8 @@ const Index = ({category='Localmarket'}) => {
     const loadingMoreRef = useRef(false);
     const { get, isLoading, error } = useApi(null);
     const {data:checkFavorites, error: errorCheckFavorites, isLoading: isLoadingCHeckFAvorite, get:getCheckFavorites} = useApi(`stores/favorites/check?user_id=${user_id}&store_id=${params.store_id}`);
+    const {data: storedata, isLoading: loadingStore, error: errorStore, get: getStoreData } = useApi();
+    
     const [isFavorited, setIsFavorited] = useState(false);
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
@@ -39,6 +42,12 @@ const Index = ({category='Localmarket'}) => {
     // Global refreshKey to trigger child refresh
     const [refreshKey, setRefreshKey] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        if (params.store_id) {
+            getStoreData(`/stores/get_store/${params.store_id}`);
+        }
+    }, [params.store_id]);
         
     // Window width for dynamic columns
     const numColumns = width > 600 ? 3 : 2;
@@ -174,10 +183,6 @@ const Index = ({category='Localmarket'}) => {
     const favorited =
         params.favorited === true || params.favorited === 'true';
 
-    const isManuallyClosed = params.open_close === false;
-    const isTimeClosed = !isStoreOpen(params.open_time, params.closing_time);
-    const isClosed = isManuallyClosed || isTimeClosed;
-
     return (
         <SafeAreaView className='flex-1 bg-white justify-center w-full items-center px-2'>
             <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Local Market'/>
@@ -249,6 +254,7 @@ const Index = ({category='Localmarket'}) => {
                                     product_status={item.product_status}
                                     store_name={item.store_name}
                                     store_id={item.store_id}
+                                    business_id={item.business_id}
                                     store_phone_num={item.store_phone_num}
                                     store_category={item.store_category}
                                     product_category={item.product_category}
@@ -264,6 +270,7 @@ const Index = ({category='Localmarket'}) => {
                                     average_rating={item.average_rating}
                                     total_ratings={item.total_ratings}
                                     favorited={item.favorited}
+                                    is_closed={storedata?.[0]?.is_closed}
                                 />
                             );
                         }}
@@ -280,7 +287,7 @@ const Index = ({category='Localmarket'}) => {
                                             className='h-full w-full rounded-full border-2 border-white'
                                             source={{ uri: `${STORES_IMAGE_URI}${params.store_profileimage}` }}
                                         />
-                                        {isClosed &&
+                                        {storedata?.[0]?.is_closed &&
                                             <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
                                                 <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />
                                                 <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
@@ -290,7 +297,9 @@ const Index = ({category='Localmarket'}) => {
 
                                     <View className='ml-3 flex-1'>
                                         <Text numberOfLines={2} className="text-lg" style={{ fontFamily: 'roboto-medium' }}>{params.store_name}</Text>
-                                        <Text className="text-sm text-slate" style={{ fontFamily: 'roboto-medium' }}>{params.store_phone_num}</Text>
+                                        <Text className="text-sm text-slate" style={{ fontFamily: 'roboto-medium' }}>
+                                            {formatText(params.store_category)}
+                                        </Text>
                                     </View>
 
                                     <TouchableOpacity
@@ -303,8 +312,32 @@ const Index = ({category='Localmarket'}) => {
 
                                 {/* Store Opening Hours */}
                                 <View className='mt-1 w-full px-2 my-4 bg-grey_bg rounded py-1'>
-                                    <Text className='text-base text-green1' style={{ fontFamily: 'roboto-medium',textAlign: 'justify' }}>
-                                        Open{params.open_time && params.closing_time ? ` from ${formatTime(params.open_time)} to ${formatTime(params.closing_time)}` : ' 24/7'}
+                                    <Text
+                                        className="text-sm text-green1"
+                                        style={{ fontFamily: 'roboto-medium', textAlign: 'justify' }}
+                                    >
+                                        {storedata?.[0]?.is_closed ? (
+                                            storedata?.[0]?.open_close === false ? (
+                                                <Text className="text-red">
+                                                    🔴 Temporarily closed by the owner
+                                                </Text>
+                                            ) : (
+                                                <Text className="text-red">
+                                                    🔴 Closed until {storedata?.[0]?.next_opening?.day}{" "}
+                                                    {storedata?.[0]?.next_opening?.time}
+                                                </Text>
+                                            )
+                                        ) : (
+                                            <>
+                                                Open
+                                                {storedata?.[0]?.is_24_hours
+                                                    ? " 24/7"
+                                                    : storedata?.[0]?.open_time && storedata?.[0]?.close_time
+                                                        ? ` from ${formatTime(storedata[0].open_time)} to ${formatTime(storedata[0].close_time)}`
+                                                        : ""
+                                                }
+                                            </>
+                                        )}
                                     </Text>
                                 </View>
 

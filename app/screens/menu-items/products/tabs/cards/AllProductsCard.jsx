@@ -112,7 +112,9 @@ const AllProductsCard = (props) => {
             store_latitude: props.store_latitude,
             store_longitude: props.store_longitude,
             markup_percent: props.markup_percent,
-            final_price: props.final_price
+            final_price: props.final_price,
+            city_town: props.city_town,
+            business_id: props.business_id,
         }));
 
         toast.success('Product added to cart');
@@ -125,6 +127,10 @@ const AllProductsCard = (props) => {
     
     const pointA = { latitude: latitude, longitude: longitude }; // User
     const pointB = { latitude: props.store_latitude, longitude: props.store_longitude }; //Store
+
+    const distance = calculateDistance(pointA, pointB);
+    const distanceKm = distance.includes("m") ? parseFloat(distance) / 1000 : parseFloat(distance);
+    const displayDistance = distanceKm >= 50 ? props.city_town : distance;
 
     return (
         <TouchableOpacity
@@ -149,13 +155,15 @@ const AllProductsCard = (props) => {
                 final_price: props.final_price,
                 open_time: props.open_time,
                 closing_time: props.closing_time,
-                open_close: props.open_close
+                open_close: props.open_close,
+                city_town: props.city_town,
+                business_id: props.business_id,
             }})}
             activeOpacity={0.7}
-            style={{width: '48%'}}
+            style={{width: '49%'}}
             className='rounded-lg border border-grey_bg items-center justify-center relative'
         >
-            <View className='relative w-full' style={{height: 170}}>
+            <View className='relative w-full' style={{height: 190}}>
                 <Image
                     resizeMode="cover"
                     className="relative h-full w-full rounded-lg"
@@ -170,7 +178,15 @@ const AllProductsCard = (props) => {
                 </TouchableOpacity>
                 <TouchableOpacity className='flex-row px-2 absolute h-7 w-15 bottom-2 left-2 items-center justify-center bg-[#fff] rounded-full'>
                     <Ionicons name='location-outline' color={COLORS.red} size={12} />
-                    <Text numberOfLines={1} className='text-sm text-red'>{calculateDistance(pointA, pointB)}</Text>
+                    <Text
+                        numberOfLines={1}
+                        className="text-sm"
+                        style={{
+                            color: distanceKm >= 50 ? COLORS.slate : "red"
+                        }}
+                    >
+                        {displayDistance}
+                    </Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity className='flex-row px-2 absolute h-7 w-17 top-2 left-2 items-center justify-center bg-[#fff] rounded-full'>
                     <FontAwesome5 name="eye" size={13} color={COLORS.primary} />
@@ -187,6 +203,7 @@ const AllProductsCard = (props) => {
             <TouchableOpacity className='p-1 flex-row justify-center items-center mb-1'
                 onPress={() => router.push({pathname: '../(routes)/other-stores-single/', params: {
                     store_id: props.store_id,
+                    business_id: props.business_id,
                     store_profileimage: props.store_profileimage,
                     store_coverimage: props.store_coverimage,
                     store_name: props.store_name,

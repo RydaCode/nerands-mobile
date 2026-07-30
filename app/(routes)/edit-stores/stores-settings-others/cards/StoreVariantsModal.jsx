@@ -12,8 +12,8 @@ const StoreVariantsModal = ({router, params, setStoreVariantsModalVisible}) => {
                 className="flex-1"
             >
                 <View
-                    style={{ borderTopRightRadius: 7, borderTopLeftRadius: 7 }}
-                    className="w-full bg-white p-4" animation="slideInUp" duration={500} easing="ease-in-out">
+                    style={{ borderTopRightRadius: 20, borderTopLeftRadius: 20 }}
+                    className="w-full bg-white p-4 mb-14" animation="slideInUp" duration={500} easing="ease-in-out">
                     <ScrollView className="w-full px-2" contentContainerStyle={{justifyContent: 'center', alignItems: 'center'}}>
                         <View className="justify-center items-center">
                             <View className="w-full flex-row justify-between items-center">
@@ -23,8 +23,12 @@ const StoreVariantsModal = ({router, params, setStoreVariantsModalVisible}) => {
                                         Variants
                                     </Text>
                                 </View>
-                                <TouchableOpacity onPress={() => setStoreVariantsModalVisible(false)} className="ml-auto">
-                                    <FontAwesome name="times" size={22} color={COLORS.red} />
+                                <TouchableOpacity
+                                    onPress={() => setStoreVariantsModalVisible(false)}
+                                    className="bg-grey_bg justify-center items-center rounded-full"
+                                    style={{width: 33, height: 33}}
+                                >
+                                    <FontAwesome name="times" size={16} color={COLORS.red} />
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -41,7 +45,7 @@ const StoreVariantsModal = ({router, params, setStoreVariantsModalVisible}) => {
                                 }
                                 className='bg-indigo-600 p-4 rounded-md mb-5 justify-center items-center'
                             >
-                                <Text className='text-white text-xl' style={{fontFamily: 'maven-medium'}}>View Groups</Text>
+                                <Text className='text-white text-lg' style={{fontFamily: 'outfit-medium'}}>View Groups</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() =>
@@ -54,7 +58,7 @@ const StoreVariantsModal = ({router, params, setStoreVariantsModalVisible}) => {
                                 }
                                 className='bg-green2 p-4 rounded-md mb-4 justify-center items-center'
                             >
-                                <Text className='text-white text-xl' style={{fontFamily: 'maven-medium'}}>Create Groups</Text>
+                                <Text className='text-white text-lg' style={{fontFamily: 'outfit-medium'}}>Create Groups</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>

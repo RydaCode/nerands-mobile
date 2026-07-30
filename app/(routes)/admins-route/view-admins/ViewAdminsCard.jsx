@@ -1,13 +1,12 @@
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
-import Toast from "react-native-toast-message";
+import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
 import { COLORS } from "../../../../constants/constants";
 import useApi from "../../../../hook/useApi";
+import { usePermissions } from "../../../../hook/usePermissions";
+import { USER_IMAGE_URI } from "../../../../RequestMethods";
+import { formatDate } from "../../../../utils/formatDateTime";
 import { toast } from "../../../../utils/toast";
-import LoadingIndicator from "../../../LoadingIndicator";
-import Redirecting from "../../../Redirecting";
 
 const ViewAdminsCard = ({
     store_id,
@@ -17,13 +16,18 @@ const ViewAdminsCard = ({
     profile_image,
     phone_num,
     email_add,
-    admin_status,
-    params = { params }
+    updated_at,
+    gender,
+    role_name,
+    role_description,
+    role_id,
+    reload,
+    deletingUserId,
+    setDeletingUserId,
+    params
 }) => {
+    const { can } = usePermissions();
     const { user_id: loggedInUserId } = useSelector((state) => state.auth);
-
-    const [selectedLevel, setSelectedLevel] = useState(admin_status);
-    const [isRedirecting, setIsRedirecting] = useState(false);
 
     // For updating admin status
     const {
@@ -34,136 +38,110 @@ const ViewAdminsCard = ({
     } = useApi(`/stores/update-admin-status`);
 
     // For removing admin
-    const {
-        data: deleteData,
-        isLoading: deleteLoading,
-        error: deleteError,
-        del: removeAdmin,
-    } = useApi(`/stores/remove_admin`);
+    const { data: deleteData, isLoading: deleteLoading, error: deleteError, del: removeAdmin } = useApi(
+        `/stores/members/remove`
+    );
 
-    const handleUpdateStoreLevel = () => {
+    console.log("STORE", store_id)
+
+    const handleRemoveAdmin = async () => {
+        setDeletingUserId(user_id);
+
         const payload = {
+            business_id: params.business_id,
             store_id,
-            user_id,
-            admin_status: selectedLevel,
+            member_id: user_id,
         };
 
-        updatePatch(payload); // useApi for update
-    };
+        try {
+            const res = await removeAdmin(payload);
 
-    const handleRemoveAdmin = () => {
-        const payload = {
-            store_id,
-            user_id,
-        };
-
-        removeAdmin(payload); // useApi for delete
-    };
-
-    useEffect(() => {
-        if (updateData?.data?.Response) {
-            const isSuccess = updateData?.data?.Response === 'Success';
-
-            if (isSuccess) {
-                return toast.success(updateData?.data?.Response)
-            } else {
-                return toast.error(updateData?.data?.Response)
+            if (!res?.success) {
+                toast.error(res?.message || "Failed to remove member.");
+                return;
             }
-        }
 
-        if (updateError) {
-            const errorMsg = updateError?.response?.data?.Response || 'Failed to update admin level.';
-            toast.error(errorMsg);
+            toast.success(res?.message || "Member removed successfully.");
+            reload();
+        } catch (error) {
+            toast.error(error?.message || "An error occurred, try again.");
+        } finally {
+            setDeletingUserId(null);
         }
-    }, [updateData, updateError]);
-
-    useEffect(() => {
-        if (deleteData?.Response) {
-            const isSuccess = deleteData?.Response === 'Success';
-            toast.success(updateData?.data?.Response);
-            if (isSuccess) {
-                setIsRedirecting(true);
-                setTimeout(() => setIsRedirecting(false), 5000);
-            }
-        }
-
-        if (deleteError) {
-            toast.success(updateData?.data?.Response);
-        }
-    }, [deleteData, deleteError]);
-
-    {(updateLoading || deleteLoading) && <LoadingIndicator loading_text="Processing..." />}
+    };
 
     return (
-        <View className="w-full mt-2">
-            <View className="w-full items-center justify-center">
-                <View className="w-full items-center mt-4">
-                    <TouchableOpacity className="w-full flex-row items-center justify-start">
-                        <View style={{ height: 70, width: 70 }} className="rounded-full border-2 border-lavender justify-center items-center relative">
-                            {!profile_image ? (
-                                <FontAwesome5 size={30} name="user" />
-                            ) : (
-                                <Image className="h-full w-full rounded-full border-2 border-white" source={profile_image} />
-                            )}
-                            <View className={`absolute z-50 left-14 bottom-4 top-0 right-0 ${loggedInUserId === user_id ? 'bg-red' : 'bg-grey_bg'}  rounded-full items-center justify-center w-[30px] h-[30px] border-2 border-white`}>
-                                <Text style={{ fontFamily: 'roboto-medium' }} className={`text-sm text-${loggedInUserId === user_id ? 'white' : 'red'}`}>{admin_status}</Text>
-                            </View>
-                        </View>
-                        <View className="ml-4">
-                            <Text className="text-base" style={{ fontFamily: 'roboto-bold' }}>{first_name} {last_name}</Text>
-                            <Text className="text-sm text-slate" style={{ fontFamily: 'roboto-medium' }}>{phone_num}</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <View className="flex-row w-full justify-between items-center mt-4">
-                        <View className="justify-between items-center">
-                            <Text className="text-slate text-sm">Level</Text>
-                            <View className="flex-row justify-center items-center p-1">
-                                <TouchableOpacity
-                                    disabled={selectedLevel <= 1}
-                                    onPress={() => setSelectedLevel(prevCount => prevCount - 1)}
-                                    style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5 }}
-                                    className="bg-grey_bg px-3 py-2 w-[30px] rounded-full h-[30px] justify-center items-center"
-                                >
-                                    <FontAwesome name="minus" style={{ color: COLORS.black }} />
-                                </TouchableOpacity>
-                                <Text className="mx-2 text-lg text-slate">{selectedLevel}</Text>
-                                <TouchableOpacity
-                                    disabled={selectedLevel === 4}
-                                    onPress={() => setSelectedLevel(prevCount => prevCount + 1)}
-                                    style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5 }}
-                                    className="bg-grey_bg px-3 py-2 w-[30px] rounded-full h-[30px] justify-center items-center"
-                                >
-                                    <FontAwesome name="plus" style={{ color: COLORS.black }} />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                        <View style={{ width: '29%' }} className="mt-3">
-                            <TouchableOpacity
-                                onPress={handleUpdateStoreLevel}
-                                disabled={selectedLevel === 1 || admin_status === 4}
-                                style={{ opacity: loggedInUserId === user_id && admin_status === 4 ? 0.5 : 0.9, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5 }}
-                                className="bg-green2 px-3 py-2 h-[40px] justify-center items-center w-full"
-                            >
-                                <Text className="text-white text-lg" style={{ fontFamily: 'maven-medium' }}>Update</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={{ width: '29%' }} className="mt-3">
-                            <TouchableOpacity
-                                disabled={loggedInUserId === user_id ? true : false}
-                                onPress={handleRemoveAdmin}
-                                style={{ opacity: loggedInUserId === user_id ? 0.5 : 0.9, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5 }}
-                                className="bg-red px-3 py-2 h-[40px] justify-center items-center w-full"
-                            >
-                                <Text className="text-white text-lg" style={{ fontFamily: 'maven-medium' }}>Remove</Text>
-                            </TouchableOpacity>
-                        </View>
+        <View className='w-full'>
+            <View className='flex-row w-full justify-between items-center'>
+                <View
+                    className='bg-grey_bg relative rounded-full border-2 border-lavender justify-center items-center'
+                    style={{width: 63, height: 63}}
+                >
+                    <View
+                        style={{height: 25, width: 25, top: -3, right: -3, zIndex: 5}}
+                        className='absolute bg-green1 border-2 border-white justify-center items-center rounded-full'
+                    >
+                        {gender === 'male' ? (
+                            <Text className='text-sm text-white'
+                                style={{fontFamily: 'roboto-medium'}}
+                            >M</Text>
+                        ) : (
+                            <Text className='text-sm text-white'
+                                style={{fontFamily: 'roboto-medium'}}
+                            >F</Text>
+                        )}
+                        
                     </View>
+                    {profile_image === null ?
+                        <FontAwesome name="user" size={24} color={COLORS.slate} />
+                        : <Image
+                            source={{ uri: `${USER_IMAGE_URI}${profile_image}` }}
+                            style={{ height: '100%', width: '100%' }}
+                            className='rounded-full border-2 border-white'
+                        />
+                    }
                 </View>
-                <View className="h-[1px] w-full bg-grey_bg rounded-full my-2" />
+                <View
+                    style={{width: '68%'}}
+                    className=''
+                >
+                    <Text
+                        numberOfLines={1}
+                        className='text-base'
+                        style={{fontFamily: 'roboto-medium'}}
+                    >
+                        {first_name} {last_name}
+                    </Text>
+                    <Text
+                        className='text-sm text-slate'
+                        style={{fontFamily: 'roboto'}}
+                    >{role_name} | Added: {formatDate(updated_at)}</Text>
+                </View>
+
+                <TouchableOpacity
+                    className='flex-row justify-center items-center rounded-full p-2 bg-grey_bg'
+                    style={{width: 30, height: 30}}
+                    onPress={() =>  {
+                        if (!can('remove_store_member')) {
+                            toast.error('You you no permissions to remove member');
+                            return;
+                        }
+                        handleRemoveAdmin();
+                    }}
+                    disabled={deletingUserId === user_id}
+                >
+                    {deletingUserId === user_id ? (
+                        <ActivityIndicator color={COLORS.primary} />
+                    ) : (
+                        <FontAwesome6
+                            name="trash"
+                            size={14}
+                            color={COLORS.red}
+                        />
+                    )}
+                </TouchableOpacity>
             </View>
-            {updateLoading || deleteLoading ? <LoadingIndicator loading_text="Processing..." /> : null}
-            {isRedirecting && <Redirecting />}
-            <Toast />
+            <View className='bg-grey_bg w-full my-6' style={{height: 1}}/>
         </View>
     );
 };

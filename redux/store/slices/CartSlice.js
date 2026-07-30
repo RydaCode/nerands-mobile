@@ -4,6 +4,7 @@ import { generateCartId } from "../../../utils/cartId";
 const initialState = {
     cartItems: [],
     store_id: null,
+    business_id: null,
     modalVisible: false,
     quantity: 1,
 };
@@ -52,6 +53,7 @@ const cartSlice = createSlice({
         addItem: (state, action) => {
             const {
                 store_id,
+                business_id,
                 store_name,
                 product_id,
                 product_name,
@@ -96,6 +98,7 @@ const cartSlice = createSlice({
                 state.cartItems.push({
                     cart_id,
                     store_id,
+                    business_id,
                     store_name,
                     product_id,
                     product_name,
@@ -122,6 +125,7 @@ const cartSlice = createSlice({
             const {
                 cart_id,
                 store_id,
+                business_id,
                 product_qty,
                 selected_variants,
                 selected_extras,

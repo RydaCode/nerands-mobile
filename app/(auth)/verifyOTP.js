@@ -1,3 +1,4 @@
+import { registerDevice } from "../../services/notificationService";
 import { toast } from "../../utils/toast";
 
 const ValidateOTP = ({ purpose, otp_type, contact, otp, user_id }) => {
@@ -61,6 +62,8 @@ export const handleVerifyOTPLogin = async ({ purpose, otp_type, contact, otp, us
             };
         }
 
+        // Register device AFTER login is confirmed
+        await registerDevice();
         toast.success(res?.data?.data?.message || 'OTP verified successfully');
 
         return {
@@ -95,7 +98,8 @@ export const handleVerifyOTPRegister = async ({ contact, purpose, otp_type, otp,
         }
 
         toast.success(res?.data?.data?.message || 'OTP verified successfully');
-
+        // Register device AFTER login is confirmed
+        await registerDevice();
         return {
             success: true,
             data: res?.data?.data
@@ -128,7 +132,8 @@ export const handleVerifyOTPResetPassword = async ({purpose, otp_type, contact, 
         }
 
         toast.success(res.message || 'OTP verified successfully');
-
+        // Register device AFTER login is confirmed
+        await registerDevice();
         return {
             success: true,
             data: res.data,

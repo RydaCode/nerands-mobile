@@ -2,6 +2,12 @@ import { useEffect, useMemo } from "react";
 import useApi from "../../../../hook/useApi";
 
 export const useRunnerOrders = ({ runner_id, isActive }) => {
+    const pendingApi = useApi(
+        runner_id
+            ? `/trips/runner/errands?runner_id=${runner_id}&order_status=Pending&page=1&limit=1`
+            : null
+    );
+
     const acceptedApi = useApi(
         runner_id
             ? `/trips/runner/errands?runner_id=${runner_id}&order_status=Accepted&page=1&limit=1`
@@ -17,12 +23,6 @@ export const useRunnerOrders = ({ runner_id, isActive }) => {
     const readyApi = useApi(
         runner_id
             ? `/trips/runner/errands?runner_id=${runner_id}&order_status=ready&page=1&limit=1`
-            : null
-    );
-
-    const pendingApi = useApi(
-        runner_id
-            ? `/trips/runner/errands?runner_id=${runner_id}&order_status=pending&page=1&limit=1`
             : null
     );
 

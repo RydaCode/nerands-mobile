@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Modal, Pressable, SectionList, Text, TouchableOpacity, View } from 'react-native'
 import { COLORS } from '../../../constants/constants'
 import useApi from '../../../hook/useApi'
+import { usePermissions } from '../../../hook/usePermissions'
 import { toast } from '../../../utils/toast'
 
 const RoleAndPermisionsModal = ({
@@ -15,6 +16,7 @@ const RoleAndPermisionsModal = ({
     user_id,
     reloadPermissions
 }) => {
+    const { can } = usePermissions();
     const router = useRouter();
     const [selected, setSelected] = useState([]);
 
@@ -38,8 +40,6 @@ const RoleAndPermisionsModal = ({
     const {data: deleteRole, isLoading: loadingDeleteRole, error: deleteRoleError, del: delRole} = useApi(
         `/businesses/role/delete`
     );
-
-    console.log('deleteRole', deleteRoleError)
 
     useEffect(() => {
         get();
@@ -220,6 +220,8 @@ const RoleAndPermisionsModal = ({
         }
     }
 
+    console.log("PERMI", getPermissions)
+
     return (
         <Modal
             visible={openRoleAndPermisionsModal}
@@ -247,7 +249,7 @@ const RoleAndPermisionsModal = ({
                     style={{
                         borderTopLeftRadius: 20,
                         borderTopRightRadius: 20,
-                        maxHeight: "95%"   // important
+                        maxHeight: "92%"   // important
                     }}
                     className="bg-white px-4 pt-3"
                 >
@@ -356,7 +358,15 @@ const RoleAndPermisionsModal = ({
                                         </View>
                                         <TouchableOpacity
                                             className='py-1 flex-row justify-end items-center'
-                                            onPress={() => handleRemovePermission(item?.id)}
+                                            onPress={() => {
+                                                if (!can('delete_permissions')) {
+                                                    setOpenRoleAndPermisionsModal(false);
+                                                    toast.error('You do not have permission to remove permissions');
+                                                    return;
+                                                }
+
+                                                handleRemovePermission(item?.id)
+                                            }}
                                         >
                                             <FontAwesome6 name='trash' size={14} color='red' />
                                             <Text
@@ -377,10 +387,16 @@ const RoleAndPermisionsModal = ({
                                                 <TouchableOpacity
                                                     style={{backgroundColor: COLORS.extra_blue, width: '100%'}}
                                                     className='flex-row mt-4 rounded justify-center items-center py-3 elevation-sm'
-                                                    onPress={() => router.push({
-                                                        pathname: './AddPermissions',
-                                                        params: {name: item?.name, role_id: item?.id, business_id}
-                                                    })}
+                                                    onPress={() => {
+                                                        if (!can('update_permissions')) {
+                                                            setOpenRoleAndPermisionsModal(false);
+                                                            toast.error('You do not have permission to update permissions');
+                                                            return;
+                                                        }
+                                                            router.push({
+                                                            pathname: './AddPermissions',
+                                                            params: {name: item?.name, role_id: item?.id, business_id}
+                                                    })}}
                                                 >
                                                     <MaterialCommunityIcons
                                                         name="shield-account"
@@ -481,7 +497,15 @@ const RoleAndPermisionsModal = ({
                         <TouchableOpacity
                             style={{backgroundColor: COLORS.red, width: '100%'}}
                             className='flex-row mt-4 rounded justify-center items-center py-3 elevation-sm'
-                            onPress={() => handleDeleteBusinessRole()}
+                            onPress={() => {
+                                if (!can('delete_role')) {
+                                    setOpenRoleAndPermisionsModal(false);
+                                    toast.error('You do not have permission to delete role');
+                                    return;
+                                }
+
+                                handleDeleteBusinessRole()
+                            }}
                             disabled={loadingDeleteRole}
                         >
                             {loadingDeleteRole ? (

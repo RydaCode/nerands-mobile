@@ -7,7 +7,9 @@ import useApi from '../../../../../hook/useApi';
 const ViewAdmins = ({router, params}) => {
     const store_id = params.store_id;
     
-    const { data, isLoading, error, get, } = useApi(`/stores/admins/${store_id}`);
+    const { data, isLoading, error, get, } = useApi(
+        `/stores/business/${params.business_id}/store-members/${store_id}`
+    );
 
     useEffect(() => {
         if (store_id) {
@@ -36,15 +38,16 @@ const ViewAdmins = ({router, params}) => {
                 store_province: params.store_province,
                 store_ratings: params.store_ratings,
                 user_id: params.user_id,
+                business_id: params.business_id,
                 router: router
             }})}
             style={{borderRadius: SIZES.border}}
-            className='h-full items-center justify-center bg-white border-1 border-lavender relative m-2 w-full'
+            className='h-full items-center justify-center bg-white border-1 relative m-2 w-full'
         >
-            <View style={{right: 20, top: 3}} className='absolute z-50 bg-red rounded-full items-center justify-center w-[25px] h-[25px] border-2 border-white'>
-                <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>{storeCount}</Text>
+            <View style={{right: 25, top: 3, height: 23, width: 23}} className='absolute z-50 bg-red rounded-full items-center justify-center border-2 border-white'>
+                <Text style={{fontFamily: 'roboto-medium', fontSize: 11}} className='text-white'>{storeCount}</Text>
             </View>
-            <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+            <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                 <FontAwesome5 name="user" color='#54C571' size={19} />
             </View>
             <Text className='text-sm'>View Admins</Text>

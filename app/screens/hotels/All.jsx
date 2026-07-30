@@ -23,7 +23,7 @@ const All = () => {
                     <Text
                         className='text-base text-slate mt-3'
                         style={{fontFamily: 'roboto-medium'}}
-                    >No Hotel & Lodgets Listings Yet</Text>
+                    >No Hotels & lodges are listed yet.</Text>
                 </View>
             ) : (
                 <FlatList

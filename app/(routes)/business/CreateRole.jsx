@@ -25,7 +25,8 @@ const CreateRole = () => {
         user_id: params.user_id,
         business_id: params.business_id,
         role_name: '',
-        role_description: ''
+        role_description: '',
+        is_system: false
     });
 
     const handleChangeText = useCallback((key, value) => {
@@ -84,9 +85,7 @@ const CreateRole = () => {
             <SafeAreaView className='flex-1 px-4 bg-white justify-between relative'>
                 <Headers header_name='Business Hub' fontFamily='outfit-medium' textStyles='text-2xl' icon={<Ionicons name='business-sharp' size={15} color={COLORS.slate}/>}/>
                 {isLoading && (
-                    <View className='h-full justify-center items-center absolute' style={{zIndex: 900, left: 0, right: 0, bottom: 0}}>
-                        <Text>Hello</Text>
-                    </View>
+                    <View className='h-full justify-center items-center absolute' style={{zIndex: 900, left: 0, right: 0, bottom: 0}}/>
                 )}
                 <View className='flex-1 justify-center'>
                     <View className='w-full mb-8 bg-grey_bg p-1 rounded-xl justify-center items-center'>

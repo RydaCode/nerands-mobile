@@ -31,7 +31,7 @@ const CreateProductCard = ({params}) => {
     const [sizeoption, setSizeOption] = useState(false);
 
     const [formData, setFormData] = useState({
-        user_id: user_id,
+        business_id: params.business_id,
         store_id: params.store_id,
         store_category: params.store_category,
         product_name: '',
@@ -110,6 +110,7 @@ const CreateProductCard = ({params}) => {
 
             // Append text fields
             formDataObj.append('user_id', formData.user_id);
+            formDataObj.append('business_id', formData.business_id);
             formDataObj.append('store_id', formData.store_id);
             formDataObj.append('product_name', formData.product_name);
             formDataObj.append('product_category', formData.product_category);
@@ -142,8 +143,11 @@ const CreateProductCard = ({params}) => {
 
             const data = await response.json();
 
+            console.log(data)
+
             if (!response.ok) {
-                throw new Error(data.message || 'Upload failed');
+                toast.error(data.message || 'Upload failed');
+                return;
             }
 
             toast.success('Product created successfully!');
@@ -160,10 +164,14 @@ const CreateProductCard = ({params}) => {
 
             // ✅ Reset selected category dropdown
             setSelectedCategory('Select category');
+            setIsLoading(false);
+            return;
 
         } catch (error) {
-            console.error("Upload error:", error);
+            console.log("Upload error:", error);
             toast.error(error.message);
+            setIsLoading(false);
+            return;
         } finally {
             setIsLoading(false);
         }

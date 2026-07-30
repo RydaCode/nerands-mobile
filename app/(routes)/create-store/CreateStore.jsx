@@ -1,15 +1,16 @@
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
-    StyleSheet,
+    Switch,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Dropdown } from "react-native-element-dropdown";
@@ -18,102 +19,78 @@ import FormInputs from "../../../components/FormFields/FormInputs";
 import { COLORS } from "../../../constants/constants";
 import { VALID_PREFIXES } from "../../../constants/phonePrefixes";
 import useApi from "../../../hook/useApi";
+import { getUserTimezone } from "../../../utils/timezone";
 import { toast } from "../../../utils/toast";
 import OverLay from "../../OverLay";
 import Redirecting from "../../Redirecting";
 
-const CreateStore = () => {
+const CreateStore = ({
+    business_id,
+    business_name,
+    display_name,
+    business_category,
+    email,
+    country,
+    logo_url,
+    phone,
+    province,
+    registration_number,
+    status,
+    t_pin,
+    tax_number,
+    city
+}) => {
     const { user_id, user_type, is_runner } = useSelector((state) => state.auth);
-    const router = useRouter();
-    const [errors, setErrors] = useState({});
-    const [showOpenTimePicker, setShowOpenTimePicker] = useState(false);
-    const [showCloseTimePicker, setShowCloseTimePicker] = useState(false);
-
-    const updateTime = (key, selectedDate) => {
-        const time = selectedDate || new Date();
-
-        const formattedTime = formatTo24Hour(
-            time.getHours(),
-            time.getMinutes()
-        );
-
-        setFormData(prev => ({
-            ...prev,
-            [key]: formattedTime
-        }));
-    };
-
-    const showOpenTimepicker = () => {
-        setShowOpenTimePicker(true);
-    };
-
-    const showCloseTimepicker = () => {
-        setShowCloseTimePicker(true);
-    };
-
-    // Function to convert to 24-hour format
-    const formatTo24Hour = (hours, minutes) => {
-        const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-        return `${hours < 10 ? `0${hours}` : hours}:${formattedMinutes}`;
-    };
-
-    useEffect(() => {
-        if (latitude && longitude) {
-            setFormData(prev => ({
-                ...prev,
-                store_latitude: latitude,
-                store_longitude: longitude
-            }));
-        }
-    }, [latitude, longitude]);
-
-    // Use useSelector to get location data from Redux store
     const {
         latitude,
         longitude,
         displayCurrentLocation,
         locationServicesEnabled,
     } = useSelector((state) => state.location);
-
-    const [formData, setFormData] = useState({
-        user_id: user_id,
-        store_name: "",
-        store_category: '',
-        store_phone_num: "",
-        store_province: '',
-        city_town: "",
-        store_location: "",
-        store_country: "Zambia",
-        open_time: '',
-        closing_time: '',
-        store_latitude: latitude || 0.0,
-        store_longitude: longitude || 0.0,
-    });
-
+    const timezone = getUserTimezone();
+    const router = useRouter();
+    const [errors, setErrors] = useState({});
+    const [run24hours, setRun24Hours] = useState(false);
     const [agreement, setAgreement] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    const { data: response, isLoading, error, post } = useApi("/stores/create");
+    const { data, isLoading, error, post } = useApi("/stores/create");
+
+    // Strip phone number
+    const displayPhone = phone.slice(4);
+
+    const [formData, setFormData] = useState({
+        business_id: business_id,
+        user_id: user_id,
+        store_country: country ||"Zambia",
+        logo_url: logo_url,
+        store_name: display_name,
+        email: email,
+        store_category: business_category,
+        store_location: '',
+        timezone: timezone || 'Africa/Lusaka'
+    });
 
     useEffect(() => {
-        if (response) {
-            if (response.Response === "Success") {
-                toast.success("Store created successfully");
-
-                setIsRedirecting(true);
-                setTimeout(() => {
-                    router.back(); // Navigate back
-                }, 3000);
-            } else {
-                toast.error(response.Response || "Something went wrong");
-            }
+        if (latitude && longitude) {
+            setFormData(prev => ({
+                ...prev,
+                store_latitude: latitude || 0.0,
+                store_longitude: longitude || 0.0,
+                city_town: city || '',
+                store_phone_num: displayPhone || '',
+                store_province: province || '',
+                is_24_hours: run24hours || false
+            }));
         }
+    }, [
+        latitude,
+        longitude,
+        displayPhone,
+        run24hours
+    ]);
 
-        if (error) {
-            toast.error("An error occurred. Please try again.");
-        }
-
-    }, [response, error]);
+    console.log(formData)
 
     const handleChangeText = useCallback((key, value) => {
         setFormData(prev => ({
@@ -169,17 +146,7 @@ const CreateStore = () => {
         return `+260${cleaned}`;
     };
 
-    const onChangeOpenTime = (e, date) => {
-        updateTime("open_time", date);
-        setShowOpenTimePicker(false);
-    };
-
-    const onChangeCloseTime = (e, date) => {
-        updateTime("closing_time", date);
-        setShowCloseTimePicker(false);
-    };
-
-    const handleCreateStore = () => {
+    const handleCreateStore = async() => {
         let newErrors = {};
 
         if (!formData.store_name) {
@@ -187,11 +154,11 @@ const CreateStore = () => {
         }
 
         if (!formData.store_category) {
-            newErrors.store_category = "Please select a category";
+            newErrors.store_category = "Category is missing";
         }
 
         if (!formData.store_location) {
-            newErrors.store_location = "Store location is required";
+            newErrors.store_location = "Branch location is required";
         }
 
         if (!formData.store_phone_num) {
@@ -207,14 +174,6 @@ const CreateStore = () => {
 
         if (!formData.city_town) {
             newErrors.city_town = "City/Town is required";
-        }
-
-        if (!formData.open_time) {
-            newErrors.open_time = "Select opening time";
-        }
-
-        if (!formData.closing_time) {
-            newErrors.closing_time = "Select closing time";
         }
 
         if (!agreement) {
@@ -236,71 +195,99 @@ const CreateStore = () => {
         };
 
         // Trigger API request
-        post(payload);
+        const res = await post(payload);
+
+        if (res) {
+            if (res?.data?.success === true) {
+                toast.success(res?.data?.message || "Store created successfully");
+
+                setIsRedirecting(true);
+                setTimeout(() => {
+                    router.back(); // Navigate back
+                }, 3000);
+            } else {
+                toast.error(res?.data?.message || "Something went wrong");
+            }
+        }
     };
 
-    const categoryOptions = [
-        { label: 'Restaurant', value: 'restaurant' },
-        { label: 'Liquor', value: 'liquor' },
-        { label: 'Fashion', value: 'fashion' },
-        { label: 'Cosmetics', value: 'cosmetics' },
-        { label: 'Electronics', value: 'electronics' },
-        { label: 'Grocery', value: 'grocery' },
-        { label: 'Supermarket', value: 'supermarket' },
-        ...( (user_type === 'SUPER' || user_type === 'ADMIN') && is_runner
-            ? [{ label: 'Local Market', value: 'local_market' }]
-            : []
-        ),
-    ];
+    // const categoryOptions = [
+    //     { label: 'Restaurant', value: 'restaurant' },
+    //     { label: 'Liquor', value: 'liquor' },
+    //     { label: 'Fashion', value: 'fashion' },
+    //     { label: 'Cosmetics', value: 'cosmetics' },
+    //     { label: 'Electronics', value: 'electronics' },
+    //     { label: 'Grocery', value: 'grocery' },
+    //     { label: 'Supermarket', value: 'supermarket' },
+    //     ...( (user_type === 'SUPER' || user_type === 'ADMIN') && is_runner
+    //         ? [{ label: 'Local Market', value: 'local_market' }]
+    //         : []
+    //     ),
+    // ];
 
     const provinceOptions = [
-        { label: 'Lusaka', value: 'Lusaka' },
-        { label: 'Copperbelt', value: 'Copperbelt' },
-        { label: 'Central', value: 'Central' },
-        { label: 'Eastern', value: 'Eastern' },
-        { label: 'Northern', value: 'Northern' },
-        { label: 'Muchinga', value: 'Muchinga' },
-        { label: 'Southern', value: 'Southern' },
-        { label: 'Western', value: 'Western' },
-        { label: 'North-Western', value: 'North-Western' },
-        { label: 'Luapula', value: 'Luapula' },
+        { label: 'Lusaka', value: 'lusaka' },
+        { label: 'Copperbelt', value: 'copperbelt' },
+        { label: 'Central', value: 'central' },
+        { label: 'Eastern', value: 'eastern' },
+        { label: 'Northern', value: 'northern' },
+        { label: 'Muchinga', value: 'muchinga' },
+        { label: 'Southern', value: 'southern' },
+        { label: 'Western', value: 'western' },
+        { label: 'North-Western', value: 'north-western' },
+        { label: 'Luapula', value: 'luapula' },
     ];
 
     return (
-        <View className="flex-1 justify-center items-center bg-white relative">
-            <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View className="w-full justify-center items-center mt-6 px-4">
                     <View
-                        style={{ backgroundColor: "#ffebee" }}
-                        className="w-full mb-8 rounded-md"
+                        // style={{ backgroundColor: "#ffebee" }}
+                        className="w-full mb-8 rounded-md bg-[#a2fac777]"
                     >
                         <View className='px-2 pt-2'>
                             <Text
                                 className="text-red text-md"
                                 style={{ fontFamily: "roboto-bold" }}
                             >NOTE:</Text>
-                            <Text className="text-base" style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}>
-                                During store creation, the system automatically captures and sets your current location as the store location.
+                            <Text className="text-black text-sm" style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}>
+                                During store creation, the system automatically captures and sets your current location as the branch / store location. You can update location from the dashboard.
                             </Text>
                         </View>
                         <View className='bg-white w-full my-2' style={{height: 1}}/>
                         <View className='flex-row items-center px-2 pb-2'>
                             <Ionicons name="location-sharp" size={15} color={COLORS.red} />
-                            <Text className='text-sm ml-1 text-slate' numberOfLines={1} style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}>{displayCurrentLocation}</Text>
+                            <Text className='text-sm ml-1 text-slate' numberOfLines={1} style={{ fontFamily: "roboto", textAlign: 'justify' }}>
+                                {displayCurrentLocation}
+                            </Text>
+                        </View>
+                        <View className='flex-row items-center px-2 pb-2'>
+                            <Text className='text-sm ml-1 text-slate' numberOfLines={1} style={{ fontFamily: "roboto", textAlign: 'justify' }}>
+                                Timezone: {timezone || 'Loading timezone...'}
+                            </Text>
                         </View>
                     </View>
                     <View className="w-full">
-                        <FormInputs
+                        {/* <FormInputs
                             title="Store Name"
+                            defaultValue={display_name}
                             handleChangeText={(value) =>
                                 handleChangeText("store_name", value)
                             }
                             borderStyle={`border ${errors.store_name ? "border-red" : "border-[#E2E8F0]"}`}
                             autoFocus={true}
                             error={errors.store_name}
-                        />
+                        /> */}
 
-                        <View className="mb-5">
+                        {/* <View className="mb-5">
                             <Text
                                 className="text-base mb-1"
                                 style={{ fontFamily: "roboto-bold" }}
@@ -340,14 +327,27 @@ const CreateStore = () => {
                                     {errors.store_category}
                                 </Text>
                             )}
-                        </View>
+                        </View> */}
+
+                        <FormInputs
+                            title="Branch / Store location"
+                            placeholder='Eg: Levy mall or Cairo'
+                            handleChangeText={(value) =>
+                                handleChangeText("store_location", value)
+                            }
+                            desc=""
+                            borderStyle={`border ${errors.store_location ? "border-red" : "border-[#E2E8F0]"}`}
+                            error={errors.store_location}
+                            textColor='black'
+                            descFontFamily='roboto'
+                        />
 
                         {/* Phone */}
                         <Text
                             className="mb-2 text-black"
                             style={{ fontFamily: "roboto-medium" }}
                         >
-                            Phone Number {errors.store_phone_num && (
+                            Branch / Store phone {errors.store_phone_num && (
                                 <Text className='text-red'>*</Text>
                             )}
                         </Text>
@@ -364,7 +364,7 @@ const CreateStore = () => {
                                 marginBottom: 20,
                             }}
                         >
-                            <Text style={{ fontFamily: "roboto-medium", marginRight: 8 }}>
+                            <Text style={{ fontFamily: "roboto-medium", marginRight: 2 }}>
                                 +260
                             </Text>
 
@@ -372,7 +372,7 @@ const CreateStore = () => {
                                 placeholder="Eg: 971234567"
                                 keyboardType="phone-pad"
                                 maxLength={9}
-                                value={formData.store_phone_num}
+                                defaultValue={displayPhone}
                                 onChangeText={(value) => {
                                     const numbersOnly = (value || '').replace(/\D/g, '');
                                     handleChangeText('store_phone_num', numbersOnly);
@@ -390,31 +390,22 @@ const CreateStore = () => {
                             </Text>
                         )}
 
-                        <FormInputs
-                            title="Store location"
-                            placeholder=""
-                            handleChangeText={(value) =>
-                                handleChangeText("store_location", value)
-                            }
-                            desc="Please enter the store’s area location, as this will help clients locate your store more easily."
-                            borderStyle={`border ${errors.store_location ? "border-red" : "border-[#E2E8F0]"}`}
-                            error={errors.store_location}
-                        />
-
                         <View className="mb-5">
-                            <Text className="text-base mb-1" style={{ fontFamily: "roboto-bold" }}>Store province</Text>
-                            <Text
+                            <Text className="text-base mb-1" style={{ fontFamily: "roboto-bold" }}>Province</Text>
+                            {/* <Text
                                 className="text-sm mb-1 text-slate"
                                 style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}
                             >
-                                Please select the province where the store is located.
-                            </Text>
+                                Select the province where the store is located.
+                            </Text> */}
                             <Dropdown
                                 data={provinceOptions}
+                                placeholder={province}
                                 labelField="label"
                                 valueField="value"
                                 placeholder="Select Province"
                                 value={formData.store_province}
+                                mode="modal"
                                 onChange={(item) => {
                                     setFormData(prev => ({
                                         ...prev,
@@ -438,87 +429,52 @@ const CreateStore = () => {
                         </View>
 
                         <FormInputs
-                            title="Store city / town"
-                            placeholder=""
+                            title="City"
+                            defaultValue={city}
                             handleChangeText={(value) => handleChangeText("city_town", value)}
-                            desc="Please select the city or town where the store is located."
+                            desc=""
                             borderStyle={`border ${errors.city_town ? "border-red" : "border-[#E2E8F0]"}`}
                             error={errors.city_town}
+                            textColor='black'
+                            descFontFamily='roboto'
                         />
 
-                        <View className='w-full my-6'>
-                            <Text className='text-sm text-slate mb-2'
-                                style={{fontFamily: 'roboto-medium'}}
-                            >Please select the time the store opens and closes.</Text>
-                            <View className='w-full flex-row items-center justify-between'>
-                                <View className='border justify-center items-center rounded-sm p-1 bg-grey_bg' style={{width: '49%', borderColor: errors.open_time ? "red" : "#E2E8F0"}}>
-                                    <View className='flex-row justify-center items-center'>
-                                        <MaterialIcons name="timer" size={18} color={COLORS.green1} />
-                                        <Text className='text-base text-slate ml-1' style={{fontFamily: 'roboto-medium'}}>{formData.open_time}</Text>
-                                    </View>
-                                    <TouchableOpacity
-                                        className="bg-green1 rounded-sm py-3 w-full justify-center items-center"
-                                        onPress={showOpenTimepicker}
-                                    >
-                                        <Text
-                                            className="ml-1 text-base text-white"
-                                            style={{ fontFamily: "roboto-medium" }}
-                                        >Select opening time</Text>
-                                    </TouchableOpacity>
-                                </View>
+                        <View className="w-full mb-6">
+                            <Text
+                                className="text-slate text-sm mb-2 mt-4"
+                                style={{
+                                    fontFamily: "roboto-medium",
+                                    textAlign: "justify"
+                                }}
+                            >
+                                Does your store operate 24 hours a day?
+                            </Text>
 
-                                <View className='border justify-center items-center rounded-sm p-1 bg-grey_bg' style={{width: '49%', borderColor: errors.closing_time ? "red" : "#E2E8F0"}}>
-                                    <View className='flex-row justify-center items-center'>
-                                        <MaterialIcons name="timer" size={18} color={COLORS.green1} />
-                                        <Text className='text-base ml-1 text-slate' style={{fontFamily: 'roboto-medium'}}>{formData.closing_time}</Text>
-                                    </View>
-                                    <TouchableOpacity
-                                        className="bg-green1 rounded-sm py-3 w-full justify-center items-center"
-                                        onPress={showCloseTimepicker}
-                                    >
-                                        <Text className="ml-1 text-base text-white"
-                                            style={{ fontFamily: "roboto-medium" }}
-                                        >Select closing time</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            {errors.open_time ? (
-                                <Text className='text-red text-sm mt-2'>
-                                    Select opeing time
+                            <View className="flex-row items-center justify-between">
+                                <Text
+                                    className="text-slate text-sm"
+                                    style={{
+                                        fontFamily: "roboto-medium"
+                                    }}
+                                >
+                                    Store operates 24/7
                                 </Text>
-                            ) : errors.closing_time ? (
-                                <Text className='text-red text-sm mt-2'>
-                                    Select closing time
-                                </Text>
-                            ) : null}
 
-                            <View className='w-full'>
-                                {showOpenTimePicker && (
-                                    <DateTimePicker
-                                        testID="openTimePicker"
-                                        value={new Date()}
-                                        mode="time"
-                                        display="default"
-                                        onChange={onChangeOpenTime}
-                                    />
-                                )}
-
-                                {showCloseTimePicker && (
-                                    <DateTimePicker
-                                        testID="closeTimePicker"
-                                        value={new Date()}
-                                        mode="time"
-                                        display="default"
-                                        onChange={onChangeCloseTime}
-                                    />
-                                )}
+                                <Switch
+                                    value={run24hours}
+                                    onValueChange={(value) => setRun24Hours(value)}
+                                    trackColor={{
+                                        false: "#cbd5e1",
+                                        true: COLORS.primary
+                                    }}
+                                    thumbColor="#ffffff"
+                                />
                             </View>
                         </View>
                     </View>
                     <View className="w-full mb-6">
                         <Text
-                            className="text-slate text-sm mb-8"
+                            className="text-slate text-sm mb-2 mt-8"
                             style={{ fontFamily: "roboto-medium", textAlign: 'justify' }}
                         >By pressing the create button, you sign up to the terms and conditions.</Text>
                         <BouncyCheckbox
@@ -531,7 +487,7 @@ const CreateStore = () => {
                                 marginLeft: -10,
                                 fontSize: 13,
                             }}
-                            size={20}
+                            size={21}
                             fillColor={COLORS.primary}
                             iconStyle={{ borderColor: COLORS.primary, borderRadius: 2, borderWidth: 2 }}
                             innerIconStyle={{ borderWidth: 2, borderRadius: 2 }}
@@ -539,7 +495,7 @@ const CreateStore = () => {
                     </View>
 
                     <TouchableOpacity
-                        className={`w-full py-3 bg-primary justify-center items-center rounded ${agreement || isLoading ? "opacity-100" : "opacity-50"}`}
+                        className={`w-full py-3 bg-primary justify-center items-center rounded-xl ${agreement || isLoading ? "opacity-100" : "opacity-50"}`}
                         disabled={isLoading || !agreement}
                         onPress={() => handleCreateStore()}
                     >
@@ -557,20 +513,8 @@ const CreateStore = () => {
             </ScrollView>
             {isLoading && <OverLay/>}
             {isRedirecting &&  <Redirecting redirect_text="Please wait..." />}
-        </View>
+        </KeyboardAvoidingView>
     );
 };
-
-const styles = StyleSheet.create({
-    picker: {
-        height: 50,
-        borderRadius: 5,
-    },
-    pickerItem: {
-        color: COLORS.slate,
-        fontSize: 13,
-        fontFamily: "roboto-medium",
-    },
-});
 
 export default CreateStore;

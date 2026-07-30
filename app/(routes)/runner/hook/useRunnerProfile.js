@@ -9,15 +9,16 @@ import {
 import { toast } from "../../../../utils/toast";
 
 export const useRunnerProfile = () => {
-    const { user_id, runner_id, is_runner } = useSelector((s) => s.auth);
+    const { user_id, is_runner } = useSelector((s) => s.auth);
 
     /* -------------------- APIs -------------------- */
-    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi(user_id ? `/runner/get_runner/${user_id}` : null);
+    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi(
+        user_id ? `/runner/get_runner/${user_id}` : null
+    );
     const availabilityApi = useApi(`/runner/update`);
 
     const runner = runnerApi;
-
-    console.log("RUNNERSSS", runner?.profile_image);
+    const runner_id = runner?.runner_id;
 
     /* -------------------- Local state -------------------- */
     const [isActive, setIsActive] = useState('NO');
@@ -26,49 +27,80 @@ export const useRunnerProfile = () => {
     useEffect(() => {
         if (!runner) return;
 
-        // Only sync on initial load / runner_id change
-        setIsActive(runner.is_available === "YES");
-    }, [runner_id, runner]);
+        setIsActive(runner.is_available);
+    }, [runner]);
 
     /* -------------------- Optimistic availability toggle -------------------- */
     const toggleAvailability = async () => {
-        if (!runner_id) return;
 
-        const prev = isActive;
-        const next = !prev;
+    console.log("1. toggle called");
 
-        // 1️⃣ Optimistic UI update
-        setIsActive(next);
+    if (!runner_id || isActive === null) {
+        console.log("2. stopped", {
+            runner_id,
+            isActive,
+        });
+        return;
+    }
 
-        try {
-            // 2️⃣ Update backend first
-            await availabilityApi.patch({
-                runner_id,
-                is_assigned: next ? "YES" : "NO",
-            });
+    const previous = isActive;
+    const next = previous === "YES" ? "NO" : "YES";
 
-            // 3️⃣ Start/Stop background tracking safely
-            if (next) await startBackgroundTracking();
-            else await stopBackgroundTracking();
+    console.log("3. changing", {
+        previous,
+        next
+    });
 
-            toast.success(
-                "Success",
-                next ? "Tracking started" : "Tracking stopped"
-            );
-        } catch (err) {
-            // ❌ Rollback UI and tracking
-            setIsActive(prev);
+    setIsActive(next);
 
-            try {
-                if (next) await stopBackgroundTracking();
-                else await startBackgroundTracking();
-            } catch (_) {
-                // ignore tracking rollback errors
-            }
-            console.log(err)
-            toast.error("Error", "Could not change availability");
+    try {
+
+        console.log("4. sending API update");
+
+        const response = await availabilityApi.patch({
+            user_id,
+            runner_id,
+            is_available: next,
+        });
+
+        console.log("5. API response", response);
+
+
+        if (next === "YES") {
+
+            console.log("6. starting tracking");
+            await startBackgroundTracking();
+
+        } else {
+
+            console.log("7. stopping tracking");
+            await stopBackgroundTracking();
+
         }
-    };
+
+
+        console.log("8. completed");
+
+        toast.success(
+            "Success",
+            next === "YES"
+                ? "You are now available"
+                : "You are now offline"
+        );
+
+
+    } catch (error) {
+
+        console.log("ERROR:", error);
+
+        setIsActive(previous);
+
+        toast.error(
+            "Error",
+            "Could not update availability"
+        );
+    }
+};
 
     useEffect(() => {
         if (user_id) {

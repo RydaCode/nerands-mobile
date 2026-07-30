@@ -1,26 +1,44 @@
-import { FontAwesome, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 import MainHeader from '../../../components/MainHeader';
 import { COLORS } from '../../../constants/constants';
+import useApi from '../../../hook/useApi';
 import LocationComponent from '../../../services/LocationComponent';
 import socket from '../../../socket-io/socket';
 import AssignmentModal from './AssignmentModal';
 import BuyTripsModal from './BuyErrandsModal';
 import { useRunnerDashboard } from './hook/useRunnerDashboard';
+import NotRunnerView from './NotRunnerView';
 import RunnerActions from './RunnerActions';
 import RunnerHeaderss from './RunnerHeaderss';
 import StatsCards from './StatsCards';
 
-const index = () => {
+const Index = () => {
+    const { user_id, is_runner } = useSelector((s) => s.auth);
     const router = useRouter();
     const [buyerrands, setBuyErrands] = useState(false);
     const [settings, setSettings] = useState(false);
     const [liveOrder, setLiveOrder] = useState(null);
     const soundRef = useRef(null);
+
+    const {data, isLoading, error, get} = useApi();
+
+    useEffect(() => {
+        if (user_id) {
+            get(`/runner/user/dashboard`);   
+        }
+    }, [user_id]);
+
+    const runnerData = data?.data?.runner;
+    const runnerStats = data?.data?.stats;
+    const purchasedTrips = data?.data?.purchasedTrips;
+
+    console.log("RUNNER DASHBOARD", purchasedTrips?.count);
 
     const startLoopSound = async () => {
         try {
@@ -48,17 +66,7 @@ const index = () => {
     };
     
     const {
-        isLoading,
-        runner,
-        runner_id,
-        is_runner,
-        activeOrder,
-        customOrder,
-        pendingOrders,
-        stats,
-        isActive,
-        toggleAvailability,
-        refreshDashboard
+        toggleAvailability
     } = useRunnerDashboard();
 
     useEffect(() => {
@@ -89,49 +97,66 @@ const index = () => {
         <SafeAreaView className='flex-1 px-4 bg-white relative'>
             {/* Pass refresh function to modal */}
             <AssignmentModal
-                pendingorders={liveOrder ? { data: [liveOrder] } : pendingOrders}
+                runner_id={runnerStats?.runner_id}
                 onClose={() => setLiveOrder(null)}
-                refreshOrders={refreshDashboard}
                 stopLoopSound={stopLoopSound}
             />
             <View className="">
                 <MainHeader header_name="Runner" fontFamily='ubuntu-medium' textStyles="text-2xl text-black" />
             </View>
 
-            <LocationComponent role="runner" userId={runner_id} />
+            <LocationComponent role="runner" userId={runnerStats?.runner_id} />
 
             {isLoading ? (
                 <View className='flex-1 w-full justify-center items-center'>
                     <ActivityIndicator size={40} color={COLORS.primary} />
                     <Text className='text-lg text-black' style={{fontFamily: 'roboto-medium'}}>Loading data, please wait...</Text>
                 </View>
-            ) : runner ? (
+            ) : runnerData?.length === 0 ? (
+                <View className='flex-1 w-full justify-center items-center'>
+                    <FontAwesome name='search' size={30} color={COLORS.slate}/>
+                    <Text className='text-slate mt-2' style={{fontFamily: 'roboto-medium'}}>
+                        Runner data did not load, try reloaing the app.
+                    </Text>
+                    <TouchableOpacity
+                        style={{width: '40%'}}
+                        className='bg-primary py-3 justify-center items-center rounded elevation mt-6'
+                        onPress={() => get()}
+                    >
+                        <Text
+                            className='text-white tetx-lg'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : runnerData ? (
                 <FlatList
                     data={[]}
                     renderItem={null}
                     ListHeaderComponent={ 
                         <View className=''>
-                            <RunnerHeaderss runner={runner} setSettings={setSettings}/>
-                            <StatsCards stats={stats} runner={runner} />
+                            <RunnerHeaderss runner={runnerData} setSettings={setSettings}/>
+                            <StatsCards stats={runnerStats} purchasedTrips={purchasedTrips} runner={runnerData} />
                             <RunnerActions
-                                isActive={isActive}
+                                isActive={runnerStats?.is_available}
                                 toggleAvailability={toggleAvailability}
                                 setBuyErrands={setBuyErrands}
                                 router={router}
-                                runner_id={runner_id}
+                                runner_id={runnerStats?.runner_id}
                             />
                             <BuyTripsModal
                                 visible={buyerrands}
                                 setBuyErrands={setBuyErrands}
-                                runner_id={runner_id}
+                                runner_id={runnerStats?.runner_id}
                             />
                         </View>
                     }
                 />
             ) : !is_runner ? (
                 <View className='flex-1 w-full justify-center items-center'>
-                    <MaterialIcons name="directions-run" size={40} color={COLORS.green1} />
-                    <Text className='text-lg text-black' style={{fontFamily: 'roboto-medium', textAlign: 'center', height: 90, marginTop: 5 }}>You dont have a runner account yet.</Text>
+                    {/* <MaterialIcons name="directions-run" size={40} color={COLORS.green1} /> */}
+                    {/* <Text className='text-lg text-black' style={{fontFamily: 'roboto-medium', textAlign: 'center', height: 90, marginTop: 5 }}>You dont have a runner account yet.</Text> */}
+                    <NotRunnerView router={router}/>
                 </View>
             ) : (
                 <View className='flex-1 w-full justify-center items-center'>
@@ -154,4 +179,4 @@ const index = () => {
     )
 }
 
-export default index
+export default Index

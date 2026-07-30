@@ -1,4 +1,4 @@
-import { Fontisto, MaterialIcons } from '@expo/vector-icons'
+import { FontAwesome6, Fontisto } from '@expo/vector-icons'
 import { MotiView } from 'moti'
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import OpenCloseStoreComponent from '../../../../../components/publish-content/publish-store/OpenCloseStoreComponent'
@@ -12,52 +12,92 @@ const OpenCloseStore = ({router, params, openStoreModalVisible, setOpenStoreModa
     const isCloseOpen = params.open_close === true || params.open_close === 1 || params.open_close === 'true';
     return (
         <>
-            {/* Start publish store modal */}
-            <TouchableOpacity className='flex-1 items-center'
-                onPress={() => setOpenStoreModalVisible(false)}
+            {/* Modal for publish/unpublish confirmation */}
+            <Modal
+                visible={openStoreModalVisible}
+                transparent
+                animationType="none"
+                onRequestClose={() => setOpenStoreModalVisible(false)}
             >
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    statusBarTranslucent={true}
-                    visible={openStoreModalVisible}
-                    onRequestClose={() => setOpenStoreModalVisible(false)}
+                {/* Overlay */}
+                <Pressable
+                    className="flex-1 bg-transparentBlack justify-end"
+                    // onPress={() => setOpenStoreModalVisible(false)}
                 >
-                    <Pressable style={styles.centeredView}
-                        onPress={() => setOpenStoreModalVisible(false)}
-                    />
-                    <MotiView
-                        from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
-                        animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
-                        transition={{ duration: 1000 }}
-                        style={styles.centeredView}>
-                        <View className='bg-white p-2 w-full rounded-md' style={[styles.modalView, {maxWidth: width}]}>
-                            {/* Container */}
+                    {/* Inner content wrapper (prevents closing when tapped) */}
+                    <View
+                        // onStartShouldSetResponder={() => true}
+                    >
+                        <MotiView
+                            from={{ opacity: 0, translateY: 80 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: "timing", duration: 300 }}
+                            style={{borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 60}}
+                            className="bg-white px-4 pt-3"
+                        >
+                            {/* Header */}
                             <View className='p-1 flex-row justify-between items-center'>
                                 <View className='flex-row justify-center items-center'>
-                                    <MaterialIcons name="lock" size={22}/>
-                                    <Text className='text-2xl ml-1' style={{fontFamily: 'roboto-medium'}}>
+                                    <FontAwesome6 name="edit" size={22} />
+                                    <Text className='text-2xl ml-1' style={{ fontFamily: 'outfit-medium' }}>
                                         {isCloseOpen ? 'Close Store' : 'Open Store'}
                                     </Text>
                                 </View>
                             </View>
-                            {/* <View className='h-[1px] mb-2 mt-1 w-full bg-lavender' /> */}
-                            <OpenCloseStoreComponent router={router} params={params} setOpenStoreModalVisible={setOpenStoreModalVisible} />
-                        </View>
-                    </MotiView>
-                </Modal>
-            </TouchableOpacity>
-            {/* End publish store modal */}
+    
+                            <View className='w-full bg-lavender my-3' style={{height: 1}} />
+                            {/* Start Content */}
+                            <OpenCloseStoreComponent
+                                router={router}
+                                params={params}
+                                setOpenStoreModalVisible={setOpenStoreModalVisible}
+                            />
+                            {/* End Content */}
+                        </MotiView>
+                    </View>
+                </Pressable>
+            </Modal>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             <TouchableOpacity
                 onPress={() => setOpenStoreModalVisible(true)}
                 disabled={!isPublished}
-                style={{borderRadius: SIZES.border, opacity: isPublished ? 0.9 : 0.3}}
+                style={{borderRadius: SIZES.border}}
                 className='h-full items-center justify-center bg-white border-1 border-lavender w-full '
                 accessible={true}
                 accessibilityLabel={isCloseOpen ? 'Close store' : 'Open store'}
             >
-                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45, opacity: isPublished ? 1 : 0.3}}>
                     <Fontisto
                         name={isCloseOpen ? "unlocked" : "locked"}
                         size={18} color={"#54C571"}

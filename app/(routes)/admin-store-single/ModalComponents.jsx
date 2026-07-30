@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import ProductDashBoard from '../../../app/(routes)/edit-products/ProductDashBoard';
-import DeleteProductOthers from '../../delete-content/delete-product-others/DeleteProductOthers';
-import PublishProductOthers from '../../publish-content/publish-product/PublishProductOthers';
+import DeleteProductOthers from '../../../components/delete-content/delete-product-others/DeleteProductOthers';
+import PublishProductOthers from '../../../components/publish-content/publish-product/PublishProductOthers';
+import ProductDashBoard from '../edit-products/ProductDashBoard';
 
 const ModalComponents = ({ visible, onClose, actionType, productDetails }) => {
     

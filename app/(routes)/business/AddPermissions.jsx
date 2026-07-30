@@ -65,10 +65,10 @@ const AddPermissions = () => {
             });
 
             if (!res?.success) {
-                toast.error(res?.data?.message || 'Failed to update permissions');
+                toast.error(res?.message || 'Failed to update permissions');
                 return;
             }
-            toast.success(res?.data?.message || 'Success');
+            toast.success(res?.message || 'Success');
             setSelected([]);
             router.back();
 

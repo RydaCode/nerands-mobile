@@ -1,4 +1,5 @@
 import { FontAwesome6, MaterialIcons } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import {
     Modal,
     Pressable,
@@ -20,32 +21,48 @@ const PublishStoreBtn = ({ router, params, publishStoremodalVisible, setPublishS
         <>
             {/* Modal for publish/unpublish confirmation */}
             <Modal
-                animationType="slide"
-                transparent={true}
-                statusBarTranslucent={true}
                 visible={publishStoremodalVisible}
+                transparent
+                animationType="none"
                 onRequestClose={() => setPublishStoreModalVisible(false)}
             >
-                <Pressable style={styles.centeredView} onPress={() => setPublishStoreModalVisible(false)} />
-                <View style={styles.centeredView}>
-                    <View className='bg-white p-2 w-full rounded-md' style={[styles.modalView, { maxWidth: width }]}>
-                        {/* Header */}
-                        <View className='p-1 flex-row justify-between items-center'>
-                            <View className='flex-row justify-center items-center'>
-                                <FontAwesome6 name="edit" size={22} />
-                                <Text className='text-2xl ml-1' style={{ fontFamily: 'maven-medium' }}>
-                                    {isPublished ? 'Unpublish' : 'Publish'}
-                                </Text>
+                {/* Overlay */}
+                <Pressable
+                    className="flex-1 bg-transparentBlack justify-end"
+                    // onPress={() => setPublishStoreModalVisible(false)}
+                >
+                    {/* Inner content wrapper (prevents closing when tapped) */}
+                    <View
+                        // onStartShouldSetResponder={() => true}
+                    >
+                        <MotiView
+                            from={{ opacity: 0, translateY: 80 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: "timing", duration: 300 }}
+                            style={{borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 60}}
+                            className="bg-white px-4 pt-3"
+                        >
+                            {/* Header */}
+                            <View className='p-1 flex-row justify-between items-center'>
+                                <View className='flex-row justify-center items-center'>
+                                    <FontAwesome6 name="edit" size={22} />
+                                    <Text className='text-2xl ml-1' style={{ fontFamily: 'outfit-medium' }}>
+                                        {isPublished ? 'Unpublish' : 'Publish'}
+                                    </Text>
+                                </View>
                             </View>
-                        </View>
-
-                        <PublishStoreOthers
-                            router={router}
-                            params={params}
-                            setPublishStoreModalVisible={setPublishStoreModalVisible}
-                        />
+    
+                            <View className='w-full bg-lavender my-3' style={{height: 1}} />
+                            {/* Start Content */}
+                            <PublishStoreOthers
+                                router={router}
+                                params={params}
+                                setPublishStoreModalVisible={setPublishStoreModalVisible}
+                            />
+                            {/* End Content */}
+                        </MotiView>
                     </View>
-                </View>
+                </Pressable>
             </Modal>
 
             {/* Trigger button */}
@@ -56,7 +73,7 @@ const PublishStoreBtn = ({ router, params, publishStoremodalVisible, setPublishS
                 accessible={true}
                 accessibilityLabel={isPublished ? 'Unpublish store' : 'Publish store'}
             >
-                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                <View className='bg-[#fff] border border-[#54C571] elevation-sm justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                     <MaterialIcons
                         name={isPublished ? 'unpublished' : 'publish'}
                         size={22} color={"#54C571"}

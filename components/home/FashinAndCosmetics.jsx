@@ -9,23 +9,28 @@ import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
-import { isStoreOpen } from '../../utils/isStoreOpen';
+import { formatText } from '../../utils/getInitials';
 
 const FashinAndCosmetics = (refreshKey) => {
     const { user_id  } = useSelector((state) => state.auth);
     const router = useRouter();
     const { latitude, longitude } = useSelector(state => state.location);
-    const { data, isLoading, error, get } = useApi(`/stores/toprated?cat_name=general&limit=10&open_close=true&user_id=${user_id}`);
+    const { data, isLoading, error, get } = useApi();
+    
     useEffect(() => {
-        get();
-    }, [refreshKey]);
+        if (latitude || longitude || refreshKey) {
+            get(`/stores/toprated?cat_name=general&limit=10&open_close=true&user_id=${user_id}&user_lat=${latitude}&user_lang=${longitude}`);   
+        }
+    }, [latitude, longitude, user_id, refreshKey]);
+
+    // console.log("TOP:", data)
 
     const storesList = data?.stores ?? [];
     // Get screen width and height using useWindowDimensions
     const { width, height } = useWindowDimensions();
 
     // Dynamically calculate image sizes based on screen width and height
-    const imageWidth = width * 0.85;  // 45% of screen width
+    const imageWidth = width * 0.92;  // 45% of screen width
     const imageHeight = height * 0.60; // 15% of screen height
 
     const isLandscape = width > height; // Determine orientation
@@ -49,10 +54,6 @@ const FashinAndCosmetics = (refreshKey) => {
                 data={storesList}
                 keyExtractor={(item) => item.store_id}
                 renderItem={({ item }) => {
-                    const isManuallyClosed = item.open_close === false;
-                    const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
-                    const isClosed = isManuallyClosed || isTimeClosed;
-
                     return (
                     <View
                         style={{
@@ -87,8 +88,7 @@ const FashinAndCosmetics = (refreshKey) => {
                             }})}
                         >
                             <View className='rounded relative' style={{ width: '35%', height: '100%' }}>
-                                
-                                <Image
+                               <Image
                                     style={{
                                         width: "100%",
                                         height: "100%",
@@ -104,10 +104,10 @@ const FashinAndCosmetics = (refreshKey) => {
                                     transition={200}
                                 />
 
-                                {isClosed &&
+                                {item.is_closed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50'>
-                                        <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.primary, opacity: 0.5}} />
-                                        <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
+                                        <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.white, opacity: 0.5}} />
+                                        <Text style={{fontFamily: 'roboto'}} className='text-sm text-white'>Closed</Text>
                                     </View>
                                 }
                             </View>
@@ -118,34 +118,34 @@ const FashinAndCosmetics = (refreshKey) => {
                                     </Text>
                                 </View>
                                 <View className='w-full flex-row items-center'>
-                                    <View className='flex-row items-center ' style={{ maxWidth: '65%' }}>
-                                        <Ionicons
+                                    <View className="flex-row rounded-sm bg-[#DFF6E6] py-1 px-2 justify-center items-center self-center mr-1">
+                                        <Text className='text-sm text-green1' style={{fontFamily: 'roboto' }}>
+                                            {formatText(item.store_category)}
+                                        </Text>
+                                    </View>
+                                    <View className='flex-row justify-center ml-4 items-center'>
+                                        <Ionicons name="star" size={12} color={COLORS.primary} />
+                                        <Text className='text-sm'>{item.average_rating}</Text>
+                                        <Text className='text-sm ml-1 text-slate'>({item.review_count})</Text>
+                                    </View>
+                                </View>
+                                <View className='mt-2 mr-2 flex-row items-center justify-between'>
+                                    <View className='flex-row items-center' style={{ width: '60%' }}>
+                                        {/* <Ionicons
                                             name="location-outline"
                                             color={COLORS.green1}
                                             size={12}
-                                        />
-                                        <Text className='text-slate text-sm' numberOfLines={2} style={{fontFamily: 'roboto'}}>
+                                        /> */}
+                                        <Text className='text-slate text-sm' numberOfLines={1} style={{fontFamily: 'roboto'}}>
                                             {item.store_location}
                                         </Text>
                                     </View>
                                     <View className='h-[5px] w-[5px] bg-slate rounded-full self-center justify-center mx-2'/>
-                                    <View className="flex-row justify-center items-center self-center mr-1" style={{ width: '25%' }}>
+                                    <View className="flex-row justify-center items-center mr-1" style={{ width: '25%' }}>
                                         <Ionicons name="location-outline" color={COLORS.primary} size={11} />
-                                        <Text className='text-sm text-slate' style={{fontFamily: 'roboto' }}>
+                                        <Text className='text-sm text-slate' numberOfLines={1} style={{fontFamily: 'roboto' }}>
                                             {calculateDistance(pointA, { latitude: item.latitude, longitude: item.longitude })}
                                         </Text>
-                                    </View>
-                                </View>
-                                <View className='mt-2 mr-2 flex-row items-center justify-between'>
-                                    <View className="flex-row rounded-sm bg-[#DFF6E6] p-1 px-2 justify-center items-center self-center mr-1">
-                                        <Text className='text-sm text-green1' style={{fontFamily: 'roboto' }}>
-                                            {item.store_category}
-                                        </Text>
-                                    </View>
-                                    <View className='flex-row justify-center items-center'>
-                                        <Ionicons name="star" size={12} color={COLORS.primary} />
-                                        <Text className='text-sm'>{item.average_rating}</Text>
-                                        <Text className='text-sm ml-1 text-slate'>({item.review_count})</Text>
                                     </View>
                                 </View>
                             </View>

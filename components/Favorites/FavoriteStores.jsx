@@ -1,14 +1,14 @@
 import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import LoadingIndicator from '../../app/LoadingIndicator';
 import { COLORS, SIZES } from '../../constants/constants';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
-import { isStoreOpen } from '../../utils/isStoreOpen';
+import { formatText } from '../../utils/getInitials';
 import { toast } from '../../utils/toast';
 
 // ----------------- FavoritesCard -----------------
@@ -28,7 +28,7 @@ const FavoritesCard = ({
     total_ratings,
     isClosed,
     open_time,
-    closing_time,
+    close_time,
     open_close,
     latitude,
     longitude,
@@ -77,7 +77,7 @@ const FavoritesCard = ({
                 total_ratings,
                 favorited: true,
                 open_time,
-                closing_time
+                close_time
             },
         });
     } else {
@@ -99,7 +99,7 @@ const FavoritesCard = ({
                     total_ratings,
                     favorited: true,
                     open_time,
-                    closing_time
+                    close_time
                 },
             });
         }
@@ -135,7 +135,7 @@ const FavoritesCard = ({
                             className="items-center justify-center rounded-sm py-1"
                             style={{ width: '33%', backgroundColor: COLORS.grey_bg }}
                         >
-                            <Text className="text-sm text-green1">{store_category}</Text>
+                            <Text className="text-sm text-green1">{formatText(store_category)}</Text>
                         </View>
 
                         <View style={{ width: '10%' }}>
@@ -246,77 +246,120 @@ const FavoriteStores = () => {
         setStoreList((prev) => prev.filter((store) => store.store_id !== storeId));
     };
 
-    if (isLoading && page === 1) return <LoadingIndicator loading_text="Loading stores..." />;
-    if (error) return <Text>Error: {error.message}</Text>;
-
     return (
-        <FlatList
-            data={storeList}
-            keyExtractor={(item) => item.store_id.toString()}
-            refreshing={refreshing}
-            onRefresh={fetchStores}
-            onEndReached={loadNextPage}
-            onEndReachedThreshold={0.5}
-
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={fetchStores}
-                    colors={[COLORS.primary]} // Android
-                    tintColor={COLORS.primary} // iOS
-                />
-            }
-            renderItem={({ item }) => {
-                const isManuallyClosed = item.open_close === false;
-                const isTimeClosed = !isStoreOpen(item.open_time, item.closing_time);
-                const isClosed = isManuallyClosed || isTimeClosed;
-                return (
-                <FavoritesCard
-                    user_id={user_id}
-                    store_id={item.store_id}
-                    store_profileimage={item.store_profileimage}
-                    store_coverimage={item.store_coverimage}
-                    store_name={item.store_name}
-                    store_latitude={item.latitude}
-                    store_longitude={item.longitude}
-                    store_location={item.store_location}
-                    store_category={item.store_category}
-                    store_description={item.store_description}
-                    store_phone_num={item.store_phone_num}
-                    average_rating={item.avg_rating}
-                    total_ratings={item.total_reviews}
-                    isClosed={isClosed}
-                    open_time={item.open_time}
-                    closing_time={item.closing_time}
-                    open_close={item.open_close}
-                    latitude={latitude}
-                    longitude={longitude}
-                    onRemove={removeFromList}
-                    post={post}
-                    router={router}
-                />
-            )}}
-            
-            ListFooterComponent={() =>
-                loadingMore ? <LoadingIndicator loading_text="Loading more..." /> : null
-            }
-            ListHeaderComponent={() => (
-                <View className="flex-row my-6 mt-4 items-center justify-between">
-                    <View className='flex-row justify-center items-center'>
-                        <MaterialCommunityIcons name="heart" size={27} color={COLORS.primary} />
-                        <Text style={{ fontFamily: 'roboto-medium' }} className="ml-1 text-xl">My Favorites</Text>
-                    </View>
-                    <View className='bg-navBtnBgHome rounded-sm py-2 px-4'>
+        <>
+            {isLoading && page === 1 ? (
+                <View className='flex-1 justify-center items-center'>
+                    <ActivityIndicator color={COLORS.primary} size={35}/>
+                    <Text
+                        className='mt-2'
+                        style={{fontFamily: 'roboto-medium'}}
+                    >Loading favorites, please wait...</Text>
+                </View>
+            ) : error ? (
+                <View className='flex-1 justify-center items-center'>
+                    <FontAwesome name='search' size={30} color={COLORS.slate}/>
+                    <Text
+                        className='mt-2'
+                        style={{fontFamily: 'roboto-medium'}}
+                    >{error?.message || 'An error occured try reloading your app.'}</Text>
+                    <TouchableOpacity
+                        style={{width: '40%'}}
+                        className='bg-primary flex-row mt-3 rounded-lg py-3 justify-center items-center'
+                        onPress={() => get()}
+                    >
+                        <MaterialCommunityIcons name="reload" size={20} color="white" />
                         <Text
-                            style={{ fontFamily: 'roboto-medium' }} className='text-xl text-primary'
-                        >
-                            {storeList.length} {storeList.length === 1 ? 'Store' : 'Stores'}
-                        </Text>
-                    </View>
+                            className='text-white ml-1'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : storeList.length === 0 ? (
+                <View className='flex-1 justify-center items-center'>
+                    <FontAwesome name='search' size={30} color={COLORS.slate}/>
+                    <Text
+                        className='mt-2'
+                        style={{fontFamily: 'roboto-medium'}}
+                    >No store found in your favorites.</Text>
+                    <TouchableOpacity
+                        style={{width: '40%'}}
+                        className='bg-primary flex-row mt-3 rounded-lg py-3 justify-center items-center'
+                        onPress={() => get()}
+                    >
+                        <MaterialCommunityIcons name="reload" size={20} color="white" />
+                        <Text
+                            className='text-white ml-1'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <View className='flex-1 px-2'>
+                    <FlatList
+                        data={storeList}
+                        keyExtractor={(item) => item.store_id.toString(item.store_id)}
+                        refreshing={refreshing}
+                        onRefresh={fetchStores}
+                        onEndReached={loadNextPage}
+                        onEndReachedThreshold={0.5}
+
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={fetchStores}
+                                colors={[COLORS.primary]} // Android
+                                tintColor={COLORS.primary} // iOS
+                            />
+                        }
+                        renderItem={({ item }) => {
+                            return (
+                            <FavoritesCard
+                                user_id={user_id}
+                                store_id={item.store_id}
+                                store_profileimage={item.store_profileimage}
+                                store_coverimage={item.store_coverimage}
+                                store_name={item.store_name}
+                                store_latitude={item.latitude}
+                                store_longitude={item.longitude}
+                                store_location={item.store_location}
+                                store_category={item.store_category}
+                                store_description={item.store_description}
+                                store_phone_num={item.store_phone_num}
+                                average_rating={item.avg_rating}
+                                total_ratings={item.total_reviews}
+                                isClosed={item.is_closed}
+                                open_time={item.open_time}
+                                close_time={item.close_time}
+                                open_close={item.open_close}
+                                latitude={latitude}
+                                longitude={longitude}
+                                onRemove={removeFromList}
+                                post={post}
+                                router={router}
+                            />
+                        )}}
+                        
+                        ListFooterComponent={() =>
+                            <View className='mb-4'>
+                                {loadingMore ? <LoadingIndicator loading_text="Loading more..." /> : null}
+                            </View>
+                        }
+                        ListHeaderComponent={() => (
+                            <View className="flex-row my-6 mt-4 items-center justify-between">
+                                <View className='flex-row justify-center items-center'>
+                                    <MaterialCommunityIcons name="heart" size={27} color={COLORS.primary} />
+                                    <Text style={{ fontFamily: 'roboto-medium' }} className="ml-1 text-base">
+                                        There {storeList?.length === 1 ? 'is' : 'are'} {storeList?.length} {storeList?.length === 1 ? 'Store' : 'Stores'} in your Favorites
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+                        showsVerticalScrollIndicator={false}
+                    />
                 </View>
             )}
-            showsVerticalScrollIndicator={false}
-        />
+        </>
     );
 };
 

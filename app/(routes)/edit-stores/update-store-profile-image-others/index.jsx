@@ -1,18 +1,15 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import CustomButton from '../../../../components/Buttons/CustomButton';
-import MainHeader from '../../../../components/MainHeader';
+import Headers from '../../../../components/Headers';
 import { COLORS } from '../../../../constants/constants';
 import { SERVER_URI } from '../../../../RequestMethods';
 import { toast } from '../../../../utils/toast';
-import LoadingIndicator from '../../../LoadingIndicator';
-import Redirecting from '../../../Redirecting';
 
 const imageTypes = [
     { label: 'Profile Image', value: 'profile' },
@@ -21,10 +18,11 @@ const imageTypes = [
 
 const ChangeStoreImage = () => {
     const [image, setImage] = useState(null);
-    const [imagetype, setImageType] = useState('');
+    const [imagetype, setImageType] = useState('cover');
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const params = useLocalSearchParams();
+    const router = useRouter();
 
     // -----------------------
     // MIME TYPE DETECTION
@@ -40,8 +38,6 @@ const ChangeStoreImage = () => {
                 return 'image/png';
             case 'webp':
                 return 'image/webp';
-            case 'heic':
-                return 'image/heic';
             default:
                 return 'image/jpeg';
         }
@@ -80,10 +76,10 @@ const ChangeStoreImage = () => {
             return;
         }
 
-        if (!imagetype) {
-            toast.error('Please select image type.');
-            return;
-        }
+        // if (!imagetype) {
+        //     toast.error('Please select image type.');
+        //     return;
+        // }
 
         setIsLoading(true);
 
@@ -96,8 +92,10 @@ const ChangeStoreImage = () => {
 
             const formData = new FormData();
 
+            formData.append('business_id', params.business_id);
             formData.append('store_id', params.store_id);
-            formData.append('image_type', imagetype);
+            formData.append('image_type', 'cover');
+            // formData.append('image_type', imagetype);
 
             const file = {
                 uri: image,
@@ -118,81 +116,84 @@ const ChangeStoreImage = () => {
 
             const data = await response.json().catch(() => ({}));
 
-            if (!response.ok) {
-                throw new Error(data?.Response || 'Upload failed.');
+            if (!data.success) {
+                toast.error(data?.message || 'Upload failed.');
+                return;
             }
 
-            toast.success('Image uploaded successfully!');
+            toast.success(data?.message || 'Image uploaded successfully!');
             setErrorMessage('Success');
             setImage(null);
             setImageType('');
+            router.back();
+            return;
 
         } catch (error) {
             console.error('Upload error:', error);
             toast.error(error.message || 'Upload failed.');
             setErrorMessage('Upload Failed');
+            return;
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white items-center">
-            <View className="px-4 w-full mb-8">
-                <MainHeader
-                    fontFamily="ubuntu-medium"
-                    textStyles="text-2xl"
-                    header_name="Change Image"
-                />
-            </View>
+        <SafeAreaView className="flex-1 bg-white items-center justify-between px-4">
+            <Headers
+                header_name='Cover Image'
+                fontFamily='outfit-medium'
+                textStyles='text-2xl'
+                icon={
+                    <FontAwesome5 name="store-alt" size={15} color={COLORS.slate} />
+                }
+            />
 
-            {/* ---------------- RADIO BUTTONS ---------------- */}
-            <View className="my-5 flex-row items-center justify-center">
-                {imageTypes.map((type, index) => (
-                    <TouchableOpacity
-                        key={type.value}
-                        activeOpacity={0.7}
-                        onPress={() => setImageType(type.value)}
-                        className={`flex-row items-center ${index !== 0 ? 'ml-6' : ''}`}
-                    >
-                        <View
-                            className={`h-5 w-5 rounded-full border-2 justify-center items-center ${
-                                imagetype === type.value
-                                ? 'border-primary'
-                                : 'border-gray-400'
-                            }`}
+            <View className='flex-1 justify-center items-center w-full'>
+                {/* ---------------- RADIO BUTTONS ---------------- */}
+                {/* <View className="my-5 flex-row items-center justify-center">
+                    {imageTypes.map((type, index) => (
+                        <TouchableOpacity
+                            key={type.value}
+                            activeOpacity={0.7}
+                            onPress={() => setImageType(type.value)}
+                            className={`flex-row items-center ${index !== 0 ? 'ml-6' : ''}`}
                         >
-                            {imagetype === type.value && (
-                                <View className="h-2.5 w-2.5 rounded-full bg-primary" />
-                            )}
-                        </View>
+                            <View
+                                className={`h-5 w-5 rounded-full border-2 justify-center items-center ${
+                                    imagetype === type.value
+                                    ? 'border-primary'
+                                    : 'border-gray-400'
+                                }`}
+                            >
+                                {imagetype === type.value && (
+                                    <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                                )}
+                            </View>
 
-                        <Text className="ml-2 text-sm text-slate-600">
-                            {type.label}
+                            <Text className="ml-2 text-sm text-slate-600">
+                                {type.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View> */}
+
+                {/* ---------------- MAIN CONTENT ---------------- */}
+                <View className="justify-center items-center w-full">
+                    {/* Pick Image Button */}
+                    <TouchableOpacity
+                        onPress={pickImage}
+                        className={`border-2 ${
+                            !image ? 'border-lavender' : 'border-green2'
+                        } bg-grey_bg px-6 py-3 mb-2 rounded-lg w-full flex-row justify-center items-center`}
+                    >
+                        <FontAwesome5 name="camera" size={24} color="#32CD32" />
+                        <Text className="text-lg ml-2" style={{fontFamily: 'roboto-medium'}}>
+                            {!image ? 'Pick Image' : 'Change Image'}
                         </Text>
                     </TouchableOpacity>
-                ))}
-            </View>
 
-            {/* ---------------- MAIN CONTENT ---------------- */}
-            <View className="flex-1 justify-center items-center w-full px-4">
-
-                {/* Pick Image Button */}
-                <TouchableOpacity
-                    onPress={pickImage}
-                    activeOpacity={0.8}
-                    className={`border-2 ${
-                        !image ? 'border-lavender' : 'border-green2'
-                    } bg-grey_bg px-6 py-4 mb-6 rounded-lg w-full flex-row justify-center items-center`}
-                >
-                    <FontAwesome5 name="camera" size={24} color="#32CD32" />
-                    <Text className="text-lg font-bold ml-2">
-                        {!image ? 'Pick Image' : 'Change Image'}
-                    </Text>
-                </TouchableOpacity>
-
-                {/* Image Preview */}
-                <ScrollView className="w-full mb-4" showsVerticalScrollIndicator={false}>
+                    {/* Image Preview */}
                     {image && (
                         <View className="relative mt-3 items-center">
                             <Image
@@ -209,37 +210,36 @@ const ChangeStoreImage = () => {
                             </TouchableOpacity>
                         </View>
                     )}
-                </ScrollView>
 
-                {/* Status Message */}
-                <View className="w-full items-center justify-center p-2 mb-2">
-                    <Text
-                        className={`text-lg ${
-                            errorMessage === 'Success' ? 'text-green2' : 'text-red'
-                        }`}
-                        style={{ fontFamily: 'roboto-medium' }}
+                    {/* Status Message */}
+                    <View className="w-full items-center justify-center p-2 mb-2">
+                        <Text
+                            className={`text-lg ${
+                                errorMessage === 'Success' ? 'text-green2' : 'text-red'
+                            }`}
+                            style={{ fontFamily: 'roboto-medium' }}
+                        >
+                            {errorMessage}
+                        </Text>
+                    </View>
+
+                    {/* Upload Button */}
+                    <TouchableOpacity
+                        className='bg-primary w-full items-center justify-center rounded-lg py-3'
+                        onPress={() => handleUpload()}
+                        disabled={isLoading || !image || !imagetype}
                     >
-                        {errorMessage}
-                    </Text>
+                        {isLoading ? (
+                            <ActivityIndicator color={'white'} size={28}/>
+                        ) : (
+                            <Text
+                                className='text-white text-2xl'
+                                style={{fontFamily: 'outfit-medium'}}
+                            >Upload</Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
-
-                {/* Upload Button */}
-                <CustomButton
-                    title={isLoading ? 'Uploading...' : 'Upload'}
-                    handlePress={handleUpload}
-                    otherStyles="bg-primary p-4 mb-4 w-full"
-                    textStyles="text-2xl text-white"
-                    disabled={isLoading || !image || !imagetype}
-                />
             </View>
-
-            {isLoading && (
-                <LoadingIndicator loading_text="Uploading store image..." />
-            )}
-
-            {errorMessage === 'Success' && (
-                <Redirecting title="Success" />
-            )}
         </SafeAreaView>
     );
 };

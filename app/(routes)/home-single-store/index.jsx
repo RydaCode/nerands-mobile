@@ -14,7 +14,8 @@ import StoreMenuTabs from './StoreMenuTabs';
 import { MotiView } from 'moti';
 import useApi from '../../../hook/useApi';
 import { calculateDistance, makeCall } from '../../../utils/getDistance';
-import { formatTime, isStoreOpen } from '../../../utils/isStoreOpen';
+import { formatText } from '../../../utils/getInitials';
+import { formatTime } from '../../../utils/isStoreOpen';
 import { toast } from '../../../utils/toast';
 import AllProducts from '../../screens/StoreSingleScreen/AllProducts';
 
@@ -37,27 +38,6 @@ const StorePage = () => {
         closing_time
     } = useLocalSearchParams();
 
-    const isManuallyClosed = open_close === false;
-    const isTimeClosed = !isStoreOpen(open_time, closing_time);
-    const isClosed = isManuallyClosed || isTimeClosed;
-
-    const store_data = {
-        store_id: store_id,
-        store_profileimage: store_profileimage,
-        store_name: store_name,
-        store_description: store_description,
-        store_phone_num: store_phone_num,
-        open_close: open_close,
-        store_latitude: store_latitude,
-        store_longitude: store_longitude,
-        store_location: store_location,
-        store_category: store_category,
-        favorited: favorited,
-        open_time: open_time,
-        closing_time: closing_time,
-        isClosed: isClosed
-    };
-
     const { user_id  } = useSelector((state) => state.auth);
 
     // Global refreshKey to trigger child refresh
@@ -74,6 +54,17 @@ const StorePage = () => {
     const [review, setReview] = useState('');
     const [isFavorited, setIsFavorited] = useState(false);
     const isFavoritedParam = favorited === "true";
+
+    const {data: storedata, isLoading: loadingStore, error: errorStore, get: getStoreData } = useApi();
+    
+    useEffect(() => {
+        if (store_id) {
+            getStoreData(`/stores/get_store/${store_id}`);
+        }
+    }, [store_id]);
+
+    console.log("TIMES", storedata)
+
     const { data:ratingpost, error: ratingposterror, isLoading:ratingLoading, post } = useApi();
     const {data, error, isLoading, get} = useApi(`/stores/${store_id}/rate/${user_id}`);
 
@@ -84,6 +75,24 @@ const StorePage = () => {
     useEffect(() => {
         reviewsGet();
     }, []);
+
+    const store_data = {
+        business_id: storedata?.[0]?.business_id,
+        store_id: store_id,
+        store_profileimage: store_profileimage,
+        store_name: store_name,
+        store_description: store_description,
+        store_phone_num: store_phone_num,
+        open_close: open_close,
+        store_latitude: store_latitude,
+        store_longitude: store_longitude,
+        store_location: store_location,
+        store_category: store_category,
+        favorited: favorited,
+        open_time: open_time,
+        closing_time: closing_time,
+        is_closed: storedata?.[0]?.is_closed
+    };
 
     const reviewItems = storereviews?.data?.reviews ?? [];
     const stats = storereviews?.data?.stats;
@@ -290,6 +299,8 @@ const StorePage = () => {
         );
     };
 
+    console.log("TIMESSS", storedata?.[0]?.next_opening)
+
     return (
         <SafeAreaView className="flex-1 relative bg-white justify-center items-center px-2">
             {/* Header */}
@@ -336,7 +347,8 @@ const StorePage = () => {
                                 Please take time to read what people are saying about this store
                             </Text>
                         </View>
-                    </View>  
+                    </View>
+                    
                     <View className='w-full flex-1 justify-center mt-8 pb-16 items-center'>
                         {reviewsLoading ?
                             <View className='items-center justify-center mb-8'>
@@ -507,17 +519,19 @@ const StorePage = () => {
                                     className='h-full w-full rounded-full border-2 border-white'
                                     source={{ uri: `${STORES_IMAGE_URI}${store_profileimage}` }}
                                 />
-                                {isClosed &&
+                                {storedata?.[0]?.is_closed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
                                         <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />
-                                        <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
+                                        <Text style={{fontFamily: 'roboto'}} className='text-sm text-white'>Closed</Text>
                                     </View>
                                 }
                             </View>
 
                             <View className='ml-3 flex-1'>
                                 <Text numberOfLines={2} className="text-lg" style={{ fontFamily: 'roboto-medium' }}>{store_name}</Text>
-                                <Text className="text-sm text-gray-500" style={{ fontFamily: 'roboto-medium' }}>{store_phone_num}</Text>
+                                <Text className="text-sm text-gray-500" style={{ fontFamily: 'roboto-medium' }}>
+                                    {formatText(store_category)}
+                                </Text>
                             </View>
 
                             <TouchableOpacity
@@ -530,8 +544,35 @@ const StorePage = () => {
 
                         {/* Store Opening Hours */}
                         <View className='mt-1 w-full px-2 my-4 bg-grey_bg rounded py-1'>
-                            <Text className='text-sm text-green1' style={{ fontFamily: 'roboto-medium',textAlign: 'justify' }}>
-                                Open{open_time && closing_time ? ` from ${formatTime(open_time)} to ${formatTime(closing_time)}` : ' 24/7'}
+                            <Text
+                                className="text-sm text-green1"
+                                style={{ fontFamily: 'roboto-medium', textAlign: 'justify' }}
+                            >
+                                {storedata?.[0]?.is_closed ? (
+                                    storedata?.[0]?.open_close === false ? (
+                                        <Text className="text-red">
+                                            🔴 Temporarily closed by the owner
+                                        </Text>
+                                    ) : (
+                                        <Text className="text-red">
+                                            🔴 Closed until{" "}
+                                            {storedata?.[0]?.next_opening?.is_today
+                                                ? "today"
+                                                : storedata?.[0]?.next_opening?.day}{" "}
+                                            {storedata?.[0]?.next_opening?.time}
+                                        </Text>
+                                    )
+                                ) : (
+                                    <Text>
+                                        Open
+                                        {storedata?.[0]?.is_24_hours
+                                            ? " 24/7"
+                                            : storedata?.[0]?.open_time && storedata?.[0]?.close_time
+                                                ? ` from ${formatTime(storedata[0].open_time)} to ${formatTime(storedata[0].close_time)}`
+                                                : ""
+                                        }
+                                    </Text>
+                                )}
                             </Text>
                         </View>
 
@@ -542,35 +583,39 @@ const StorePage = () => {
 
                         {/* Store Actions */}
                             <View className='flex-row items-center justify-between mt-8 mb-12'>
-                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                                <TouchableOpacity className='items-center'
                                     onPress={() => setRateStore(true)}
-                                    style={{width: '23.5%'}}
+                                    style={{width: '23%'}}
                                 >
                                     <View className='flex-row justify-center items-center'>
                                         <Ionicons name='star' size={13} color={COLORS.primary} />
-                                        <Text className='text-sm' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                        <Text className='text-sm' style={{fontFamily: 'roboto', color: COLORS.green1}}>
                                             {' '}{average_rating} ({total_ratings})
 
 
                                         </Text>
                                     </View>
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Rate Us</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Rate Us</Text>
                                 </TouchableOpacity>
+
+                                <View style={{height: 30, width: 1}} className='bg-grey_bg'/>
 
                                 <TouchableOpacity
                                     onPress={() => setShowLocationMap(true)}
-                                    className='items-center justify-center border border-grey_bg rounded py-1'
-                                    style={{width: '23.5%'}}
+                                    className='items-center justify-center'
+                                    style={{width: '23%'}}
                                 >
                                     <View className='flex-row items-center justify-center'>
                                         <FontAwesome6 name="location-dot"  size={13} color={COLORS.primary} />
                                         <Text className='text-sm text-lavender'> | </Text>
-                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
+                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
                                     </View>
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Location</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Location</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                                <View style={{height: 30, width: 1}} className='bg-grey_bg'/>
+
+                                <TouchableOpacity className='items-center'
                                     onPress={AddToFavorites}
                                     style={{width: '23.5%'}}
                                 >
@@ -579,20 +624,22 @@ const StorePage = () => {
                                         size={16}
                                         color={COLORS.primary}
                                     />
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Favorites</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Favorites</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className='justify-center items-center border border-grey_bg rounded py-1'
+                                <View style={{height: 30, width: 1}} className='bg-grey_bg'/>
+
+                                <TouchableOpacity className='justify-center items-center'
                                     onPress={() => setModalVisible(true)}
                                     style={{width: '23.5%'}}
                                 >
                                     <View className='flex-row justify-center items-center'>
                                         <FontAwesome name='comments' size={16} color={COLORS.primary}/>
-                                        <Text className='text-sm ml-1' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                        <Text className='text-sm ml-1' style={{fontFamily: 'roboto', color: COLORS.green1}}>
                                             ({total_ratings})
                                         </Text>
                                     </View>
-                                    <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
+                                    <Text className='text-sm' style={{fontFamily: 'roboto'}}>Reviews</Text>
                                 </TouchableOpacity>
                             </View>
 

@@ -72,7 +72,7 @@ const DeleteAllProductsModal = ({deleteAllProductsModalVisible, setDeleteAllProd
                 style={{borderRadius: SIZES.border}}
                 className='h-full items-center justify-center border-1 border-lavender bg-white w-full'
             >
-                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                <View className='bg-navBtnBg border border-[#f34b4b] elevation-md justify-center items-center rounded-full' style={{width: 45, height: 45}}>
                     <FontAwesome5 name="trash" color="red" size={16} />
                 </View>
                 <View className='justify-center items-center'>

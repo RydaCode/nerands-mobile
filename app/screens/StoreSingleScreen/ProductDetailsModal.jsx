@@ -21,7 +21,7 @@ const ProductDetailsModal = ({
     item,
     extras,
     isAvailable,
-    isClosed,
+    is_closed,
     store_profileimage,
     product_iamges,
     store_description,
@@ -30,7 +30,8 @@ const ProductDetailsModal = ({
     store_longitude,
     store_location,
     store_id,
-    store_phone_num
+    store_phone_num,
+    business_id
 }) => {
     const { width, height } = useWindowDimensions();
     const dispatch = useDispatch();
@@ -153,7 +154,8 @@ const ProductDetailsModal = ({
                                     store_description,
                                     store_name: store_name,
                                     store_id: store_id,
-                                    store_phone_num
+                                    business_id: business_id,
+                                    store_phone_num,
                                 })
                             );
                         },
@@ -177,6 +179,7 @@ const ProductDetailsModal = ({
                     store_description,
                     store_name: store_name,
                     store_id: store_id,
+                    business_id: business_id,
                     store_phone_num
                 }),
             );
@@ -223,7 +226,7 @@ const ProductDetailsModal = ({
                 {/* Header */}
                     <View className='flex-row justify-between items-center w-full px-4 pt-2'>
                         <View className=''>
-                            <Text className="text-black text-2xl mt-1 font-semibold" style={{ fontFamily: "ubuntu-medium" }}
+                            <Text className="text-black text-2xl mt-1 font-semibold" style={{ fontFamily: "outfit-medium" }}
                             >Product Details</Text>
                         </View>
                         <TouchableOpacity
@@ -234,11 +237,11 @@ const ProductDetailsModal = ({
                             <FontAwesome name="times" size={15} color={'red'}/>
                         </TouchableOpacity>
                     </View>
-                    <View className='w-full px-4 mt-1'>
+                    <View className='w-full px-4 my-2'>
                         <View className='bg-lavender' style={{height: 0.5,}}/>
                     </View>
                     <ScrollView
-                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, paddingBottom: 20, backgroundColor: 'transparent' }}
+                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, width: '100%', paddingBottom: 20, backgroundColor: 'transparent' }}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Product Info */}
@@ -392,14 +395,14 @@ const ProductDetailsModal = ({
                         <View className='flex-row w-full justify-between items-center'>
                             <TouchableOpacity
                                 style={{
-                                    opacity: alreadyInCart || isClosed || !isAvailable ? 0.7 : 1,
+                                    opacity: alreadyInCart || is_closed || !isAvailable ? 0.7 : 1,
                                     width: '100%'
                                 }}
-                                disabled={alreadyInCart || isClosed || !isAvailable}
+                                disabled={alreadyInCart || is_closed || !isAvailable}
                                 onPress={handleAddToCart}
                                 className="bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
                             >
-                                {isClosed || !isAvailable  ? (
+                                {is_closed || !isAvailable  ? (
                                     <Feather name="lock" size={19} style={{ color: COLORS.red }} />
                                 ) :  (
                                     <FontAwesome
@@ -413,7 +416,7 @@ const ProductDetailsModal = ({
                                     style={{ fontFamily: "maven-medium" }}
                                 >
                                     {alreadyInCart
-                                    ? "Already In Cart" : isClosed ? "Closed" : !isAvailable ? "Unavailable" : "Add To Cart"}
+                                    ? "Already In Cart" : is_closed ? "Closed" : !isAvailable ? "Unavailable" : "Add To Cart"}
                                 </Text>
                             </TouchableOpacity>
                         </View>

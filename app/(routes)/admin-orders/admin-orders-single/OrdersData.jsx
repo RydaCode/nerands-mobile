@@ -41,8 +41,6 @@ const OrdersData = ({ order, summary, order_type, onTotalChange }) => {
 
     const finalProductPrice = basePrice + extrasTotal;
 
-    console.log("QTY", order)
-
     const totalPrice =
         order_type === 'General'
             ? order.product_price * order.quantity

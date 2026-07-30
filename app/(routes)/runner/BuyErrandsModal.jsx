@@ -1,14 +1,16 @@
 import { FontAwesome5 } from "@expo/vector-icons";
 import { MotiView } from "moti";
 import { useEffect, useState } from "react";
-import { Dimensions, FlatList, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, FlatList, Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS } from "../../../constants/constants";
 import useApi from "../../../hook/useApi";
 import { toast } from "../../../utils/toast";
 
 const BuyTripsModal = ({ visible, setBuyErrands, runner_id }) => {
     const { width, height } = Dimensions.get("window");
 
-    const buyErrandsApi = useApi(
+    const {data: buyErrandsApi, isLoading, error, get} = useApi(
         `/trips/all_trips?trip_type=runner&page=1&limit=10`
     );
 
@@ -16,7 +18,7 @@ const BuyTripsModal = ({ visible, setBuyErrands, runner_id }) => {
     const [activeErrand, setActiveErrand] = useState(null);
 
     useEffect(() => {
-        buyErrandsApi.get();
+        get();
     }, []);
 
     const errands = buyErrandsApi?.data;
@@ -54,90 +56,198 @@ const BuyTripsModal = ({ visible, setBuyErrands, runner_id }) => {
     };
 
     return (
-        <Pressable
-            style={{ width: '100%', inset: 0, height: '100%', zIndex: 50 }}
-            className=" bg-transparentBlack absolute justify-center items-center px-4"
-            onPress={() => setBuyErrands(false)}
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setBuyErrands(false)}
         >
-            <Pressable onPress={() => {}}>
+            <Pressable
+                className="flex-1 bg-transparentBlack justify-end"
+                onPress={() => setBuyErrands(false)}
+            >
                 <MotiView
-                    className="w-full items-center"
-                    from={{ opacity: 0, translateY: 50 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ duration: 700 }}
+                        from={{
+                            opacity: 0,
+                            translateY: 500
+                        }}
+                        animate={{
+                            opacity: 1,
+                            translateY: 0
+                        }}
+                        transition={{
+                            type: "timing",
+                            duration: 500
+                        }}
+                        style={{ width: '100%', justifyContent: 'center', alignItems: 'center'}}
+                    >
+                {/* Prevent closing when pressing inside */}
+                <Pressable
+                    className="w-full justify-end"
+                    onPress={(e) => e.stopPropagation()}
                 >
-                    <View className="w-full bg-white z-50 p-4 rounded elevation-lg">
-                        {/* Header */}
-                        <View className="flex-row justify-between items-center">
-                            <Text className="text-2xl" style={{ fontFamily: 'maven-medium' }}>
-                                Buy Errands
-                            </Text>
-                            <TouchableOpacity
-                                className="flex-row justify-center items-center rounded-full"
-                                onPress={() => setBuyErrands(false)}
-                            >
-                                <View className="rounded-full bg-red justify-center items-center" style={{ height: 20, width: 20 }}>
-                                    <FontAwesome5 name="times" color="white" size={15} />
-                                </View>
-                                <Text className="text-red text-base ml-1 text-center">Close</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Divider */}
-                        <View className="bg-lavender w-full my-2" style={{ height: 1 }} />
-
-                        {/* Trips List */}
-                        <FlatList
-                            data={errands.data ?? []}
-                            keyExtractor={(item) => item.trip_id.toString()}
-                            numColumns={2}
-                            columnWrapperStyle={{ justifyContent: 'space-between' }}
-                            renderItem={({ item }) => (
-                                <View
-                                    className="mt-4"
-                                    style={{ width: '48%', height: 110 }}
+                    <SafeAreaView
+                        className="bg-white"
+                        edges={["bottom"]}
+                        style={{
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                        }}
+                    >
+                        <View className="w-full bg-white px-4 rounded"
+                            style={{
+                                maxHeight: '90%',
+                                minHeight: 250,
+                                marginBottom: 0,
+                                borderTopLeftRadius: 20,
+                                borderTopRightRadius: 20,
+                            }}
+                        >
+                            {/* Header */}
+                            <View className="flex-row justify-between items-center mt-4">
+                                <Text
+                                    className="text-2xl"
+                                    style={{ fontFamily: "outfit-medium" }}
                                 >
-                                    <View className="bg-grey_bg rounded p-2 border border-grey_bg elevation-md justify-center items-center">
-                                        <View className="w-full justify-center items-center">
-                                            <Text className='text-xl text-primary' style={{fontFamily: 'roboto-bold'}}>K{item.trip_amount}</Text>
-                                            <Text style={{fontFamily: 'roboto-bold'}}>
-                                                {item.trip_number} {item.trip_number < 2 ? 'Errand' : 'Errands'}
-                                            </Text>
-                                        </View>
-
-                                        <TouchableOpacity
-                                            disabled={activeErrand === item.trip_id}
-                                            className={`w-full mt-2 rounded elevation-md py-2 ${
-                                                activeErrand === item.trip_id ? 'bg-gray-400' : 'bg-green2'
-                                            }`}
-                                            onPress={() => handleBuyTrip(item)}
-                                        >
-                                            <Text
-                                                className="text-center text-white"
-                                                style={{ fontFamily: 'roboto-medium' }}
-                                            >
-                                                {activeErrand === item.trip_id ? 'Buying...' : 'Buy now'}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            )}
-                            ListHeaderComponent={() => (
-                                <View className="px-2">
-                                    <Text
-                                        className="text-sm text-slate"
-                                        style={{ fontFamily: 'roboto-medium' }}
+                                    Buy Trips
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setBuyErrands(false)}
+                                >
+                                    <View
+                                        className="rounded-full bg-grey_bg justify-center items-center"
+                                        style={{ height: 30, width: 30 }}
                                     >
-                                        You can choose a package of errands that suits your budget.
-                                    </Text>
+                                        <FontAwesome5 name="times" color={COLORS.red} size={17} />
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                            <View className="bg-lavender my-2" style={{ height: 1 }} />
+
+                            {isLoading ? (
+                                <View className='justify-center items-center mt-6'>
+                                    <ActivityIndicator size={33} color={COLORS.primary}/>
+                                    <Text
+                                        style={{fontFamily: 'roboto-medium'}}
+                                    >Loading trips...</Text>
                                 </View>
+                            ) : errands?.length === 0 ? (
+                                <View className='justify-center items-center mt-4'>
+                                    <FontAwesome5 name='search' size={25} color={COLORS.slate}/>
+                                    <Text
+                                        className='mt-4'
+                                        style={{fontFamily: 'roboto-medium'}}
+                                    >There are no trips to purchase</Text>
+                                    <TouchableOpacity
+                                        className='bg-primary py-3 mt-4 justify-center items-center rounded'
+                                        style={{width: '40%'}}
+                                        onPress={() => get()}
+                                    >
+                                        <Text
+                                            className='text-white'
+                                            style={{fontFamily: 'roboto-medium'}}
+                                        >Reload</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : error ? (
+                                <View className='justify-center items-center mt-6'>
+                                    <Text
+                                        style={{fontFamily: 'roboto-medium'}}
+                                    >Error loading trips...</Text>
+                                    <TouchableOpacity
+                                        className='bg-primary py-3 mt-4 justify-center items-center rounded'
+                                        style={{width: '40%'}}
+                                        onPress={() => get()}
+                                    >
+                                        <Text
+                                            className='text-white'
+                                            style={{fontFamily: 'roboto-medium'}}
+                                        >Reload</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <FlatList
+                                    data={errands?.data ?? []}
+                                    keyExtractor={(item) => item.trip_id.toString()}
+                                    style={{maxHeight: 500}}
+
+                                    numColumns={2}
+                                    columnWrapperStyle={{
+                                        justifyContent: "space-between"
+                                    }}
+
+                                    renderItem={({ item }) => (
+                                        <View
+                                            className="mt-4"
+                                            style={{width: "48%", height: 110}}
+                                        >
+                                            <View
+                                                className="bg-grey_bg rounded p-2 border border-lavender items-center elevation-sm flex-1 justify-between"
+                                            >
+                                                <Text
+                                                    className="text-xl text-primary"
+                                                    style={{fontFamily: "roboto-bold"}}
+                                                >
+                                                    K{item.trip_amount}
+                                                </Text>
+                                                <Text>
+                                                    <Text
+                                                        style={{fontFamily: "roboto-bold"}}
+                                                    >
+                                                        {item.trip_number}
+                                                    </Text>
+
+                                                    {" "}
+                                                    <Text>
+                                                        {item.trip_number < 2 ? "Trip" : "Trips"}
+                                                    </Text>
+                                                </Text>
+
+                                                <TouchableOpacity
+                                                    disabled={
+                                                        activeErrand === item.trip_id
+                                                    }
+
+                                                    className={`rounded py-2 w-full ${
+                                                        activeErrand === item.trip_id
+                                                        ? "bg-gray-400"
+                                                        : "bg-green2"
+                                                    }`}
+
+                                                    onPress={() =>
+                                                        handleBuyTrip(item)
+                                                    }
+                                                >
+                                                    <Text
+                                                        className="text-center text-white"
+                                                    >
+                                                        {
+                                                            activeErrand === item.trip_id
+                                                            ? "Buying..."
+                                                            : "Buy now"
+                                                        }
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
+
+                                    ListHeaderComponent={() => (
+                                        <Text className="text-base px-2" >
+                                            Choose a package of trips that suits your budget.
+                                        </Text>
+                                    )}
+                                    showsVerticalScrollIndicator={false}
+                                />
                             )}
-                            showsVerticalScrollIndicator={false}
-                        />
-                    </View>
+                        </View>
+                        </SafeAreaView>
+                    
+                    
+                </Pressable>
                 </MotiView>
             </Pressable>
-        </Pressable>
+        </Modal>
     );
 };
 

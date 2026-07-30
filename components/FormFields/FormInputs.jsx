@@ -1,12 +1,12 @@
 import { Text, TextInput, View } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const FormInputs = ({ title, value, handleChangeText, otherStyles, borderStyle, placeholder, desc, defaultValue, autoFocus, keyboardType, error, icon, ...props }) => {
+const FormInputs = ({ title, value, handleChangeText, otherStyles, borderStyle, placeholder, desc, defaultValue, autoFocus, keyboardType, error, icon, textColor='slate', descFontFamily='roboto-medium', ...props }) => {
     return (
         <View className={`mb-3 ${otherStyles} w-full justify-center`}>
             <Text className='text-base mb-1' style={{fontFamily: 'roboto-medium'}}>{title}</Text>
             {!desc || desc === '' ? <></> :
-                <Text className='text-sm mb-1 text-slate' style={{fontFamily: 'roboto-medium', textAlign: "justify"}}>{desc}</Text>
+                <Text className='text-sm mb-1 text-slate' style={{fontFamily: descFontFamily, textAlign: "justify"}}>{desc}</Text>
             }
             <View className={`w-full h-14 px-3 border-2 rounded-xl ${borderStyle} flex-row items-center`}>
                 {/* Icon */}
@@ -20,7 +20,7 @@ const FormInputs = ({ title, value, handleChangeText, otherStyles, borderStyle, 
                     )}
                 <TextInput
                     style={{fontFamily: 'roboto'}}
-                    className='flex-1 font-semibold text-lg text-slate'
+                    className={`flex-1 font-semibold text-lg text-${textColor}`}
                     editable
                     placeholder={placeholder}
                     onChangeText={handleChangeText}

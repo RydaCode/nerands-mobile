@@ -14,16 +14,22 @@ const OrderHistory = (params) => {
     const router = useRouter();
 
     const pointA = { latitude: latitude, longitude: longitude }; // User
-   
-    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi(
-        `/runner/errands/${runner_id}?order_status=Delivered,Cancelled,Completed&limit=10`
-    );
+    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi();
+    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi();
 
     console.log('Normal Orders:', normalOrderError);
 
     useEffect(() => {
-        getNormalOrders();
-    }, []);
+        if (user_id) {
+            getUserData(`/runner/get_runner/${user_id}`);   
+        }
+    }, [user_id]);
+
+    useEffect(() => {
+        if (runnerApi?.runner_id) {
+            getNormalOrders(`/runner/errands/${runnerApi?.runner_id}?order_status=Delivered,Cancelled,Completed&limit=10`);   
+        }
+    }, [runnerApi?.runner_id]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -65,7 +71,7 @@ const OrderHistory = (params) => {
                                 onPress={() => router.push({
                                     pathname: 'runner-single-order',
                                     params: {
-                                        runner_id,
+                                        runner_id: runnerApi?.runner_id,
                                         order_id: item.order_id,
                                         order_number: item.order_number,
                                         order_type: item.order_type,

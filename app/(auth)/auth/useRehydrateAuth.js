@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import axiosInstance from '../../../hook/axiosInstance';
 import { logoutUser, setUserData } from '../../../redux/store/slices/authSlice';
 import { authService } from '../../../services/authService';
+import { registerDevice } from '../../../services/notificationService';
 
 const useRehydrateAuth = () => {
     const dispatch = useDispatch();
@@ -14,7 +15,7 @@ const useRehydrateAuth = () => {
                 const token = await authService.getAccessToken();
                 const refreshToken = await authService.getRefreshToken();
 
-                // 1. No token → unauthenticated
+                // No token
                 if (!token) {
                     dispatch(logoutUser());
                     setRehydrated(true);
@@ -23,19 +24,18 @@ const useRehydrateAuth = () => {
 
                 let finalToken = token;
 
-                // 2. Token expired → try refresh
+                // Token expired
                 if (authService.isExpired(token)) {
                     try {
                         const res = await axiosInstance.post(
-                            '/auth/user/token/refresh',
-                            { refreshToken }
+                            '/auth/user/token/refresh', { refreshToken }
                         );
 
                         finalToken = res.data.accessToken;
-                        await authService.saveAccessToken(finalToken);
-
-                    } catch (err) {
-                        // ONLY here user is truly logged out
+                        await authService.saveAccessToken(
+                            finalToken
+                        );
+                    } catch(err) {
                         await authService.clearTokens();
                         dispatch(logoutUser());
                         setRehydrated(true);
@@ -43,20 +43,24 @@ const useRehydrateAuth = () => {
                     }
                 }
 
-                // 3. Set auth header
-                axiosInstance.defaults.headers.common['Authorization'] =
-                    `Bearer ${finalToken}`;
-
-                // 4. Decode + login
+                axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${finalToken}`;
                 const decoded = authService.decode(finalToken);
 
-                dispatch(setUserData({
-                    ...decoded,
-                    isAuthenticated: true,
-                }));
+                dispatch(
+                    setUserData({
+                        ...decoded,
+                        isAuthenticated:true,
+                    })
+                );
 
-            } catch (err) {
-                console.warn("Auth restore error:", err);
+                // Register device AFTER login is confirmed
+                await registerDevice();
+            } catch(err) {
+                console.warn(
+                    "Auth restore error:",
+                    err
+                );
+                
                 dispatch(logoutUser());
             } finally {
                 setRehydrated(true);
@@ -65,7 +69,6 @@ const useRehydrateAuth = () => {
 
         restore();
     }, [dispatch]);
-
     return rehydrated;
 };
 

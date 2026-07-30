@@ -9,9 +9,10 @@ import MainHeader from '../../../components/MainHeader';
 import { COLORS } from '../../../constants/constants';
 import { Carticons } from '../../../constants/icons';
 import useApi from '../../../hook/useApi';
-import { STORES_IMAGE_URI } from '../../../RequestMethods';
+import { STORES_IMAGE_URI, USER_IMAGE_URI } from '../../../RequestMethods';
 import { calculateDistance, makeCall } from '../../../utils/getDistance';
-import { formatTime, isStoreOpen } from '../../../utils/isStoreOpen';
+import { formatText } from '../../../utils/getInitials';
+import { formatTime } from '../../../utils/isStoreOpen';
 import { toast } from '../../../utils/toast';
 import LoadingItems from './LoadingItems';
 import MapModal from './MapModal';
@@ -30,19 +31,27 @@ const Index = () => {
     const loadingMoreRef = useRef(false);
     const { get, isLoading } = useApi(null);
     const {data:checkFavorites, error: errorCheckFavorites, isLoading: isLoadingCHeckFAvorite, get:getCheckFavorites} = useApi(`stores/favorites/check?user_id=${user_id}&store_id=${params.store_id}`);
-    const [isFavorited, setIsFavorited] = useState(false);
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
     const [getReviews, setGetReviews] = useState(false);
     const [openMapsModal, setOpenMapsModal] = useState(false);
     const isFavoritedParam = params.favorited === "true";
+    const [isFavorited, setIsFavorited] = useState(isFavoritedParam);
     const isOpen = params.open_close === true || params.open_close === "true";
 
     const router = useRouter();
 
     // Window width for dynamic columns
-      const { width } = useWindowDimensions();
-      const numColumns = width > 600 ? 3 : 2;
+    const { width } = useWindowDimensions();
+    const numColumns = width > 600 ? 3 : 2;
+
+    const {data: storedata, isLoading: loadingStore, error: errorStore, get: getStoreData } = useApi();
+
+    useEffect(() => {
+        if (params.store_id) {
+            getStoreData(`/stores/get_store/${params.store_id}`);
+        }
+    }, [params.store_id]);
 
     // Fetch products
     const fetchProducts = useCallback(async (reset = false) => {
@@ -68,8 +77,28 @@ const Index = () => {
         }
     }, [params.store_category, params.store_id, page, get]);
 
-    const { data:ratingpost, error: ratingposterror, isLoading:ratingLoading, post } = useApi();
+    const { data:ratingpost, isLoading:ratingLoading, error: ratingposterror, post } = useApi();
     const { data: UserRatings, error:errorGetUserRatings, isLoading:loadingUserRatings, get: getUserRatings } = useApi(`/stores/${params.store_id}/rate/${user_id}`);
+
+    const {data: storereviews, isLoading: reviewsLoading, error: reviewsError, get: reviewsGet } = useApi(
+        `/stores/${params.store_id}/reviews/`
+    );
+
+    const {data: addFavorites, isLoading: loadingAddFavorites, error: errorAddFavorites, post: postAddFavorites} =useApi(
+        `/stores/favorites/add`
+    );
+
+    // console.log(ratingposterror)
+
+    useEffect(() => {
+        if (params.store_id) {
+            reviewsGet();   
+        }
+    }, [params.store_id]);
+
+    const reviewItems = storereviews?.data?.reviews ?? [];
+    const stats = storereviews?.data?.stats;
+    const pagination = storereviews?.data?.pagination;
 
     useEffect(() => {
         if (UserRatings && UserRatings.success !== undefined) {
@@ -101,32 +130,34 @@ const Index = () => {
                 toast.success("Rating submitted");
                 get(); // refresh rating
                 setRateStore(false);
+                return;
             } else {
                 toast.error(res.message || "Failed to submit rating");
+                return;
             }
         } catch (err) {
             console.error("Failed to submit rating", err);
+            toast.error("Failed to submit rating", err);
+            return;
         }
     };
 
     const AddToFavorites = async () => {
         try {
-            const res = await post(
-                { user_id, store_id: params.store_id },
-                `/stores/favorites/add`
-            );
+            const res = await postAddFavorites({ user_id, store_id: params.store_id });
 
-            if (res.data.favorited === false) {
-                toast.error(res.data.message);
+            if (res?.data?.favorited === false) {
+                toast.success(res?.data?.message || 'Store added to favorites.');
+                return;
             } else {
-                setIsFavorited(res.data.favorited);
-                toast.success(
-                    res.data.message
-                );
+                setIsFavorited(res?.data?.favorited);
+                toast.success(res?.data?.message || 'Store was not added to favorites.');
+                return;
             }
         } catch (err) {
             console.error("Failed to toggle favorite", err);
-            toast.error("Error occurred");
+            toast.error(err.message || "Error occurred");
+            return;
         }
     };
         
@@ -155,13 +186,9 @@ const Index = () => {
         return count;
     }
 
-    const isManuallyClosed = params.open_close === false;
-    const isTimeClosed = !isStoreOpen(params?.open_time, params?.closing_time);
-    const isClosed = isManuallyClosed || isTimeClosed;
-
     return (
-        <SafeAreaView className='flex-1 px-2 w-full justify-center relative bg-white'>
-            <View className=''>
+        <SafeAreaView className='flex-1 justify-center items-center relative bg-white'>
+            <View className='px-2'>
                 <MainHeader header_name='Store' fontFamily='maven-medium' textStyles='text-2xl' />
             </View>
 
@@ -212,6 +239,7 @@ const Index = () => {
                                 variant_groups={item.variant_groups}
                                 markup_percent={item.markup_percent}
                                 final_price={item.final_price}
+                                is_available={item.is_available}
                             />
                         )
                     }}
@@ -249,90 +277,122 @@ const Index = () => {
                             <View className='w-full mt-2 flex-row items-center'>
                                 <View className="w-20 h-20 rounded-full border-2 border-lavender">
                                     <Image className='h-full w-full rounded-full' source={{ uri: `${STORES_IMAGE_URI}${params.store_profileimage}` }} />
-                                    {isClosed &&
+                                    {storedata?.[0]?.is_closed &&
                                         <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
-                                            <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />
-                                            <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
+                                            <MaterialCommunityIcons name="lock" size={15} style={{color: COLORS.lite}} />
+                                            <Text style={{fontFamily: 'roboto'}} className='text-sm text-white'>Closed</Text>
                                         </View>
                                     }
                                 </View>
 
                                 <View className='ml-3 flex-1'>
                                     <Text numberOfLines={1} className="text-base" style={{ fontFamily: 'roboto-medium' }}>{params.store_name}</Text>
-                                    <Text className="text-sm text-gray-500" style={{ fontFamily: 'roboto-medium' }}>{params.store_phone_num}</Text>
+                                    <Text className="text-sm text-gray-500" style={{ fontFamily: 'roboto-medium' }}>
+                                        {formatText(params.store_category)}
+                                    </Text>
                                 </View>
 
                                 <TouchableOpacity
-                                    className='rounded-full h-[40px] bg-[#DFF6E6] border border-green1 w-[40px] items-center justify-center'
+                                    className='rounded-full h-[40px] bg-grey_bg border border-green1 w-[40px] items-center justify-center'
                                     onPress={() => makeCall(params.store_phone_num)}
                                 >
                                     <FontAwesome name='phone' size={20} style={{color: COLORS.green2}} />
                                 </TouchableOpacity>
                             </View>
 
+                            {/* Store Description */}
+                            <View className='my-2 w-full'>
+                                <Text className='text-sm text-gray-600' style={{ fontFamily: 'roboto' }}>{params.store_description}</Text>
+                            </View>
+
                             {/* Store Opening Hours */}
                             <View className='mt-1 w-full px-2 my-4 bg-grey_bg rounded py-1'>
-                                <Text className='text-sm text-green1' style={{ fontFamily: 'roboto-medium',textAlign: 'justify' }}>
-                                    Open{params.open_time && params.closing_time ? ` from ${formatTime(params.open_time)} to ${formatTime(params.closing_time)}` : ' 24/7'}
+                                <Text
+                                    className="text-sm text-green1"
+                                    style={{ fontFamily: 'roboto-medium', textAlign: 'justify' }}
+                                >
+                                    {storedata?.[0]?.is_closed ? (
+                                        storedata?.[0]?.open_close === false ? (
+                                            <Text className="text-red">
+                                                🔴 Temporarily closed by the owner
+                                            </Text>
+                                        ) : (
+                                            <Text className="text-red">
+                                                🔴 Closed until {storedata?.[0]?.next_opening?.day}{" "}
+                                                {storedata?.[0]?.next_opening?.time}
+                                            </Text>
+                                        )
+                                    ) : (
+                                        <>
+                                            Open
+                                            {storedata?.[0]?.is_24_hours
+                                                ? " 24/7"
+                                                : storedata?.[0]?.open_time && storedata?.[0]?.close_time
+                                                    ? ` from ${formatTime(storedata[0].open_time)} to ${formatTime(storedata[0].close_time)}`
+                                                    : ""
+                                            }
+                                        </>
+                                    )}
                                 </Text>
                             </View>
 
-                            {/* Store Description */}
-                            <View className='my-2 w-full'>
-                                <Text className='text-sm text-gray-600' style={{ fontFamily: 'roboto-medium' }}>{params.store_description}</Text>
-                            </View>
-
                             {/* Store Actions */}
-                            <View className='flex-row items-center justify-between mt-5'>
-                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                            <View className='flex-row items-center justify-between my-5'>
+                                <TouchableOpacity className='justify-start items-center rounded'
                                     onPress={() => setRateStore(true)}
-                                    style={{width: '23.5%'}}
+                                    style={{width: '23%'}}
                                 >
                                     <View className='flex-row justify-center items-center'>
                                         <Ionicons name='star' size={13} color={COLORS.primary} />
-                                        <Text className='text-sm' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                        <Text className='text-sm' style={{fontFamily: 'roboto', color: COLORS.green1}}>
                                             {' '}{params.average_rating} ({formatReviews(params.total_ratings)})
                                         </Text>
                                     </View>
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Rate Us</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Rate Us</Text>
                                 </TouchableOpacity>
+
+                                <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
 
                                 <TouchableOpacity
                                     onPress={() => setOpenMapsModal(true)}
-                                    className='items-center justify-center border border-grey_bg rounded py-1'
-                                    style={{width: '23.5%'}}
+                                    className='items-center justify-center rounded'
+                                    style={{width: '23%'}}
                                 >
                                     <View className='flex-row items-center justify-center'>
                                         <FontAwesome6 name="location-dot"  size={13} color={COLORS.primary} />
                                         <Text className='text-sm text-lavender'> | </Text>
-                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
+                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
                                     </View>
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Location</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Location</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
+                                <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
+
+                                <TouchableOpacity className='items-center rounded'
                                     onPress={AddToFavorites}
-                                    style={{width: '23.5%'}}
+                                    style={{width: '23%'}}
                                 >
                                     <MaterialCommunityIcons
-                                        name={!isFavoritedParam ? "cards-heart-outline" : "cards-heart"}
+                                        name={!isFavorited ? "cards-heart-outline" : "cards-heart"}
                                         size={16}
                                         color={COLORS.primary}
                                     />
-                                    <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Favorites</Text>
+                                    <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Favorites</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity className='justify-center items-center border border-grey_bg rounded py-1'
+                                <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
+
+                                <TouchableOpacity className='justify-center items-center rounded'
                                     onPress={() => setGetReviews(true)}
-                                    style={{width: '23.5%'}}
+                                    style={{width: '23%'}}
                                 >
                                     <View className='flex-row justify-center items-center'>
                                         <FontAwesome name='comments' size={16} color={COLORS.primary}/>
-                                        <Text className='text-sm ml-1' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
+                                        <Text className='text-sm ml-1' style={{fontFamily: 'roboto', color: COLORS.green1}}>
                                             ({formatReviews(params.total_ratings)})
                                         </Text>
                                     </View>
-                                    <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
+                                    <Text className='text-sm' style={{fontFamily: 'roboto'}}>Reviews</Text>
                                 </TouchableOpacity>
                             </View>
                         </>
@@ -342,7 +402,7 @@ const Index = () => {
 
             {ratestore &&
                 <>
-                    <View className='absolute flex-1 bottom-12 left-1 w-full' style={{zIndex: 10000}}>
+                    <View className='absolute flex-1 px-2 w-full' style={{zIndex: 10000}}>
                         <MotiView
                             from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
                             animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
@@ -399,7 +459,11 @@ const Index = () => {
                                         className='bg-primary my-4 py-3 w-full rounded-md elevation-lg justify-center items-center'
                                         onPress={() => submitRating()}
                                     >
-                                        <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>Done</Text>
+                                        {ratingLoading ? (
+                                            <ActivityIndicator color={COLORS.white} size={27}/>
+                                        ) : (
+                                            <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>Done</Text>
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             </View>  
@@ -426,8 +490,7 @@ const Index = () => {
                         exit={{ opacity: 0 }}
                         style={styles.overlay}
                     >
-                        {/* <Pressable style={{ flex: 1 }} onPress={() => setModalVisible(false)} /> */}
-                        <Pressable className="flex-1 inset-0 top-0 bottom-0 left-0 right-0 bg-transparentBlack" onPress={() => setModalVisible(false)} />
+                        <Pressable className="flex-1 inset-0 top-0 bottom-0 left-0 right-0 bg-transparentBlack" onPress={() => setGetReviews(false)} />
                     </MotiView>
     
                     {/* Bottom Sheet */}
@@ -457,42 +520,100 @@ const Index = () => {
                                 </Text>
                             </View>
 
-                            <View className='w-full justify-center pb-12 mt-8 items-center'>
-                                <View className='px-2 w-full'>
-                                    <View className='w-full justify-center'>
-                                        <View className='justify-between w-full items-center flex-row'>
-                                            <View className='border-2 border-lavender justify-center items-center rounded-full p-1' style={{width: 45, height: 45}}>
-                                                <FontAwesome name='user' size={28} color={COLORS.slate}/>
+                            <View className='w-full flex-1 justify-center mt-8 pb-16 items-center'>
+                                {reviewsLoading ?
+                                    <View className='items-center justify-center mb-8'>
+                                        <ActivityIndicator size={35} color={COLORS.primary}/>
+                                        <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>Loading comments, please wait...</Text>
+                                    </View> :
+                                    <FlatList
+                                        data={reviewItems}
+                                        keyExtractor={(item) => item.rating_id}
+                                        renderItem={({item}) => (
+                                            <View className='px-2 w-full'>
+                                                <View className='w-full justify-center'>
+                                                    <View className='justify-between w-full items-center flex-row'>
+                                                        <View className='border-2 border-lavender justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                                                            {item.profile_image ?
+                                                                <Image className='h-full w-full rounded-full' source={{ uri: `${USER_IMAGE_URI}${item.profile_image}` }} />
+                                                                : <FontAwesome name='user' size={28} color={COLORS.slate}/> 
+                                                            }
+                                                        </View>
+                                                        <View className='' style={{width: '83%'}}>
+                                                            <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>
+                                                                {(`${item.first_name || ""} ${item.last_name || ""}`).trim() || "User"}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                    <View className='w-full'>
+                                                        <View className='' >
+                                                            <Text className='' style={{fontFamily: 'roboto', textAlign: 'justify'}}>
+                                                                {item.review}
+                                                            </Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                                <View className='w-full bg-grey_bg my-4' style={{height: 1}}/>
                                             </View>
-                                            <View className='' style={{width: '83%'}}>
-                                                <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>Sylveter Nyimbili</Text>
+                                        )}
+        
+                                        ListEmptyComponent={
+                                            <View className='flex-1 justify-center items-center mb-4'>
+                                                <FontAwesome name='comments' size={25}/>
+                                                <Text className='text-base' style={{fontFamily: 'roboto-medium'}}>There are no comments yet</Text>
+                                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Be the first to comment.</Text>
                                             </View>
-                                        </View>
-                                        <View className='justify-center w-full items-center'>
-                                            <View className='' >
-                                                <Text className='' style={{fontFamily: 'roboto', textAlign: 'justify'}}>Hello this is a very good store, their services are awesome. Keep it up</Text>
+                                        }
+        
+                                        ListFooterComponent={
+                                            !reviewsLoading &&
+                                            <View className='w-full px-2 mb-4'>
+                                                {/* Review Input */}
+                                                <TouchableOpacity className='border w-full rounded border-lavender py-6 px-3'
+                                                    onPress={() => {
+                                                        setGetReviews(false)
+                                                        setRateStore(true)
+                                                    }}
+                                                >
+                                                    <Text className='text-slate' style={{fontFamily: 'roboto-medium'}}>Write a comment...</Text>
+                                                </TouchableOpacity>
                                             </View>
-                                        </View>
-                                    </View>
-                                    <View className='w-full my-4' style={{height: 1}}/>
-                                </View>
-
-                                <View className='w-full px-2 mb-4'>
-                                    {/* Review Input */}
-                                    <TouchableOpacity className='border rounded border-lavender py-6 px-3'
-                                        onPress={() => {
-                                            setGetReviews(false)
-                                            setRateStore(true)
-                                        }}
-                                    >
-                                        <Text className='text-slate' style={{fontFamily: 'roboto-medium'}}>Write a review...</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                        }
+                                        showsVerticalScrollIndicator={false}
+                                    />
+                                }
                             </View>
                         </View>  
                     </MotiView>
                 </Modal>
             }
+
+            {loadingAddFavorites && (
+                <MotiView
+                    from={{ translateY: 400 }}
+                    animate={{ translateY: 0 }}
+                    exit={{ translateY: 400 }}
+                    transition={{ type: 'timing', duration: 400 }}
+                    className=' w-full bg-white'
+                    style={{paddingBottom: 10}}
+                >
+                    <View 
+                        className=' bg-transparent shadow-md justify-end py-8 items-center border-white w-full'
+                        style={{
+                            borderRadius: 20,
+                            borderTopWidth: 1,
+                            borderRightWidth: 1,
+                            borderLeftWidth: 1
+                        }}
+                    >
+                        <ActivityIndicator size={33} color={COLORS.primary}/>
+                        <Text
+                            style={{fontFamily: 'roboto-medium'}}
+                            className='mt-2 text-sm text-slate'
+                        >Adding store to favorites...</Text>
+                    </View>
+                </MotiView>
+            )}
         </SafeAreaView>
     );
 };
@@ -511,6 +632,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
         alignItems: 'center',
+        maxHeight: '90%',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20
     },
@@ -519,7 +641,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width: '100%',
-        maxHeight: '95%',
+        maxHeight: '90%',
         backgroundColor: 'white',
         borderTopLeftRadius: 6,
         borderTopRightRadius: 6,

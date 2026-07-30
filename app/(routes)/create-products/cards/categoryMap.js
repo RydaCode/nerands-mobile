@@ -1,5 +1,5 @@
 export const categoryMap = {
-    Fashion: [
+    fashion: [
         { label: 'Men Shoes', value: 'men_shoes' },
         { label: 'Men Jeans', value: 'men_jeans' },
         { label: 'Men T-Shirts', value: 'men_tshirts' },
@@ -15,7 +15,7 @@ export const categoryMap = {
         { label: 'Sports Wear', value: 'sports_wear' },
     ],
 
-    Restaurant: [
+    restaurant: [
         { label: 'Any', value: 'any' },
         { label: 'Breakfast', value: 'breakfast' },
         { label: 'Lunch', value: 'lunch' },
@@ -23,14 +23,14 @@ export const categoryMap = {
         { label: 'Drinks', value: 'drinks' },
     ],
 
-    Electronics: [
+    electronics: [
         { label: 'Phones', value: 'phones' },
         { label: 'Sound Systems', value: 'sound_systems' },
         { label: 'TV', value: 'tv' },
         { label: 'Accessories', value: 'accessories' },
     ],
 
-    Cosmetics: [
+    cosmetics: [
         { label: 'Lotions', value: 'lotions' },
         { label: 'Bathing Soaps', value: 'bathing_soaps' },
         { label: 'Creams', value: 'creams' },
@@ -39,7 +39,7 @@ export const categoryMap = {
         { label: 'Scrub', value: 'scrub' },
     ],
 
-    Liquor: [
+    liquor: [
         { label: 'Whisky', value: 'whisky' },
         { label: 'Gin', value: 'gin' },
         { label: 'Spirits', value: 'spirits' },

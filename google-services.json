@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "797185213044",
+    "project_id": "nerands-market-place",
+    "storage_bucket": "nerands-market-place.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797185213044:android:bd0fdd0235018c53d84721",
+        "android_client_info": {
+          "package_name": "com.nerands.marketplace"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgNonoOv6zAkNlaFglRrtt80A5ZyvG8Co"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797185213044:android:db4174eb6092e25dd84721",
+        "android_client_info": {
+          "package_name": "com.nerands.marketplace.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgNonoOv6zAkNlaFglRrtt80A5ZyvG8Co"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

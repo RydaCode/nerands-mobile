@@ -4,7 +4,6 @@ import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { COLORS } from '../../../../constants/constants';
 import useApi from '../../../../hook/useApi';
-import { isStoreOpen } from '../../../../utils/isStoreOpen';
 import AllStoresCard from './cards/AllStoresCard';
 
 const AllStores = ({ cat_name }) => {
@@ -15,6 +14,8 @@ const AllStores = ({ cat_name }) => {
     const [page, setPage] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+
+    console.log("STORES DATAAA", stores)
 
     const LIMIT = 10;
 
@@ -113,12 +114,10 @@ const AllStores = ({ cat_name }) => {
             data={stores}
             keyExtractor={(item) => item.store_id.toString()}
             renderItem={({ item }) => {
-                const isManuallyClosed = item.open_close === false;
-                const isTimeClosed = !isStoreOpen(item?.open_time, item?.closing_time);
-                const isClosed = isManuallyClosed || isTimeClosed;
                 return (
                 <AllStoresCard
                     store_id={item.store_id}
+                    business_id={item.business_id}
                     store_profileimage={item.store_profileimage}
                     store_coverimage={item.store_coverimage}
                     store_name={item.store_name}
@@ -132,9 +131,9 @@ const AllStores = ({ cat_name }) => {
                     average_rating={item.average_rating}
                     total_ratings={item.review_count}
                     favorited={item.favorited}
-                    isClosed={isClosed}
+                    is_closed={item.is_closed}
                     open_time={item.open_time}
-                    closing_time={item.closing_time}
+                    close_time={item.close_time}
                 />
             )}}
             onEndReached={loadMore}
