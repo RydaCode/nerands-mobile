@@ -35,7 +35,7 @@ const Index = () => {
             const res = await api.get('/notifications/all?limit=10&offset=1');
 
             
-console.log("Notifications response:", res.data.result);
+            console.log("Notifications response:", res.data.result);
 
             dispatch(
                 setNotifications(
@@ -104,15 +104,15 @@ console.log("Notifications response:", res.data.result);
                     await loadNotifications();
                 }
 
-                // 🚀 CONTINUE NORMAL FLOW (THIS WAS MISSING BEFORE)
+                // 🚀 CONTINUE NORMAL FLOW
                 router.replace(
-                    isAuthenticated ? '/(tabs)' : '/(auth)'
+                    '/(tabs)'
                 );
 
             } catch (error) {
                 // Fail-safe → still allow access
                 router.replace(
-                    isAuthenticated ? '/(tabs)' : '/(auth)'
+                    '/(tabs)'
                 );
             }
         };
@@ -173,7 +173,7 @@ console.log("Notifications response:", res.data.result);
                 <Text
                     style={{fontFamily: 'roboto-medium'}}
                     className='text-sm text-slate'
-                >App By:</Text>
+                >Powered by:</Text>
                 <Text
                     style={{fontFamily: 'roboto-medium'}}
                     className='text-base text-black'

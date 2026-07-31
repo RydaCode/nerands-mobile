@@ -2,13 +2,13 @@ import { Text, View } from 'react-native';
 
 const StatsCards = ({ stats, purchasedTrips, runner }) => {
     return (
-        <View className="bg-white">
+        <View className="">
             <View className="w-full flex-row justify-between items-center">
                 <Card value={purchasedTrips?.count || 0} label="Active Errands" text='Purchased errands to be used' />
                 <Card value={stats?.completedTotal || 0} label="Completed Errands" text='Errands completed for a particular month' />
             </View>
 
-            <View className="mt-4 rounded border border-lavender elevation-sm bg-white p-2 justify-center items-center w-full" style={{ height: 90 }}>
+            <View className="mt-4 rounded border border-lavender bg-white p-2 justify-center items-center w-full" style={{ height: 90 }}>
                 <Text className="text-xl text-indigo-600" style={{ fontFamily: 'roboto-bold' }}>
                     K{runner?.runner_actual_bonus || 0}
                 </Text>
@@ -29,7 +29,7 @@ const StatsCards = ({ stats, purchasedTrips, runner }) => {
 }
 
 const Card = ({ value, label, text }) => (
-    <View className="bg-white border border-lavender rounded-md justify-center items-center elevation-sm p-1" style={{ width: '48%', height: 105 }}>
+    <View className="bg-white border border-lavender rounded-md justify-center items-center p-1" style={{ width: '48%', height: 105 }}>
         <Text className="text-xl text-red" style={{ fontFamily: 'roboto-bold' }}>{value}</Text>
         <Text className="text-base text-red" style={{ fontFamily: 'roboto-medium' }}>{label}</Text>
         <View className='w-full bg-lavender my-1' style={{height: 1}}/>

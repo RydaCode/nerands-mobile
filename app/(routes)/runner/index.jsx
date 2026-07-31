@@ -12,7 +12,6 @@ import LocationComponent from '../../../services/LocationComponent';
 import socket from '../../../socket-io/socket';
 import AssignmentModal from './AssignmentModal';
 import BuyTripsModal from './BuyErrandsModal';
-import { useRunnerDashboard } from './hook/useRunnerDashboard';
 import NotRunnerView from './NotRunnerView';
 import RunnerActions from './RunnerActions';
 import RunnerHeaderss from './RunnerHeaderss';
@@ -38,7 +37,23 @@ const Index = () => {
     const runnerStats = data?.data?.stats;
     const purchasedTrips = data?.data?.purchasedTrips;
 
-    console.log("RUNNER DASHBOARD", purchasedTrips?.count);
+    useEffect(() => {
+        if (!runnerData?.runner_id) return;
+
+        const joinRunnerRoom = () => {
+            socket.emit("join_runner", runnerData.runner_id);
+        };
+
+        if (socket.connected) {
+            joinRunnerRoom();
+        }
+
+        socket.on("connect", joinRunnerRoom);
+
+        return () => {
+            socket.off("connect", joinRunnerRoom);
+        };
+    }, [runnerData?.runner_id]);
 
     const startLoopSound = async () => {
         try {
@@ -64,10 +79,6 @@ const Index = () => {
             console.log("Stop sound error:", e);
         }
     };
-    
-    const {
-        toggleAvailability
-    } = useRunnerDashboard();
 
     useEffect(() => {
         if (!liveOrder) return;
@@ -94,10 +105,10 @@ const Index = () => {
     }, []);
 
     return (
-        <SafeAreaView className='flex-1 px-4 bg-white relative'>
+        <SafeAreaView className='flex-1 px-4 relative'>
             {/* Pass refresh function to modal */}
             <AssignmentModal
-                runner_id={runnerStats?.runner_id}
+                runner_id={runnerData?.runner_id}
                 onClose={() => setLiveOrder(null)}
                 stopLoopSound={stopLoopSound}
             />
@@ -105,7 +116,7 @@ const Index = () => {
                 <MainHeader header_name="Runner" fontFamily='ubuntu-medium' textStyles="text-2xl text-black" />
             </View>
 
-            <LocationComponent role="runner" userId={runnerStats?.runner_id} />
+            <LocationComponent role="runner" userId={runnerData?.runner_id} />
 
             {isLoading ? (
                 <View className='flex-1 w-full justify-center items-center'>
@@ -130,28 +141,28 @@ const Index = () => {
                     </TouchableOpacity>
                 </View>
             ) : runnerData ? (
-                <FlatList
+                <View className='flex-1 justify-between'>
+                    <FlatList
                     data={[]}
                     renderItem={null}
                     ListHeaderComponent={ 
-                        <View className=''>
+                        <View className='h-full justify-between'>
                             <RunnerHeaderss runner={runnerData} setSettings={setSettings}/>
                             <StatsCards stats={runnerStats} purchasedTrips={purchasedTrips} runner={runnerData} />
-                            <RunnerActions
-                                isActive={runnerStats?.is_available}
-                                toggleAvailability={toggleAvailability}
-                                setBuyErrands={setBuyErrands}
-                                router={router}
-                                runner_id={runnerStats?.runner_id}
-                            />
-                            <BuyTripsModal
-                                visible={buyerrands}
-                                setBuyErrands={setBuyErrands}
-                                runner_id={runnerStats?.runner_id}
-                            />
                         </View>
                     }
+
+                    contentContainerStyle={{flex: 1}}
                 />
+                <RunnerActions
+                    isActive={runnerData?.is_available}
+                    setBuyErrands={setBuyErrands}
+                    router={router}
+                    runner_id={runnerData?.runner_id}
+                    user_id={runnerData?.user_id}
+                    reload={() => get(`/runner/user/dashboard`)}
+                />
+                </View>
             ) : !is_runner ? (
                 <View className='flex-1 w-full justify-center items-center'>
                     {/* <MaterialIcons name="directions-run" size={40} color={COLORS.green1} /> */}
@@ -175,6 +186,11 @@ const Index = () => {
                     </TouchableOpacity>
                 </View>
             )}
+            <BuyTripsModal
+                visible={buyerrands}
+                setBuyErrands={setBuyErrands}
+                runner_id={runnerData?.runner_id}
+            />
         </SafeAreaView>
     )
 }
