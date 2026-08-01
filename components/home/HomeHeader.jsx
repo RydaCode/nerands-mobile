@@ -1,4 +1,5 @@
 import { COLORS } from '@/constants/constants';
+import { useResponsive } from '@/hook/useResponsive';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -43,6 +44,11 @@ const HomeHeader = ({ location }) => {
     );
 
     const cartNum = totalFoodCartItems + totalOtherCartItems + totaLocalMarketCartItems || 0;
+
+    const {
+        responsiveSize,
+        isTablet
+    } = useResponsive();
     return (
         <View className='items-center w-full'>
             <View className='w-full flex-row justify-between items-center'>
@@ -59,36 +65,38 @@ const HomeHeader = ({ location }) => {
                         <Text className=' text-primary text-2xl' style={{fontFamily: 'maven-bold', fontWeight: SIZES.h2}} >Nerands</Text>
                     </View>
                 </View>
-                <View className='flex-row justify-between items-center'>
+                <View className='flex-row justify-between items-center mr-2' style={{width: '34%'}}>
                     <TouchableOpacity
-                        style={{ backgroundColor: COLORS.navBtnBgHome }}
-                        className='w-8 h-8 rounded-full justify-center items-center'
+                        style={{ backgroundColor: COLORS.navBtnBgHome, height: responsiveSize(8, 30, 40), width: responsiveSize(8, 30, 40) }}
+                        className='rounded-full justify-center items-center'
                     >
                         <Ionicons name='search' size={20} color={COLORS.black} />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={openNotifications}
-                        style={{ backgroundColor: COLORS.navBtnBgHome }}
-                        className='w-8 h-8 bg-blue-500 rounded-full ml-4 justify-center items-center relative'
+                        style={{ backgroundColor: COLORS.navBtnBgHome, height: responsiveSize(8, 30, 40), width: responsiveSize(8, 30, 40) }}
+                        className='bg-blue-500 rounded-full justify-center items-center relative'
                     >
                         <FontAwesome name="bell" size={17} color={COLORS.black} />
                         {/* <Text className='text-2xl'>🥗</Text> */}
                         <View
-                            className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
+                            style={{width: responsiveSize(8, 12, 23), height: responsiveSize(8, 12, 23)}}
+                            className='absolute left-5 -top-[5px] bottom-0 border border-white justify-center items-center bg-red size-[21px] rounded-full'
                         >
-                            <Text className='text-white' style={{fontSize: 11}}>{finalNotCount}</Text>
+                            <Text className='text-white text-sm'>{finalNotCount}</Text>
                         </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => router.push('../../cart/')}
-                        style={{ backgroundColor: COLORS.navBtnBgHome }}
-                        className='w-8 h-8 rounded-full ml-4 mr-2 justify-center items-center relative'
+                        style={{ backgroundColor: COLORS.navBtnBgHome, height: responsiveSize(8, 30, 40), width: responsiveSize(8, 30, 40) }}
+                        className='rounded-full justify-center items-center relative'
                     >
                         {/* <FontAwesome name="bell" size={17} color={COLORS.slate} /> */}
                         <FontAwesome6 name="bag-shopping" size={17} color={COLORS.black} />
                         <View
-                            className='absolute left-5 -top-[5px] bottom-0 border-[1px] border-white justify-center items-center bg-red size-[21px] rounded-full'
+                            style={{width: responsiveSize(8, 12, 23), height: responsiveSize(8, 12, 23)}}
+                            className='absolute left-5 -top-[5px] bottom-0 border border-white justify-center items-center bg-red size-[21px] rounded-full'
                         >
                             <Text className='text-white text-sm'>{cartNum}</Text>
                         </View>

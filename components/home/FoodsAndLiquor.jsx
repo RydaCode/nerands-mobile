@@ -1,15 +1,16 @@
 import { COLORS } from '@/constants/constants';
+import { useResponsive } from '@/hook/useResponsive';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
 import { STORES_IMAGE_URI } from '../../RequestMethods';
 import { calculateDistance } from '../../utils/getDistance';
-import { formatText } from '../../utils/getInitials';
+import { formatText, getAvatarColor, getFirstLetter } from '../../utils/getInitials';
 
 const FoodsAndLiquor = (refreshKey) => {
     const router = useRouter();
@@ -18,6 +19,20 @@ const FoodsAndLiquor = (refreshKey) => {
     // This enpoint can be used to fetched and filter stores by category, open_close
     // const { data, isLoading, error, get, del } = useApi(`/stores/toprated?cat_name=food&limit=10&open_close=true`);
     // const { data, isLa, ioading, error, get, del } = useApi(`/stores/toprated?cat_name=food&limit=10&user_id=${user_id}`);
+    
+    
+    const {
+        wp,
+        aspectHeight,
+        isLandscape,
+        avatarSize
+    } = useResponsive();
+
+    const imageWidth = wp(70);
+
+    const imageHeight = isLandscape
+        ? aspectHeight(70, 0.45)
+        : aspectHeight(70, 0.55);
     
     const { data, isLoading, error, get, del } = useApi();
 
@@ -32,22 +47,7 @@ const FoodsAndLiquor = (refreshKey) => {
             get(url);
         }
     }, [user_id, latitude, longitude, refreshKey]);
-
     const storesList = data?.stores ?? [];
-    // Get screen width and height using useWindowDimensions
-    const { width, height } = useWindowDimensions();
-
-    // Dynamically calculate image sizes based on screen width and height
-    const imageWidth = width * 0.60;  // 45% of screen width
-    const imageHeight = height * 0.60; // 15% of screen height
-
-    const isLandscape = width > height; // Determine orientation
-    const isTablet = width >= 768; // Define a breakpoint for tablets
-
-    // Set image dimensions based on orientation and device type
-    const imageDimensions = isLandscape
-    ? { width: imageWidth, height: imageHeight } // Larger dimensions for landscape
-    : { width: imageWidth, height: 110 }; // Requested dimensions for portrait
 
     const pointA = { latitude: latitude, longitude: longitude }; // User
 
@@ -91,7 +91,10 @@ const FoodsAndLiquor = (refreshKey) => {
                                 closing_time: item.closing_time
                             }})}
                         >
-                            <View className='rounded-md relative' style={[imageDimensions]}>
+                            <View 
+                                className="rounded-md relative w-full"
+                                style={{height: imageHeight}}
+                            >
                                 <Image
                                     style={{
                                             width: "100%",
@@ -169,9 +172,19 @@ const FoodsAndLiquor = (refreshKey) => {
                                 />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={{height: 30, width: '30%', bottom: 2, right: 2}}
-                                className="absolute bg-primary rounded justify-center items-center elevation-sm border border-lavender"
-
+                                style={{ width: wp(20), height: aspectHeight(20, 0.45) }}
+                                className="
+                                    absolute
+                                    bottom-0.5
+                                    right-0.5
+                                    bg-primary
+                                    rounded
+                                    justify-center
+                                    items-center
+                                    elevation-sm
+                                    border
+                                    border-lavender
+                                "
                                 onPress={() => router.push({pathname: '../(routes)/home-single-store/', params: {
                                     store_id: item.store_id,
                                     store_profileimage: item.store_profileimage,
@@ -194,27 +207,44 @@ const FoodsAndLiquor = (refreshKey) => {
                                 <Text className='text-white text-sm' style={{fontFamily: 'ubuntu-medium'}}>Visit</Text>
                             </TouchableOpacity>
                             <View
-                                style={{bottom: 47, height: 63, width: 63}}
-                                className="absolute left-2 border-2 border-white rounded-full justify-center items-center"
+                                style={{
+                                    width: avatarSize,
+                                    height: avatarSize,
+                                }}
+                                className="
+                                    absolute
+                                    left-2
+                                    bottom-[47px]
+                                    border-2
+                                    border-white
+                                    rounded-full
+                                    justify-center
+                                    items-center
+                                "
                             >
-                                <View style={{zIndex: 1100}} className='relative w-full h-full rounded-full'>
-                                    <Image
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            borderRadius: 999,
-                                        }}
-                                        source={
-                                            item.store_profileimage
-                                                ? { uri: `${STORES_IMAGE_URI}${item.store_profileimage}` }
-                                                : Carticons.placeholder
-                                        }
-                                        contentFit="cover"
-                                        transition={200}
-                                    />
-                                    {item.is_closed &&
-                                        <View className='absolute w-full h-full bg-black opacity-70 rounded-full'/>
-                                    }
+                                <View
+                                    style={{
+                                        zIndex: 1100,
+                                        backgroundColor: getAvatarColor(item?.store_id),
+                                    }}
+                                    className='relative w-full h-full rounded-full justify-center items-center'
+                                >
+                                    {!item.store_profileimage ? (
+                                        <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>
+                                            {getFirstLetter(item?.store_name)}
+                                        </Text>
+                                    ) : (
+                                        <Image
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                borderRadius: 999,
+                                            }}
+                                            source={{ uri: `${STORES_IMAGE_URI}${item.store_profileimage}` }}
+                                            contentFit="cover"
+                                            transition={200}
+                                        />
+                                    )}
                                 </View>
                             </View>
                         </TouchableOpacity>

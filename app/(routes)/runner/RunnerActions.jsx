@@ -15,14 +15,11 @@ const RunnerActions = ({ isActive, setBuyErrands, router, runner_id, user_id, re
             : "YES";
 
         try {
-
             const res = await patch({
                 user_id,
                 runner_id,
                 is_available: next,
             });
-
-            console.log("res", res)
 
             if (!res?.success) {
                 toast.error( res?.data?.message || 'Failed to update availability.');
@@ -38,7 +35,6 @@ const RunnerActions = ({ isActive, setBuyErrands, router, runner_id, user_id, re
 
                 reload();
             }
-
         } catch(err){
             console.log(err);
         }

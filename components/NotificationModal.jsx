@@ -1,7 +1,8 @@
-import {
+import React, {
     forwardRef,
     useCallback,
     useMemo,
+    useRef,
 } from "react";
 
 import {
@@ -11,19 +12,23 @@ import {
 } from "@gorhom/bottom-sheet";
 
 import {
-    Image,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
 
 import { FontAwesome } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useSelector } from "react-redux";
-import { COLORS } from "../constants/constants";
+import { useDispatch, useSelector } from "react-redux";
+import { markNotificationRead } from "../redux/store/slices/notificationSlice";
 import agoTimeStamp from "./agoTimeStamp";
 
 const NotificationModal = forwardRef((props, ref) => {
+
+    const router = useRouter();
+    const dispatch = useDispatch();
 
     const notifications =
         useSelector(
@@ -31,10 +36,11 @@ const NotificationModal = forwardRef((props, ref) => {
         );
 
     const snapPoints = useMemo(
-        () => ["65%", "85%"],
+        () => ["75%", "95%"],
         []
     );
     const insets = useSafeAreaInsets();
+    const renderedCount = useRef(0);
 
     const renderBackdrop = useCallback(
         props => (
@@ -47,77 +53,17 @@ const NotificationModal = forwardRef((props, ref) => {
         []
     );
 
-    const renderItem = ({ item }) => (
-    <View style={{width: '100%', paddingHorizontal: 16}}>
-    <TouchableOpacity
-        className={`py-4 border-b border-gray-100 ${
-            !item.is_read
-                ? "bg-red-50"
-                : "bg-white"
-        }`}
-    >
-
-        <View className="flex-row items-center">
-
-            {item.image_url && (
-                <Image
-                    source={{
-                        uri: item.image_url.startsWith("http")
-                            ? item.image_url
-                            : `https://images.nerands.com/${item.image_url}`
-                    }}
-                    style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 25,
-                        marginRight: 12
-                    }}
-                    contentFit="cover"
-                />
-            )}
-
-            <View className="flex-1">
-
-                <Text
-                    style={{ fontFamily: "roboto-medium" }}
-                    className="text-black"
-                >
-                    {item.title}
-                </Text>
-
-                <Text
-                    className="text-slate mt-1"
-                    numberOfLines={2}
-                >
-                    {item.message}
-                </Text>
-
-                <Text
-                    className="text-sm text-gray-400 mt-2"
-                >
-                    {new Date(item.created_at).toLocaleString()} - ({agoTimeStamp(item.created_at)})
-                </Text>
-
-            </View>
-
-        </View>
-
-    </TouchableOpacity>
-    <View
-        style={{
-            height: 1,
-            width: '100%',
-            backgroundColor: COLORS.grey_bg,
-        }}
-    />
-    </View>
-);
+    const renderItem = useCallback(({ item }) => {
+        return (
+            <NotificationItem item={item} router={router} dispatch={dispatch} ref={ref} />
+        );
+    }, []);
 
     return (
 
         <BottomSheetModal
             ref={ref}
-            index={0}
+            index={1}
             snapPoints={snapPoints}
             topInset={insets.top}
             backdropComponent={renderBackdrop}
@@ -129,8 +75,7 @@ const NotificationModal = forwardRef((props, ref) => {
 
             <View
                 style={{
-                    flex: 1,
-                    paddingBottom: insets.bottom,
+                    flex: 1
                 }}
             >
 
@@ -163,17 +108,114 @@ const NotificationModal = forwardRef((props, ref) => {
 
                 </View>
 
-                <BottomSheetFlatList
-                    data={notifications}
-                    keyExtractor={item => item.notification_id}
-                    renderItem={renderItem}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{
-                        paddingBottom: insets.bottom + 30,
-                    }}
-                />
+                <View style={{flex: 1}}>
+                    <BottomSheetFlatList
+                        data={notifications}
+                        keyExtractor={item => item.notification_id}
+                        renderItem={renderItem}
+                        initialNumToRender={15}
+                        maxToRenderPerBatch={10}
+                        windowSize={10}
+                        removeClippedSubviews={true}
+                        showsVerticalScrollIndicator={false}
+                    />
+                </View>
             </View>
         </BottomSheetModal>
+    );
+});
+
+const NotificationItem = React.memo(({ item, router, dispatch, ref }) => {
+
+    const readNotification = (item) => {
+        // Implement the logic to mark the notification as read
+        ref.current?.dismiss();
+
+        router.push({
+            pathname: '../(routes)/user-account'
+        });
+
+        dispatch(markNotificationRead(item.notification_id));
+        console.log(`Notification ${item.notification_id} marked as read.`);
+    }
+
+    return (
+        <View
+            style={{ width: '100%' }}
+            onLayout={(event) => {
+                const { height } = event.nativeEvent.layout;
+            }}
+        >
+            <TouchableOpacity
+                className={`border-gray-100 ${
+                    !item.is_read
+                        ? "bg-grey_bg"
+                        : "bg-white"
+                }`}
+
+                onPress={() => readNotification(item)}
+            >
+                <View className="flex-row items-center" style={{marginHorizontal: 16}}>
+
+                    {item.image_url ? (
+                        <Image
+                            source={{
+                                uri: item.image_url.startsWith("http")
+                                    ? item.image_url
+                                    : `https://images.nerands.com/${item.image_url}`
+                            }}
+                            style={{
+                                width: 60,
+                                height: 60,
+                                borderRadius: 999,
+                                marginRight: 12
+                            }}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                        />
+                    ) : (
+                        <View
+                            className="bg-primary justify-center items-center"
+                            style={{
+                                width: 60,
+                                height: 60,
+                                borderRadius: 999,
+                                marginRight: 12
+                            }}
+                        >
+                            <FontAwesome name="bell" size={22} color="white" />
+                        </View>
+                    )}
+
+                    <View className="flex-1">
+
+                        <Text
+                            numberOfLines={1}
+                            style={{ fontFamily: "roboto-medium" }}
+                            className="text-black"
+                        >
+                            {item.title}
+                        </Text>
+
+                        <Text
+                            className="text-slate mt-1"
+                            numberOfLines={2}
+                        >
+                            {item.message}
+                        </Text>
+
+                        <Text
+                            className="text-sm text-gray-400 mt-2"
+                        >
+                            {new Date(item.created_at).toLocaleString()} - ({agoTimeStamp(item.created_at)})
+                        </Text>
+
+                    </View>
+
+                </View>
+                <View className='bg-lavender my-3 mx-4' style={{height: 1}}/>
+            </TouchableOpacity>
+        </View>
     );
 });
 

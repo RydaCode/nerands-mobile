@@ -1,3 +1,4 @@
+import { useResponsive } from '@/hook/useResponsive';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -132,6 +133,12 @@ const AllProductsCard = (props) => {
     const distanceKm = distance.includes("m") ? parseFloat(distance) / 1000 : parseFloat(distance);
     const displayDistance = distanceKm >= 50 ? props.city_town : distance;
 
+    const {
+        wp,
+        aspectHeight,
+        isTablet
+    } = useResponsive();
+
     return (
         <TouchableOpacity
             onPress={() => router.push({ pathname: '../(routes)/other-single-product/', params: {
@@ -160,10 +167,15 @@ const AllProductsCard = (props) => {
                 business_id: props.business_id,
             }})}
             activeOpacity={0.7}
-            style={{width: '49%'}}
+            style={{width: wp(47.5)}}
             className='rounded-lg border border-grey_bg items-center justify-center relative'
         >
-            <View className='relative w-full' style={{height: 190}}>
+            <View
+                className="relative w-full"
+                style={{
+                    height: aspectHeight(53, 0.95)
+                }}
+            >
                 <Image
                     resizeMode="cover"
                     className="relative h-full w-full rounded-lg"
@@ -173,10 +185,14 @@ const AllProductsCard = (props) => {
                             : Carticons.placeholder
                     }
                 />
-                <TouchableOpacity className='absolute h-7 w-7 top-2 right-2 items-center justify-center bg-[#fff] rounded-full'>
+                <TouchableOpacity
+                    className='absolute top-2 right-2 items-center justify-center bg-[#fff] rounded-full'
+                    style={{ height: isTablet ? 35 : 25, width: isTablet ? 35 : 25 }}>
                     <MaterialCommunityIcons color={COLORS.primary} name='heart-outline' size={17} />
                 </TouchableOpacity>
-                <TouchableOpacity className='flex-row px-2 absolute h-7 w-15 bottom-2 left-2 items-center justify-center bg-[#fff] rounded-full'>
+                <TouchableOpacity
+                    style={{ height: isTablet ? 35 : 25 }}
+                    className='flex-row px-4 absolute bottom-2 left-2 items-center justify-center bg-[#fff] rounded-full'>
                     <Ionicons name='location-outline' color={COLORS.red} size={12} />
                     <Text
                         numberOfLines={1}
@@ -227,18 +243,37 @@ const AllProductsCard = (props) => {
                 </View>
             </TouchableOpacity>
             <TouchableOpacity
-                className='flex-row w-full mx-1 rounded-lg bg-primary elevation-lg bottom-0 items-center justify-center'
+                className="
+                    flex-row
+                    rounded-lg
+                    bg-primary
+                    elevation-lg
+                    bottom-0
+                    items-center
+                    justify-center
+                "
                 style={{
-                    width: '98%',
-                    height: 30,
-                    opacity: othersCartItems.some(item => item.product_id === props.product_id) ? 0.5 : 0.9
+                    width: wp(46),
+                    height: isTablet ? 50 : 30,
+                    opacity: othersCartItems.some(
+                        item => item.product_id === props.product_id
+                    ) ? 0.5 : 0.9
                 }}
                 disabled={othersCartItems.some(item => item.product_id === props.product_id)}
                 onPress={handleAddItem}
             >
-                <FontAwesome color={COLORS.white} name='shopping-cart' size={17} />
-                <Text style={{fontFamily: 'roboto-medium'}} className='ml-2 text-white'>
-                    {othersCartItems.some(item => item.product_id === props.product_id) ? "Already In Cart" : "Add To Cart"}
+                <FontAwesome 
+                    color={COLORS.white} 
+                    name="shopping-cart" 
+                    size={17} 
+                />
+                <Text 
+                    style={{fontFamily: 'roboto-medium'}} 
+                    className="ml-2 text-white"
+                >
+                    {othersCartItems.some(item => item.product_id === props.product_id) 
+                        ? "Already In Cart" 
+                        : "Add To Cart"}
                 </Text>
             </TouchableOpacity>
         </TouchableOpacity>

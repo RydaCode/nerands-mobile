@@ -134,7 +134,7 @@ const MainContent = ({
         })
       }
       style={{
-        elevation: 0.5,
+        // elevation: 0.5,
         borderWidth: 1,
         borderColor: COLORS.grey_bg,
         backgroundColor: "#fff",
@@ -144,7 +144,7 @@ const MainContent = ({
       className="relative mt-6 pb-1"
     >
       <View className="w-full">
-        <View className="w-full relative" style={[imageDimensions]}>
+        <View className="w-full relative h-[160px] md:h-[190px] lg:h-[220px]">
           <Image
             style={{ borderRadius: 5 }}
             className="w-full h-full"
@@ -186,8 +186,18 @@ const MainContent = ({
             />
           </TouchableOpacity>
           <View
-            className="absolute -bottom-4 left-2 rounded-full"
-            style={{ height: 90, width: 90 }}
+            className="
+              absolute
+              -bottom-4
+              left-2
+              rounded-full
+              h-[90px]
+              w-[90px]
+              md:h-[120px]
+              md:w-[120px]
+              lg:h-[180px]
+              lg:w-[180px]
+            "
           >
             <Image
               style={{ }}
@@ -197,8 +207,23 @@ const MainContent = ({
           </View>
         </View>
         <View
-          style={{ position: "absolute", right: 10, bottom: 45, zIndex: 500, borderWidth: 2, height: 28, borderColor: '#fff' }}
-          className="flex-row bg-white elevation-md justify-center items-center px-2 py-1 rounded-2xl"
+          className="
+            absolute
+            right-2.5
+            bottom-[45px]
+            z-[500]
+            h-[28px]
+            border-2
+            border-white
+            flex-row
+            bg-white
+            elevation-md
+            justify-center
+            items-center
+            px-2
+            py-1
+            rounded-2xl
+          "
         >
           <Ionicons
             name={"star"}

@@ -1,9 +1,10 @@
 import { COLORS } from '@/constants/constants';
+import { useResponsive } from '@/hook/useResponsive';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { FlatList, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Carticons } from '../../constants/icons';
 import useApi from '../../hook/useApi';
@@ -26,22 +27,14 @@ const FashinAndCosmetics = (refreshKey) => {
     // console.log("TOP:", data)
 
     const storesList = data?.stores ?? [];
-    // Get screen width and height using useWindowDimensions
-    const { width, height } = useWindowDimensions();
-
-    // Dynamically calculate image sizes based on screen width and height
-    const imageWidth = width * 0.92;  // 45% of screen width
-    const imageHeight = height * 0.60; // 15% of screen height
-
-    const isLandscape = width > height; // Determine orientation
-    const isTablet = width >= 768; // Define a breakpoint for tablets
-
-    // Set image dimensions based on orientation and device type
-    const imageDimensions = isLandscape
-    ? { width: imageWidth, height: imageHeight } // Larger dimensions for landscape
-    : { width: imageWidth, height: 110 }; // Requested dimensions for portrait
 
     const pointA = { latitude: latitude, longitude: longitude }; // User
+
+    const {
+        wp,
+        isTablet,
+        listCardHeight
+    } = useResponsive();
 
     return (
         <View>
@@ -57,14 +50,17 @@ const FashinAndCosmetics = (refreshKey) => {
                     return (
                     <View
                         style={{
-                            width: imageWidth,
-                            height: 84,
-                            elevation: 0,
-                            borderWidth: 1,
-                            borderColor: COLORS.grey_bg,
-                            backgroundColor: COLORS.white,
+                            width: wp(91),
+                            height: listCardHeight,
                         }}
-                        className='flex-row mr-4 rounded-md justify-between'
+                        className="
+                            flex-row
+                            mr-2
+                            rounded-md
+                            border
+                            border-grey_bg
+                            bg-white
+                        "
                     >
                         <TouchableOpacity className="flex-row items-center"
                             style={{width: '90%'}}
@@ -87,7 +83,7 @@ const FashinAndCosmetics = (refreshKey) => {
                                 closing_time: item.closing_time
                             }})}
                         >
-                            <View className='rounded relative' style={{ width: '35%', height: '100%' }}>
+                            <View className='rounded relative w-[35%] h-full'>
                                <Image
                                     style={{
                                         width: "100%",
@@ -111,7 +107,7 @@ const FashinAndCosmetics = (refreshKey) => {
                                     </View>
                                 }
                             </View>
-                            <View className="ml-2" style={{width: '64%'}}>
+                            <View className="ml-2 w-[64%]">
                                 <View className="flex-row items-center justify-start">
                                     <Text className='text-base' numberOfLines={1} style={{ fontFamily: 'roboto-medium' }}>
                                         {item.store_name}
@@ -119,7 +115,7 @@ const FashinAndCosmetics = (refreshKey) => {
                                 </View>
                                 <View className='w-full flex-row items-center'>
                                     <View className="flex-row rounded-sm bg-[#DFF6E6] py-1 px-2 justify-center items-center self-center mr-1">
-                                        <Text className='text-sm text-green1' style={{fontFamily: 'roboto' }}>
+                                        <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto' }}>
                                             {formatText(item.store_category)}
                                         </Text>
                                     </View>

@@ -1,6 +1,7 @@
+import { useResponsive } from '@/hook/useResponsive';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, FlatList, Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Animated, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import { Carticons } from '../../constants/icons';
 
@@ -52,9 +53,6 @@ const category_items = [
 
 const Categories = () => {
     const { user_id, first_name  } = useSelector((state) => state.auth);
-    const { width, height } = useWindowDimensions(); // Get the screen dimensions
-    const isLandscape = width > height; // Determine orientation
-    const isTablet = width >= 768; // Define a breakpoint for tablets
     const router = useRouter();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     
@@ -67,11 +65,6 @@ const Categories = () => {
     };
 
     const [timeOfDay, setTimeOfDay] = useState(getTimeOfDay());
-
-    // Set image dimensions based on orientation and device type
-    const imageDimensions = isLandscape
-        ? { width: 80, height: 60 } // Larger dimensions for landscape
-        : { width: 65, height: 50 }; // Requested dimensions for portrait
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -116,6 +109,12 @@ const Categories = () => {
 
     const { text, sub } = getPersonalizedGreeting();
 
+    const {
+        isLandscape,
+        isTablet,
+        categoryImageSize
+    } = useResponsive();
+
     return (
         <View>
             <View className="mt-6">
@@ -144,10 +143,13 @@ const Categories = () => {
                         >
                             <Image
                                 source={item.category_image}
-                                style={[imageDimensions]}
+                                style={categoryImageSize}
                                 className="rounded-md border border-[#E2E8F0]"
                             />
-                            <Text style={{fontFamily: 'roboto-medium'}} className={`font-medium mt-1 ${isTablet ? 'text-lg' : 'text-sm'}`}>
+                            <Text
+                                style={{fontFamily: 'roboto-medium'}}
+                                className={`font-medium mt-1 ${isTablet ? 'text-lg' : 'text-sm'}`}
+                            >
                                 {item.category_text}
                             </Text>
                         </TouchableOpacity>

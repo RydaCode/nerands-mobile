@@ -32,16 +32,17 @@ const MemberDetailsModal = ({
     );
 
     const [formData, setFormData] = useState({
-        user_id: item?.member?.user_id,
         business_id: business_id,
         role_id: ''
     });
+
+    // console.log("MemberDetailsModal item:", formData);
 
     useEffect(() => {
         if (item?.member?.user_id) {
             setFormData(prev => ({
                 ...prev,
-                user_id: item.member.user_id
+                member_id: item?.member?.user_id
             }));
         }
     }, [item]);
@@ -149,19 +150,27 @@ const MemberDetailsModal = ({
         try {
             const res = await patch(formData);
 
-            if (res?.data?.success) {
-                toast.success(res?.data?.message || "Role updated");
+            console.log("Update role response:", res);
+
+            if (res?.success) {
                 setOpenMemberDetails(false);
+                toast.success(res?.data?.message || "Role updated");
                 reload();
             }
             else if (!res?.data?.success) {
-                toast.error(res?.data?.message || "Role was not upatad");
+                setOpenMemberDetails(false);
+                toast.error(res?.data?.message || "Role was not updated");
+                return;
             }
             else if (error) {
-                toast.error(error.message || "Role was not upatad, try again later");
+                setOpenMemberDetails(false);
+                toast.error(error.message || "Role was not updated, try again later");
+                return;
             }
         } catch (err) {
+            setOpenMemberDetails(false);
             toast.error(err.message || "Failed to update role");
+            return;
         }
     };
 

@@ -37,6 +37,7 @@ const GetAvailableRunners = ({
 
             const payload = {
                 runner_id: item?.runner_id,
+                runner_user_id: item?.user_id,
                 destination_phone_number: user_phone_num,
                 last_name: item?.last_name,
                 first_name: item?.first_name,
@@ -88,7 +89,7 @@ const GetAvailableRunners = ({
                     <View className='absolute flex-1 h-full w-full bg-white justify-center items-center'>
                         <View className='bg-grey_bg py-6 rounded border border-white elevation-sm justify-center items-center' style={{zIndex: 999, width: '90%'}}>
                             <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>
-                                No runner available
+                                No runners available
                             </Text>
                         </View>
                     </View>

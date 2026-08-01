@@ -17,9 +17,9 @@ import NotificationModal from "../components/NotificationModal";
 import { COLORS } from "../constants/constants";
 import "../global.css";
 import { loadDeliveryCharges } from '../hook/pricing/loadDeliveryCharges';
-import { addNotification } from "../redux/store/slices/notificationSlice";
 import store from "../redux/store/store";
 import LocationComponent from "../services/LocationComponent";
+import { initializeNotifications } from "./services/notifications";
 
 const APP_PRIMARY_COLOR = COLORS.white;
 const NAVIGATION_STATE_KEY = "NAVIGATION_STATE";
@@ -42,58 +42,22 @@ const AppContent = () => {
     }, [dispatch]);
 
     useEffect(() => {
+        let cleanup;
 
-        // Notification received while app is open
-        const receivedSubscription = Notifications.addNotificationReceivedListener(
-            notification => {
-                console.log(
-                    "NOTIFICATION RECEIVED:",
-                    notification
-                );
-
-                console.log(
-                    "NOTIFICATION DATA:",
-                    notification.request.content.data
-                );
-
-                const data = notification.request.content.data;
-                dispatch(
-                    addNotification({
-                        notification_id: data.order_id,
-                        title: notification.request.content.title,
-                        message: notification.request.content.body,
-                        ...data,
-                        read:false,
-                        created_at: new Date().toISOString()
-                    })
-                );
-            }
-        );
-
-        // User taps notification
-        const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-            response => {
-
-                const data = response.notification.request.content.data;
-
-                console.log(
-                    "NOTIFICATION CLICKED DATA:",
-                    data
-                );
-
-                // router.push('/(tabs)/orders');
-                if (data?.action_url) {
-                    router.push(data.action_url);
-                }
-            }
-        );
-
-        return () => {
-            receivedSubscription.remove();
-            responseSubscription.remove();
+        const setupNotifications = async () => {
+            cleanup = await initializeNotifications(
+                dispatch,
+                router
+            );
         };
 
-    }, []);
+        setupNotifications();
+
+        return () => {
+            cleanup?.();
+        };
+
+    }, [dispatch, router]);
 
     // Only mount Stack when user is authenticated
     return (
@@ -103,8 +67,7 @@ const AppContent = () => {
 
             <NotificationContext.Provider
                 value={{
-                    openNotifications: () =>
-                        notificationRef.current?.present()
+                    openNotifications: () => notificationRef.current?.present()
                 }}
             >
             <Stack screenOptions={{ headerShown: false }}>

@@ -3,7 +3,7 @@ import styles from '../../../../constants/styles.tabs';
 
 const TabButton = ({ name, activeTab, onHandleSearchType }) => (
     <TouchableOpacity
-        style={styles.btn(name, activeTab)} className='py-2 px-6 items-center border border-lavender'
+        style={styles.btn(name, activeTab)} className='py-2 px-5 items-center border border-lavender'
         onPress={onHandleSearchType}
     >
         <Text style={styles.btnText(name, activeTab)}>{name}</Text>
