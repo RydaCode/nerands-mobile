@@ -1,35 +1,17 @@
-import { Entypo, FontAwesome } from '@expo/vector-icons';
+import { Entypo, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import agoTimeStamp from '../../../components/agoTimeStamp';
 import { COLORS } from '../../../constants/constants';
-import useApi from '../../../hook/useApi';
 import { calculateDistance } from '../../../utils/getDistance';
 
-const TodayOrders = (params) => {
+const TodayOrders = ({title, todayOrderData, reload}) => {
     const { user_id, runner_id, is_runner } = useSelector(state => state.auth);
     const { latitude, longitude } = useSelector(state => state.location);
     const router = useRouter();
 
     const pointA = { latitude: latitude, longitude: longitude }; // User
-    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi();
-    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi();
-
-    console.log('Normal Orders:', normalOrderError);
-
-    useEffect(() => {
-        if (user_id) {
-            getUserData(`/runner/get_runner/${user_id}`);   
-        }
-    }, [user_id]);
-
-    useEffect(() => {
-        if (runnerApi?.runner_id) {
-            getNormalOrders(`/runner/errands/${runnerApi?.runner_id}?order_status=Accepted,Processing,In_Transit&limit=10`);   
-        }
-    }, [runnerApi?.runner_id]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -49,20 +31,29 @@ const TodayOrders = (params) => {
     };
 
     return (
-        (normalOrderLoading || getUserLoading) ? (
-            <View className='h-full justify-center items-center'>
-                <ActivityIndicator size={40} color={COLORS.primary}/>
-                <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>Loading orders, please wait...</Text>
-            </View>
-        ) : !normalorders || normalorders?.length === 0 ? (
-            <View className='h-full justify-center items-center'>
-                <FontAwesome name='search' size={40} color={COLORS.slate}/>
-                <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>You currently have no orders</Text>
-            </View>
-        ) : (
-            <View className='justify-center items-center mt-1'>
+        <View className='justify-center items-center mt-1'>
+            {todayOrderData?.length === 0 ? (
+                <View className='h-full justify-center items-center'>
+                    <FontAwesome name='search' size={40} color={COLORS.slate}/>
+                    <Text className='text-base text-slate mt-3' style={{fontFamily: 'roboto-medium'}}>
+                        You currently have no orders {title.toLowerCase()}
+                    </Text>
+                
+                    <TouchableOpacity
+                        onPress={reload}
+                        className='flex-row justify-center items-center mt-4 px-6 py-2 bg-primary rounded'
+                    >
+                        {/* <ActivityIndicator size={20} color={COLORS.white}/> */}
+                        <MaterialCommunityIcons name="reload" size={24} color="white" />
+                        <Text
+                            className='text-base text-white ml-1'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
                 <FlatList
-                    data={normalorders || []}
+                    data={todayOrderData || []}
                     keyExtractor={(item) => item.order_id}
                     renderItem={({item}) => (
                         <View className='justify-center items-center mt-4'>
@@ -71,7 +62,7 @@ const TodayOrders = (params) => {
                                 onPress={() => router.push({
                                     pathname: 'runner-single-order',
                                     params: {
-                                        runner_id: runnerApi?.runner_id,
+                                        runner_id: runner_id,
                                         order_id: item.order_id,
                                         order_number: item.order_number,
                                         order_type: item.order_type,
@@ -121,7 +112,7 @@ const TodayOrders = (params) => {
                                         <View className='flex-row justify-start items-center'>
                                             <Entypo name='location' size={16} color={COLORS.primary}/>
                                             <Text className='text-sm ml-2 text-slate' style={{fontFamily: 'roboto-medium'}}>
-                                                {item.city === null ? 'City not available' : item.city}
+                                                {item.city_town ?? 'City not available'}
                                             </Text>
                                             <View className='bg-grey_bg ml-3 px-2 py-1 rounded-full'>
                                                 <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>
@@ -158,7 +149,7 @@ const TodayOrders = (params) => {
 
                     ListHeaderComponent={() => (
                         <View className='w-full mb-2'>
-                            <Text className='text-lg my-4' style={{fontFamily: 'roboto-medium'}}>You have {normalorders?.length || 0} orders today</Text>
+                            <Text className='text-lg my-4' style={{fontFamily: 'roboto-medium'}}>You have {todayOrderData?.length || 0} orders today</Text>
                             <Text className='text-sm text-red' style={{textAlign: 'justify', fontFamily: 'roboto-medium'}}>
                                 Make sure you complete all accepted errands today to avoid inconveniencing customers.
                             </Text>
@@ -167,8 +158,9 @@ const TodayOrders = (params) => {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
                 />
-            </View>
-    )   )
+            )}
+        </View>
+    )
 }
 
 const styles = StyleSheet.create({

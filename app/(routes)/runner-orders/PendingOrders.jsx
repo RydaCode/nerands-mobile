@@ -1,38 +1,23 @@
-import { Entypo, FontAwesome } from '@expo/vector-icons';
+import { Entypo, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import agoTimeStamp from '../../../components/agoTimeStamp';
 import { COLORS } from '../../../constants/constants';
-import useApi from '../../../hook/useApi';
 import { calculateDistance } from '../../../utils/getDistance';
+import { getStoreStatus, getStoreStatusColor } from './getStoreStatus';
 
-const PendingOrders = (params) => {
-    const { user_id, is_runner } = useSelector(state => state.auth);
+const PendingOrders = ({title, pendingData, reload}) => {
+    const { user_id, runner_id, is_runner } = useSelector(state => state.auth);
     const { latitude, longitude } = useSelector(state => state.location);
     const router = useRouter();
 
     const pointA = { latitude, longitude }; // User
-    const {data: runnerApi, isLoading: getUserLoading, error: getUserError, get: getUserData} = useApi();
-    const {data: normalorders, isLoading: normalOrderLoading, error: normalOrderError, get: getNormalOrders} = useApi();
-
-    useEffect(() => {
-        if (user_id) {
-            getUserData(`/runner/get_runner/${user_id}`);   
-        }
-    }, [user_id]);
-
-    useEffect(() => {
-        if (runnerApi?.runner_id) {
-            getNormalOrders(`/runner/errands/${runnerApi?.runner_id}?order_status=Pending&limit=10`);   
-        }
-    }, [runnerApi?.runner_id]);
 
     const getStatusColor = (status) => {
         switch (status) {
             case 'Pending':
-                return 'red'; // orange
+                return 'red'; // red
             case 'Processing':
                 return '#3B82F6'; // blue
             case 'Accepted':
@@ -47,20 +32,29 @@ const PendingOrders = (params) => {
     };
 
     return (
-        (getUserLoading || normalOrderLoading) ? (
-            <View className='h-full justify-center items-center'>
-                <ActivityIndicator size={40} color={COLORS.primary}/>
-                <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>Loading orders, please wait...</Text>
-            </View>
-        ) : !normalorders || normalorders?.length === 0 ? (
-            <View className='h-full justify-center items-center'>
-                <FontAwesome name='search' size={40} color={COLORS.slate}/>
-                <Text className='text-lg text-slate' style={{fontFamily: 'roboto-medium'}}>You currently have no orders</Text>
-            </View>
-        ) : (
-            <View className='justify-center items-center mt-1'>
+        <View className='justify-center items-center mt-1'>
+            {pendingData?.length === 0 ? (
+                <View className='h-full justify-center items-center'>
+                    <FontAwesome name='search' size={40} color={COLORS.slate}/>
+                    <Text className='text-base text-slate mt-3' style={{fontFamily: 'roboto-medium'}}>
+                        You currently have no {title.toLowerCase()} orders
+                    </Text>
+                
+                    <TouchableOpacity
+                        onPress={reload}
+                        className='flex-row justify-center items-center mt-4 px-6 py-2 bg-primary rounded'
+                    >
+                        {/* <ActivityIndicator size={20} color={COLORS.white}/> */}
+                        <MaterialCommunityIcons name="reload" size={24} color="white" />
+                        <Text
+                            className='text-base text-white ml-1'
+                            style={{fontFamily: 'roboto-medium'}}
+                        >Reload</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
                 <FlatList
-                    data={normalorders || []}
+                    data={pendingData || []}
                     keyExtractor={(item) => item.order_id}
                     renderItem={({item}) => (
                         <View className='justify-center items-center mt-4'>
@@ -69,7 +63,7 @@ const PendingOrders = (params) => {
                                 onPress={() => router.push({
                                     pathname: 'runner-single-order',
                                     params: {
-                                        runner_id: runnerApi?.runner_id,
+                                        runner_id: runner_id,
                                         order_id: item.order_id,
                                         order_number: item.order_number,
                                         order_type: item.order_type,
@@ -133,20 +127,20 @@ const PendingOrders = (params) => {
                                     </View>
                                 </View>
                                 <View className='flex-row mt-4 justify-between items-center'>
-                                    <View className='w-[48.5%] py-2 justify-center items-center bg-navBtnBgHome rounded'>
+                                    <View className='w-[30%] py-2 justify-center items-center bg-navBtnBgHome rounded'>
                                         <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>
-                                            TYPE: <Text className='ml-1 text-green2 text-base' style={{fontFamily: 'roboto-medium'}}>
+                                            <Text className='ml-1 text-green2 text-base' style={{fontFamily: 'roboto-medium'}}>
                                                 {item.order_type?.charAt(0).toUpperCase() + item.order_type?.slice(1)}
                                             </Text>
                                         </Text>
                                     </View>
-                                    <View className='w-[48.5%] py-2 justify-center items-center rounded'
+                                    <View className='w-[68%] py-2 justify-center items-center rounded'
                                         style={{
-                                            backgroundColor: getStatusColor(item.order_status?.charAt(0).toUpperCase() + item.order_status?.slice(1))
+                                            backgroundColor: getStoreStatusColor(item)
                                         }}
                                     >
                                         <Text className='ml-1 text-white text-base' style={{fontFamily: 'roboto-medium'}}>
-                                            {item.order_status}
+                                            {getStoreStatus(item)}
                                         </Text>
                                     </View>
                                 </View>
@@ -156,17 +150,18 @@ const PendingOrders = (params) => {
 
                     ListHeaderComponent={() => (
                         <View className='w-full mb-2'>
-                            <Text className='text-lg my-4' style={{fontFamily: 'roboto-medium'}}>You have {normalorders?.length || 0} orders today</Text>
+                            <Text className='text-base my-4' style={{fontFamily: 'roboto-medium'}}>You have {pendingData?.length || 0} {title.toLowerCase()} orders</Text>
                             <Text className='text-sm text-red' style={{textAlign: 'justify', fontFamily: 'roboto-medium'}}>
-                                Make sure you complete all accepted errands today to avoid inconveniencing customers.
+                                You have pending errands waiting for completion. Please complete them promptly to ensure customers receive their orders on time.
                             </Text>
                         </View>
                     )}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
                 />
-            </View>
-    )   )
+            )}
+        </View> 
+    )
 }
 
 const styles = StyleSheet.create({

@@ -329,8 +329,29 @@ const GeneralOrder = ({ params }) => {
     const { data, isLoading, error, get } = useApi(`/orders/${params.order_id}`);
 
     useEffect(() => {
-        get();
-    }, []);
+        if (params.order_id) {
+            get();
+        }
+    }, [params.order_id]);
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Pending':
+                return 'red'; // orange
+            case 'Processing':
+                return '#3B82F6'; // blue
+            case 'Accepted':
+                return '#22C55E'; // green
+            case 'In_Transit':
+                return '#8B5CF6'; // purple
+            case 'Delivered':
+                return '#10B981'; // emerald
+            case 'Ready':
+                return 'coral'; // emerald
+            default:
+                return '#6B7280'; // gray
+        }
+    };
 
     // const {data:gettransporter, isLoading:transporterloading, error:transportererrors, refetch:transporterrefetch} = useApi(`/deliveryman/transporter/${user_id}`);
 
@@ -528,8 +549,11 @@ const GeneralOrder = ({ params }) => {
                 renderSectionFooter={({ section }) => (
                     <View className="flex-row justify-between" style={{marginTop: -12, marginBottom: 40}}>
                         <View
-                            className='bg-red rounded py-1 justify-center items-center'
-                            style={{ width: buttonWidth }}
+                            className='rounded py-1 justify-center items-center'
+                            style={{
+                                width: buttonWidth,
+                                backgroundColor: getStatusColor(section.status?.charAt(0).toUpperCase() + section.status?.slice(1))
+                             }}
                         >
                             <Text
                                 className="text-lg text-white"

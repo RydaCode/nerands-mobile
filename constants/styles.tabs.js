@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
 
   btn: (name, activeTab) => ({
     backgroundColor: name === activeTab ? COLORS.primary : COLORS.grey_bg,
-    borderRadius: SIZES.small,
+    borderRadius: SIZES.medium,
     // marginRight: 2,
     ...SHADOWS.main,
     shadowColor: COLORS.white,
