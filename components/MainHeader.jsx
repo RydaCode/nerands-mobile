@@ -18,7 +18,7 @@ const MainHeader = ({ header_name, otherStyles, textStyles, fontFamily }) => {
         openNotifications
     } = useNotificationModal();
 
-    const finalNotCount = (unreadCount?.length > 99 ? '99+' : unreadCount?.length) || 0;
+    const finalNotCount = (unreadCount?.length > 9 ? '9+' : unreadCount?.length) || 0;
 
     const totalOtherCartItems = othersCartItems.reduce(
         (sum, item) => sum + (item.product_qty || 0),

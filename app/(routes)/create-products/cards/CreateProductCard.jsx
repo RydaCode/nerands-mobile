@@ -3,39 +3,65 @@ import { ActivityIndicator, Animated, Image, Keyboard, ScrollView, StyleSheet, T
 // import RestaurantProducts from '../../../components/create-product-components/RestaurantProducts'
 // import LiquorProducts from '../../../components/create-product-components/LiquorProducts'
 // import GroceriesProducts from '../../../components/create-product-components/GroceriesProducts'
-import { FontAwesome5 } from '@expo/vector-icons'
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
-import * as SecureStore from 'expo-secure-store'
 import { useEffect, useState } from 'react'
-import { Dropdown } from 'react-native-element-dropdown'
 import { useSelector } from 'react-redux'
 import DescriptionInput from '../../../../components/FormFields/DescriptionInput'
 import FormInputs from '../../../../components/FormFields/FormInputs'
+import AppModal from '../../../../components/modals/AppModal'
 import { COLORS } from '../../../../constants/constants'
-import { SERVER_URI, STORES_IMAGE_URI } from '../../../../RequestMethods'
+import useApi from '../../../../hook/useApi'
+import { STORES_IMAGE_URI } from '../../../../RequestMethods'
 import { toast } from '../../../../utils/toast'
+import { uploadImages } from '../../../../utils/uploadImages'
 import OverLay from '../../../OverLay'
-import { categoryMap } from './categoryMap'
+import SelectProductCategory from './SelectProductCategory'
 
 const CreateProductCard = ({params}) => {
     const { user_id } = useSelector((state) => state.auth);
-    const [selectedcategory, setSelectedCategory] = useState('Select category');
-    const [chillioption, setChilliOption] = useState(false);
+    // const [selectedcategory, setSelectedCategory] = useState('Select category');
+    // const [chillioption, setChilliOption] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [images, setImages] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
     const [fadeAnim] = useState(new Animated.Value(0));
-    const [colorsinputs, setColorsInputs] = useState([{ id: Date.now().toString(), value: '' }]);
-    const [sizesinputs, setSizesInputs] = useState([{ id: Date.now().toString(), value: '' }]);
-    const [coloroption, setColorOption] = useState(false);
-    const [sizeoption, setSizeOption] = useState(false);
+    // const [colorsinputs, setColorsInputs] = useState([{ id: Date.now().toString(), value: '' }]);
+    // const [sizesinputs, setSizesInputs] = useState([{ id: Date.now().toString(), value: '' }]);
+    // const [coloroption, setColorOption] = useState(false);
+    // const [sizeoption, setSizeOption] = useState(false);
+
+    const [selectedcategory, setSelectedCategory] = useState(null);
+    const [openCatModal, setOpenCatModal] = useState(false);
+
+    const {data: getCategories, isLoading: loadCategories, error: categoriesErrors, get} = useApi();
+
+    useEffect(() => {
+        if (params.business_id) {
+            get(`/businesses/products/categories/${params.business_id}`)
+        }
+    }, [params.business_id]);
+
+    const {
+        data: presignData,
+        isLoading: presignLoading,
+        error: presignError,
+        post: presignImages
+    } = useApi('/businesses/products/images/presign');
+
+    const {
+        data: productData,
+        isLoading: productLoading,
+        error: productError,
+        post: createProduct
+    } = useApi('/products/create');
 
     const [formData, setFormData] = useState({
         business_id: params.business_id,
         store_id: params.store_id,
         store_category: params.store_category,
         product_name: '',
-        product_category: '',
+        category_id: '',
         product_description: '',
         product_price: ''
     });
@@ -53,31 +79,50 @@ const CreateProductCard = ({params}) => {
         }));
     };
 
-    const handleCategoryChange = (value) => {
-        setSelectedCategory(value);
-        setFormData((prev) => ({
-            ...prev,
-            product_category: value,
-        }));
-    };
-
-    const singleSelectCategories = ['Restaurant', 'local_market'];
+    const singleSelectCategories = ['restaurant', 'local_market'];
 
     const pickImage = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
-                allowsMultipleSelection: !singleSelectCategories.includes(params.store_category),
+                allowsMultipleSelection: !singleSelectCategories.includes(
+                    params.store_category
+                ),
                 aspect: [4, 3],
                 quality: 1,
             });
 
             if (!result.canceled && result.assets?.length > 0) {
-                const selectedImages = result.assets.map((asset) => asset.uri);
-                setImages((prevImages) => [...prevImages, ...selectedImages]);
+
+                setImages((prevImages) => {
+                    const availableSlots = 8 - prevImages.length;
+
+                    const uniqueImages = result.assets.filter((newAsset) => {
+                        return !prevImages.some((existingAsset) => {
+                            return (
+                                existingAsset.fileName === newAsset.fileName &&
+                                existingAsset.fileSize === newAsset.fileSize
+                            );
+                        });
+                    });
+
+                    const newImages = uniqueImages.slice(0, availableSlots);
+
+                    if (uniqueImages.length > availableSlots) {
+                        toast.info('You can only select a maximum of 8 images.');
+                    } else if (newImages.length < result.assets.length) {
+                        toast.info('Some images were already selected.');
+                    }
+
+                    return [...prevImages, ...newImages];
+                });
+
             } else {
-                toast.info('No image selected or operation canceled.');
+                toast.info(
+                    'No image selected or operation canceled.'
+                );
             }
+
         } catch (error) {
             console.error('Image picker error:', error);
             toast.error('Image picker error');
@@ -89,91 +134,77 @@ const CreateProductCard = ({params}) => {
     };
 
     const handleCreateProduct = async () => {
-        if (!formData.product_name)
-            return toast.error('Please enter product name!');
-        if (!formData.product_category)
-            return toast.error('Please select product category!');
-        if (!formData.product_price)
-            return toast.error('Please enter product price!');
-        if (!formData.product_description)
-            return toast.error('Please provide product description!');
-        if (images.length === 0)
-            return toast.error('Please select at least one image.');
+    
+        if (!formData.product_name?.trim()) {
+            toast.error('Product name is required.');
+            return;
+        }
+    
+        if (!formData.product_price?.trim()) {
+            toast.error('Product price is required.');
+            return;
+        }
+
+        if (!formData.product_description.trim()) {
+            toast.error('Description is required.');
+            return;
+        }
+
+        if (!selectedcategory) {
+            toast.error('Please select a product category.');
+            return;
+        }
 
         try {
-            setIsLoading(true);
-
-            const token = await SecureStore.getItemAsync('authToken');
-            if (!token) toast.info('You are not authenticated, please go and login');
-
-            const formDataObj = new FormData();
-
-            // Append text fields
-            formDataObj.append('user_id', formData.user_id);
-            formDataObj.append('business_id', formData.business_id);
-            formDataObj.append('store_id', formData.store_id);
-            formDataObj.append('product_name', formData.product_name);
-            formDataObj.append('product_category', formData.product_category);
-            formDataObj.append('product_description', formData.product_description);
-            formDataObj.append('product_price', formData.product_price);
-            formDataObj.append('store_category', formData.store_category);
-
-            // Append images
-            images.forEach((imageUri, index) => {
-                const fileType =
-                    imageUri.endsWith('.png') ? 'image/png' :
-                    imageUri.endsWith('.jpg') ? 'image/jpeg' :
-                    imageUri.endsWith('.jpeg') ? 'image/jpeg' :
-                    'image/jpeg';
-
-                formDataObj.append('product_images', {
-                    uri: imageUri,
-                    name: `image_${index}.jpg`,
-                    type: fileType,
-                });
+            // Upload images first
+            const uploadedImages = await uploadImages({
+                images,
+                business_id: params.business_id,
+                presignImages
             });
 
-            const response = await fetch(`${SERVER_URI}/products/create`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                body: formDataObj,
+            // Create product
+            const response = await createProduct({
+                business_id: params.business_id,
+                store_id: params.store_id,
+                product_name: formData.product_name.trim(),
+                product_description: formData.product_description.trim(),
+                store_category: formData.store_category.trim(),
+                category_id: selectedcategory.id,
+                product_price: formData.product_price.trim(),
+                images: uploadedImages.map(image => image.key),
             });
 
-            const data = await response.json();
-
-            console.log(data)
-
-            if (!response.ok) {
-                toast.error(data.message || 'Upload failed');
+            if (!response?.success) {
+                toast.error(
+                    response?.message || 'Failed to create product'
+                );
                 return;
             }
-
-            toast.success('Product created successfully!');
 
             // ✅ Reset form
             setImages([]);
             setFormData({
                 ...formData,
                 product_name: '',
-                product_category: '',
+                category_id: '',
                 product_description: '',
-                product_price: ''
+                product_price: '',
             });
 
             // ✅ Reset selected category dropdown
-            setSelectedCategory('Select category');
-            setIsLoading(false);
-            return;
+            setSelectedCategory(null);
+
+            toast.success(
+                response?.message || 'Product created successfully'
+            );
 
         } catch (error) {
-            console.log("Upload error:", error);
-            toast.error(error.message);
-            setIsLoading(false);
-            return;
-        } finally {
-            setIsLoading(false);
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error('Failed to create product');
+            }
         }
     };
 
@@ -199,9 +230,6 @@ const CreateProductCard = ({params}) => {
         }
     }, [errorMessage]);
 
-    const dropdownData =
-        categoryMap[params.store_category] || categoryMap.default;
-
     return (
         <>
             <View className="flex-1 justify-between">
@@ -226,28 +254,37 @@ const CreateProductCard = ({params}) => {
                                 desc='Please enter product name, ensure that the product name corresponds with product category'
                                 borderStyle='border border-lavender'
                             />
-                            <View className="mb-5">
-                                <Text className="text-black text-base mb-1" style={{ fontFamily: 'roboto-medium' }}>Category</Text>
-                                <Text className="text-sm mb-1 text-slate" style={{ fontFamily: 'roboto-medium' }}>Please select the product category to help users find your product easily.</Text>
-                                
-                                <Dropdown
-                                    data={dropdownData}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select Category"
-                                    value={selectedcategory}
-                                    onChange={(item) => {
-                                        handleCategoryChange(item.value);
-                                    }}
-                                    style={{
-                                        borderWidth: 2,
-                                        borderColor: COLORS.lavender,
-                                        borderRadius: 12,
-                                        paddingHorizontal: 12,
-                                        height: 50,
-                                    }}
-                                />
+
+                            {/* Select category */}
+                            <View className='w-full mb-6'>
+                                <View
+                                    className='w-full mb-2'
+                                >
+                                    <Text
+                                        className='text-base'
+                                        style={{fontFamily: 'roboto-medium'}}
+                                    >Select Category</Text>
+                                </View>
+            
+                                <TouchableOpacity
+                                    className='flex-row justify-between items-center border-2 border-lavender rounded-xl p-3'
+                                    onPress={() => setOpenCatModal(true)}
+                                >
+                                    {!selectedcategory ? (
+                                        <Text
+                                            className='text-slate'
+                                            style={{fontFamily: 'roboto-medium'}}
+                                        >Select</Text>
+                                    ) : (
+                                        <Text
+                                            className='text-slate'
+                                            style={{fontFamily: 'roboto-medium'}}
+                                        >{selectedcategory?.name}</Text>
+                                    )}
+                                    <FontAwesome name='angle-down' color={COLORS.slate} size={24} />
+                                </TouchableOpacity>
                             </View>
+
                             <FormInputs
                                 title='Price'
                                 handleChangeText={(value) => handleChangeText('product_price', value)}
@@ -263,10 +300,10 @@ const CreateProductCard = ({params}) => {
                                 borderStyle='border-2 border-lavender rounded-xl'
                                 lines={4}
                             />
-
+                            
                             <View className='w-full mt-10'>
                                 {/* Pick Image Button */}
-                                {params.store_category === 'Restaurant' || params.store_category === 'Liquor' || params.store_category === 'local_market' ? (
+                                {params.store_category === 'restaurant' || params.store_category === 'liquor' || params.store_category === 'local_market' ? (
                                     <View className='w-full'>
                                         {images.length === 1 ? 
                                             <View>
@@ -326,7 +363,7 @@ const CreateProductCard = ({params}) => {
                                         }
                                     </View>
                                 )}
-
+            
                                 {/* Display selected images */}
                                 {images.length > 2 && (
                                     <TouchableOpacity
@@ -340,16 +377,19 @@ const CreateProductCard = ({params}) => {
                                 )}
                                 <ScrollView className={`${images.length === 0 ? 'mb-4' : 'mb-0'}`} horizontal showsHorizontalScrollIndicator={false}>
                                     <View
-                                        animation='slideInLeft'
-                                        iterationCount={1}
+                                        // animation='slideInLeft'
+                                        // iterationCount={1}
                                         className='flex-row items-center justify-between mt-3'>
-                                        {images.map((uri, index) => (
-                                            <View key={index} className="relative mr-1 rounded-md border border-lavender">
+                                        {images.map((asset, index) => (
+                                            <View key={asset.assetId ?? asset.uri}
+                                                className="relative mr-1 rounded-md border border-lavender"
+                                            >
                                                 <Image
-                                                    source={{ uri }}
+                                                    source={{ uri: asset.uri }}
                                                     style={{ width: 105, height: 95 }}
                                                     className="rounded-md"
                                                 />
+            
                                                 <TouchableOpacity
                                                     onPress={() => removeImage(index)}
                                                     className="absolute justify-center opacity-60 items-center top-1 right-1 h-[24px] w-[24px] bg-red rounded-full p-1"
@@ -397,21 +437,22 @@ const CreateProductCard = ({params}) => {
                             images.length < 1 ||
                             !formData.product_name ||
                             !formData.product_price ||
-                            !formData.product_category ||
+                            !selectedcategory.id ||
                             images.length > 8 ? 'opacity-50' : 'opacity-100'
                         }
                     `}
                     disabled={
-                        isLoading ||
+                        presignLoading ||
+                        productLoading ||
                         images.length < 1 ||
                         images.length > 8 ||
                         !formData.product_name ||
                         !formData.product_price ||
-                        !formData.product_category
+                        !selectedcategory.id
                     }
                     onPress={() => handleCreateProduct()}
                 >
-                    {isLoading ? (
+                    {presignLoading || productLoading ? (
                         <ActivityIndicator size={30} color={COLORS.white}/>  
                     ) : (
                         <Text
@@ -422,6 +463,20 @@ const CreateProductCard = ({params}) => {
                 </TouchableOpacity>
             </View>
             {isLoading && <OverLay />}
+
+            <AppModal
+                visible={openCatModal}
+                onClose={() => setOpenCatModal(false)}
+            >
+                <SelectProductCategory
+                    onClose={() => setOpenCatModal(false)}
+                    user_id={user_id}
+                    category={selectedcategory}
+                    setSelectedCategory={setSelectedCategory}
+                    getCategories={getCategories}
+                    reload={() => get(`/businesses/products/categories/${params.business_id}`)}
+                />
+            </AppModal>
         </>
     )
 }

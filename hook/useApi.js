@@ -94,19 +94,20 @@ const useApi = (endpoint, { autoFetch = false, enabled = true } = {}) => {
         /* -------- RETRY -------- */
         if (retries > 0) {
           await new Promise((res) =>
-            setTimeout(
-              res,
-              BACKOFF_BASE * 2 ** (MAX_RETRIES - retries)
-            )
+              setTimeout(
+                  res,
+                  BACKOFF_BASE * 2 ** (MAX_RETRIES - retries)
+              )
           );
-          const result = await request(
-            method,
-            body,
-            customEndpoint,
-            retries - 1,
-            config
+
+          return await request(
+              method,
+              body,
+              customEndpoint,
+              retries - 1,
+              config
           );
-        }
+      }
 
         /* -------- BACKEND DOWN / NETWORK ERROR -------- */
         if (!err.response) {

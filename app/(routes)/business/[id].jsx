@@ -6,6 +6,7 @@ import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import Headers from '../../../components/Headers'
+import AppModal from '../../../components/modals/AppModal'
 import { COLORS } from '../../../constants/constants'
 import useApi from '../../../hook/useApi'
 import { usePermissions } from '../../../hook/usePermissions'
@@ -554,27 +555,33 @@ const BusinessDetails = () => {
                 loggedInUserRole={userData?.data[0]?.role?.name}
             />
 
-            <MenuModal
-                openActionBtns={openActionBtns}
-                setOpenActionBtns={setOpenActionBtns}
-                business_id={id}
-                roles={userroles}
-                user_id={user_id}
-                legal_name={business?.legal_name}
-                display_name={business?.display_name}
-                business_type={business?.business_type}
-                business_category={business?.category_id}
-                email={business?.email}
-                country={business?.country}
-                logo_url={business?.logo_url}
-                phone={business?.phone}
-                province={business?.province}
-                registration_number={business?.registration_number}
-                status={business?.status}
-                t_pin={business?.t_pin}
-                tax_number={business?.tax_number}
-                city={business?.city}
-            />
+
+            <AppModal
+                visible={openActionBtns}
+                onClose={() => setOpenActionBtns(false)}
+            >
+                <MenuModal
+                    openActionBtns={openActionBtns}
+                    setOpenActionBtns={setOpenActionBtns}
+                    business_id={id}
+                    roles={userroles}
+                    user_id={user_id}
+                    legal_name={business?.legal_name}
+                    display_name={business?.display_name}
+                    business_type={business?.business_type}
+                    business_category={business?.category_id}
+                    email={business?.email}
+                    country={business?.country}
+                    logo_url={business?.logo_url}
+                    phone={business?.phone}
+                    province={business?.province}
+                    registration_number={business?.registration_number}
+                    status={business?.status}
+                    t_pin={business?.t_pin}
+                    tax_number={business?.tax_number}
+                    city={business?.city}
+                />
+            </AppModal>
 
             <ChamgeProfileImageModal
                 openChnageProfileImage={openChnageProfileImage}

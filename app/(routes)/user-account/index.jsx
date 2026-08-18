@@ -13,8 +13,10 @@ import CustomButton from '../../../components/Buttons/CustomButton';
 import MainHeader from '../../../components/MainHeader';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
+import { useResponsive } from '../../../hook/useResponsive';
 import { SERVER_URI, USER_IMAGE_URI } from '../../../RequestMethods';
 import { formatDate, formatTime } from '../../../utils/formatDateTime';
+import { getAvatarColor } from '../../../utils/getInitials';
 import { openAboutUs } from '../../../utils/openAboutUs';
 import { requestAppReview } from '../../../utils/requestAppReview';
 import { toast } from '../../../utils/toast';
@@ -220,6 +222,13 @@ const Index = () => {
     if (isLoggingOut) {
         return <LoadingIndicator loading_text="Logging out..." />;
     }
+
+    const {
+        wp,
+        listCardHeight,
+        responsiveSize,
+        isTablet
+    } = useResponsive();
 
     return (
         <SafeAreaView className='flex-1 px-2 bg-white relative'>
@@ -460,8 +469,15 @@ const Index = () => {
                                     },
                                 })}
                             >
-                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                    <MaterialIcons name="create" color={COLORS.primary} size={20} />
+                                <View
+                                    className='justify-center items-center rounded-full'
+                                    style={{
+                                        width: wp(14),
+                                        height: wp(14),
+                                        backgroundColor: getAvatarColor(`Edit-Account${data?.user_id}`)
+                                    }}
+                                >
+                                    <MaterialIcons name="create" color={COLORS.white} size={20} />
                                 </View>
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Edit Account</Text>
                             </TouchableOpacity>
@@ -480,9 +496,16 @@ const Index = () => {
                                         })}
                                         disabled={!data?.is_verified}
                                     >
-                                    <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                    <View
+                                        className='justify-center items-center rounded-full'
+                                        style={{
+                                            width: wp(14),
+                                            height: wp(14),
+                                            backgroundColor: getAvatarColor(`Business-${data?.user_id}`)
+                                        }}
+                                    >
                                         {/* <Ionicons name="business-sharp" size={25} color={COLORS.primary} /> */}
-                                        <MaterialIcons name="business-center" size={25} color={COLORS.primary} />
+                                        <MaterialIcons name="business-center" size={25} color={COLORS.white} />
                                     </View>
                                     <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Business</Text>
                                 </TouchableOpacity>
@@ -519,8 +542,15 @@ const Index = () => {
                                     className={`justify-center items-center borde py-5 rounded-md opacity-${!data?.is_verified ? '50' : '100'}`}
                                     onPress={() => router.push('/(routes)/runner/')}
                                 >
-                                    <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                        <MaterialIcons name="directions-run" size={27} color={COLORS.primary} />
+                                    <View
+                                        className='justify-center items-center rounded-full'
+                                        style={{
+                                            width: wp(14),
+                                            height: wp(14),
+                                            backgroundColor: getAvatarColor(`Runner-${data?.user_id}`)
+                                        }}
+                                    >
+                                        <MaterialIcons name="directions-run" size={27} color={COLORS.white} />
                                     </View>
                                     <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Runner</Text>
                                 </TouchableOpacity>
@@ -532,8 +562,15 @@ const Index = () => {
                                     className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
                                     onPress={() => router.push('/(routes)/transporter/')}
                                 >
-                                    <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                        <MaterialCommunityIcons name="bike-fast" color={COLORS.primary} size={24} />
+                                    <View
+                                        className='justify-center items-center rounded-full'
+                                        style={{
+                                            width: wp(14),
+                                            height: wp(14),
+                                            backgroundColor: getAvatarColor(`Transporter-${data?.user_id}`)
+                                        }}
+                                    >
+                                        <MaterialCommunityIcons name="bike-fast" color={COLORS.white} size={24} />
                                     </View>
                                     <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Transporter</Text>
                                 </TouchableOpacity>
@@ -545,8 +582,15 @@ const Index = () => {
                                     className={`justify-center items-center borde py-5 rounded-md opacity-${!is_verified ? '50' : '100'}`}
                                     onPress={() => router.push('/(routes)/saved-locations/')}
                                 >
-                                    <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                        <Entypo name='location' size={22} color={COLORS.primary} />
+                                    <View
+                                        className='justify-center items-center rounded-full'
+                                        style={{
+                                            width: wp(14),
+                                            height: wp(14),
+                                            backgroundColor: getAvatarColor(`Locations${data?.user_id}`)
+                                        }}
+                                    >
+                                        <Entypo name='location' size={22} color={COLORS.white} />
                                     </View>
                                     <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Locations</Text>
                                 </TouchableOpacity>
@@ -557,8 +601,15 @@ const Index = () => {
                                 className='justify-center items-center borde py-5 rounded-md'
                                 onPress={() => requestAppReview()}
                             >
-                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                    <Entypo name='thumbs-up' size={24} color={COLORS.primary} />
+                                <View
+                                    className='justify-center items-center rounded-full'
+                                    style={{
+                                        width: wp(14),
+                                        height: wp(14),
+                                        backgroundColor: getAvatarColor(`Rate-Us-${data?.user_id}`)
+                                    }}
+                                >
+                                    <Entypo name='thumbs-up' size={24} color={COLORS.white} />
                                 </View>
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Rate Us</Text>
                             </TouchableOpacity>
@@ -568,8 +619,15 @@ const Index = () => {
                                 className='justify-center items-center borde py-5 rounded-md'
                                 onPress={() => openAboutUs('about-us')}
                             >
-                                <View className='bg-[#DFF6E6] justify-center items-center rounded-full' style={{width: 47, height: 47}}>
-                                    <Entypo name='info-with-circle' size={24} color={COLORS.primary} />
+                                <View
+                                    className='justify-center items-center rounded-full'
+                                    style={{
+                                        width: wp(14),
+                                        height: wp(14),
+                                        backgroundColor: getAvatarColor(`About-Us-${data?.user_id}`)
+                                    }}
+                                >
+                                    <Entypo name='info-with-circle' size={24} color={COLORS.white} />
                                 </View>
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>About Us</Text>
                             </TouchableOpacity>
@@ -579,7 +637,13 @@ const Index = () => {
                                 className='justify-center items-center borde py-5 rounded-md'
                                 onPress={() => setOpenLogout(true)}
                             >
-                                <View className='bg-navBtnBgHome justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                <View
+                                    className='bg-navBtnBgHome justify-center items-center rounded-full'
+                                    style={{
+                                        width: wp(14),
+                                        height: wp(14),
+                                    }}
+                                >
                                     <FontAwesome5 name='sign-out-alt' size={20} color={COLORS.red} />
                                 </View>
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Logout</Text>
@@ -589,7 +653,13 @@ const Index = () => {
                                 style={{width: '32%'}}
                                 className='justify-center items-center borde py-5 rounded-md'
                             >
-                                <View className='bg-navBtnBgHome justify-center items-center rounded-full' style={{width: 47, height: 47}}>
+                                <View
+                                    className='bg-navBtnBgHome justify-center items-center rounded-full'
+                                    style={{
+                                        width: wp(14),
+                                        height: wp(14),
+                                    }}
+                                >
                                     <MaterialCommunityIcons name="delete" size={24} color={COLORS.primary} />
                                 </View>
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Delete Account</Text>
