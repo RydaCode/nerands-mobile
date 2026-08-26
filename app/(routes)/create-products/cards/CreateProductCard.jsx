@@ -5,6 +5,7 @@ import { ActivityIndicator, Animated, Image, Keyboard, ScrollView, StyleSheet, T
 // import GroceriesProducts from '../../../components/create-product-components/GroceriesProducts'
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
+import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import DescriptionInput from '../../../../components/FormFields/DescriptionInput'
@@ -13,6 +14,7 @@ import AppModal from '../../../../components/modals/AppModal'
 import { COLORS } from '../../../../constants/constants'
 import useApi from '../../../../hook/useApi'
 import { STORES_IMAGE_URI } from '../../../../RequestMethods'
+import { capitalize } from '../../../../utils/capitalize'
 import { toast } from '../../../../utils/toast'
 import { uploadImages } from '../../../../utils/uploadImages'
 import OverLay from '../../../OverLay'
@@ -20,6 +22,7 @@ import SelectProductCategory from './SelectProductCategory'
 
 const CreateProductCard = ({params}) => {
     const { user_id } = useSelector((state) => state.auth);
+    const router = useRouter();
     // const [selectedcategory, setSelectedCategory] = useState('Select category');
     // const [chillioption, setChilliOption] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -243,10 +246,38 @@ const CreateProductCard = ({params}) => {
                                 <Image className='h-full w-full rounded-full border-2 border-white' source={{uri: `${STORES_IMAGE_URI}${params.store_profileimage}`}} />
                             </View>
                             <View className='w-[75%] ml-1'>
-                                <Text className='text-lg' style={{fontFamily: 'roboto-medium'}}>{params.store_name}</Text>
-                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>{params.store_category}</Text>
+                                <Text className='text-lg' style={{fontFamily: 'roboto-medium'}}>{capitalize(params.store_name)}</Text>
+                                <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>{capitalize(params.store_category)}</Text>
                             </View>
                         </View>
+
+                        <View
+                            className='mt-6'
+                        >
+                            <Text
+                                style={{fontFamily: 'roboto-medium'}}
+                                className='text-sm mb-2'
+                            >You can re-use existing products from business without creating a new product.</Text>
+
+                            <TouchableOpacity
+                                className='py-3 px-6 bg-primary rounded w-full justify-center items-center elevation'
+                                onPress={() => router.push({
+                                    pathname: '../../existing-products',
+                                    params: {
+                                        user_id,
+                                        business_id: params.business_id,
+                                        store_id: params.store_id,
+                                        store_category: params.store_category
+                                    }
+                                })}
+                            >
+                                <Text
+                                    style={{fontFamily: 'roboto-medium'}}
+                                    className='text-base text-white'
+                                >Use Existing</Text>
+                            </TouchableOpacity>
+                        </View>
+
                         <View className='w-full mt-10'>
                             <FormInputs
                                 title='Product Name'

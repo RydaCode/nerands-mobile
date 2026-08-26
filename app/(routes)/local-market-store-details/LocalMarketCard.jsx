@@ -1,11 +1,13 @@
 import { Feather, FontAwesome6 } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from '../../../constants/constants';
-import { Carticons } from '../../../constants/icons';
+import { useResponsive } from '../../../hook/useResponsive';
 import { addLocalMarketItem } from '../../../redux/store/slices/LocalMarketCartSlice';
-import { PRODUCTS_IMAGE_URI } from '../../../RequestMethods';
+import { IMAGE_URI } from '../../../RequestMethods';
+import { getAvatarColor } from '../../../utils/getInitials';
 import { toast } from '../../../utils/toast';
 
 const LocalMarketCard = (props) => {
@@ -13,6 +15,7 @@ const LocalMarketCard = (props) => {
     const router = useRouter();
     const dispatch = useDispatch();
     const localMarketCartItems = useSelector((state) => state.localmarketcart.localMarketCartItems);
+    const { wp } = useResponsive();
 
     // ✅ Add item to Local Market Cart
     const handleAddItem = () => {
@@ -52,19 +55,34 @@ const LocalMarketCard = (props) => {
     return (
         <TouchableOpacity
             activeOpacity={0.7}
-            className='rounded-lg bg-white border border-grey_bg items-center justify-center relative'
+            className='rounded bg-white border border-grey_bg items-center justify-center relative'
             style={{width: '48.5%'}}
         >
-            <View className='relative w-full' style={{height: 150}}>
-                <Image
-                    resizeMode="contain"
-                    className="relative h-full w-full rounded-lg border-grey_bg"
-                    source={
-                        props.product_image
-                            ? { uri: `${PRODUCTS_IMAGE_URI}${props.product_image}` }
-                            : Carticons.placeholder
-                    }
-                />
+            <View
+                className='relative w-full overflow-hidden rounded justify-center items-center'
+                style={{
+                    height: wp(47),
+                    backgroundColor: !props.product_image ? getAvatarColor(props.product_id) : 'white',
+                }}
+            >
+                {!props.product_image ? (
+                    <Text
+                        className="text-white text-xs"
+                        style={{ fontFamily: 'roboto-medium' }}
+                    >
+                        Loading image...
+                    </Text>
+                ) : (
+                    <Image
+                        className="rounded"
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={500}
+
+                        source={{uri: `${IMAGE_URI}${props.product_image}`}}
+                    />
+                )}
                 <View className='flex-row px-2 absolute h-7 w-30 top-2 left-2 items-center justify-center bg-transparentBlack rounded-full'>
                     <Text numberOfLines={1} className='text-sm text-white'>Fresh</Text>
                 </View>
@@ -78,9 +96,9 @@ const LocalMarketCard = (props) => {
             <TouchableOpacity
                 disabled={localMarketCartItems.some(item => item.product_id === props.product_id)}
                 onPress={handleAddItem}
-                className='flex-row rounded-lg bg-primary elevation-lg bottom-0 items-center justify-center'
+                className='flex-row rounded bg-primary elevation bottom-0 items-center justify-center'
                 style={{
-                    width: '97%', height: 30,
+                    width: '97%', height: wp(8),
                     opacity: localMarketCartItems.some(item => item.product_id === props.product_id) ? 0.5 : 0.9
                 }}
             >

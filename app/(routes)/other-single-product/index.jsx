@@ -7,7 +7,6 @@ import OtherProductsSingleCard from '../../screens/other-single-product/OtherPro
 const ProductScreen = () => {
     const params = useLocalSearchParams();
 
-    
     // Create a "data" array with a single item just to use FlatList
     const data = [1];
     return (
@@ -28,6 +27,7 @@ const ProductScreen = () => {
                         <View className="mt-4 w-full justify-center items-center">
                             <OtherProductsSingleCard
                                 product_id={params.product_id}
+                                business_product_id={params.business_product_id}
                                 product_image={params.product_image}
                                 product_name={params.product_name}
                                 product_description={params.product_description}

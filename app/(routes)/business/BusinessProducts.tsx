@@ -41,6 +41,8 @@ const BusinessProducts = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingMore, setLoadingMore] = useState(false);
 
+    console.log("PRODD", products)
+
     const currentPageRef = useRef(0);
     const totalPagesRef = useRef(1);
     const isFetchingRef = useRef(false);

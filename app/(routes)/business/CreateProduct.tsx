@@ -42,7 +42,7 @@ const CreateProduct = () => {
         isLoading: presignLoading,
         error: presignError,
         post: presignImages
-    } = useApi('/businesses/images/presign');
+    } = useApi('/businesses/products/images/presign');
 
     const {
         data: productData,
@@ -50,6 +50,9 @@ const CreateProduct = () => {
         error: productError,
         post: createProduct
     } = useApi('/businesses/products/create');
+
+    console.log("Presign", presignError);
+    console.log("Product", presignError);
     
     const pickImage = async () => {
         try {

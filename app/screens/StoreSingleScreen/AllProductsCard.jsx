@@ -1,9 +1,12 @@
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { MotiView } from 'moti';
-import { Image, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { COLORS } from '../../../constants/constants';
 import { Carticons } from '../../../constants/icons';
-import { PRODUCTS_IMAGE_URI } from '../../../RequestMethods';
+import { useResponsive } from '../../../hook/useResponsive';
+import { IMAGE_URI } from '../../../RequestMethods';
+import { getAvatarColor } from '../../../utils/getInitials';
 import ProductDetailsModal from './ProductDetailsModal';
 import { useProductDetailsReducer } from './useProductDetailsReducer';
 
@@ -20,6 +23,8 @@ const AllProductsCard = ({ store_data, item }) => {
   const imageDimensions = isLandscape
     ? { width: '35%', height: 170, marginRight: 10 }
     : { width: width * 0.25, height: height * 0.09 };
+
+  const { wp, responsiveSize } = useResponsive();
 
   // Use first product image or placeholder
   const productImage = Array.isArray(item.product_images) && item.product_images.length > 0
@@ -61,7 +66,7 @@ const AllProductsCard = ({ store_data, item }) => {
         <View className='flex-row w-full justify-between items-center'>
           
           {/* Product Info */}
-          <View className='w-[70%] flex-row justify-between items-center'>
+          <View className='w-[72%] flex-row justify-between items-center'>
             <TouchableOpacity
               onPress={() => localDispatch({ type: 'TOGGLE_MODAL' })}
               className='w-8 h-8 items-center justify-center rounded-full border border-primary bg-navBtnBgHome'
@@ -70,10 +75,10 @@ const AllProductsCard = ({ store_data, item }) => {
             </TouchableOpacity>
 
             <View className='ml-2 flex-1'>
-              <Text numberOfLines={1} className='text-lg font-semibold' style={{ fontFamily: 'roboto-medium' }}>
+              <Text numberOfLines={1} className='text-base font-semibold' style={{ fontFamily: 'roboto-medium' }}>
                 {item.product_name}
               </Text>
-              <Text numberOfLines={1} className='text-slate text-sm' style={{ fontFamily: 'roboto-medium' }}>
+              <Text numberOfLines={1} className='text-slate text-sm' style={{ fontFamily: 'roboto' }}>
                 {item.product_description}
               </Text>
               <Text className='text-lg text-primary mt-1' style={{ fontFamily: 'roboto-medium' }}>
@@ -83,11 +88,35 @@ const AllProductsCard = ({ store_data, item }) => {
           </View>
 
           {/* Product Image */}
-          <View className='rounded-md relative' style={imageDimensions}>
-            <Image
-              className='rounded-md w-full h-full'
-              source={{ uri: `${PRODUCTS_IMAGE_URI}${productImage}` }}
-            />
+          <View className='rounded-md relative justify-center items-center overflow-hidden'
+            style={{
+                width: wp(25),
+                height: wp(20),
+                backgroundColor: getAvatarColor(item.product_id)
+            }}
+          >
+            
+            {!item.product_images ? (
+                <Text
+                    className="text-white text-xs"
+                    style={{ fontFamily: 'roboto-medium' }}
+                >
+                    Image...
+                </Text>
+            ) : (
+                <Image
+                    source={{ uri: `${IMAGE_URI}${item.product_images}` }}
+                    className="rounded"
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={500}
+                />
+            )}
+
+
+
+
             {!isAvailable && (
               <View className='absolute w-full h-full bg-black rounded-md opacity-70 justify-center items-center'>
                 <MaterialCommunityIcons name="lock" size={13} style={{ color: COLORS.lite }} />

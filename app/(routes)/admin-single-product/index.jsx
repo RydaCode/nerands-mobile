@@ -7,7 +7,7 @@ import useApi from '../../../hook/useApi';
 import { toast } from '../../../utils/toast';
 import ProductsSingleCard from './ProductsSingleCard';
 
-const index = () => {
+const Index = () => {
     const params = useLocalSearchParams();
 
     const [opendeleteproduct, setOpenDeleteProduct] = useState(false);
@@ -56,6 +56,7 @@ const index = () => {
         const toggledStatus = !activeStatus;
 
         publishProduct({
+            business_id: params.business_id,
             product_id,
             product_status: toggledStatus,
             unpublish: !toggledStatus,
@@ -70,6 +71,7 @@ const index = () => {
         const toggledStatus = !availableStatus;
 
         publishProduct({
+            business_id: params.business_id,
             product_id,
             is_available: toggledStatus,
             mark_unavailable: !toggledStatus,
@@ -159,9 +161,10 @@ const index = () => {
                 visible={modalVisible}
                 onClose={closeModal}
                 actionType={actionType}
+                business_id={params.business_id}
             />
         </SafeAreaView>
     );
 };
 
-export default index;
+export default Index;

@@ -15,6 +15,7 @@ const EditStoreExtras = () => {
     const params = useLocalSearchParams();
 
     const [formData, setFormData] = useState({
+        business_id: params.business_id,
         store_id: params.store_id,
         extra_id: params.extra_id,
         extra_name: params.extra_name || '',
@@ -24,7 +25,7 @@ const EditStoreExtras = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [lastToastMessage, setLastToastMessage] = useState('');
     const [isRedirecting, setIsRedirecting] = useState(false);
-    const { data: response, patch, isLoading, error } = useApi('/stores/extras/update');
+    const { data: response, isLoading, error, patch } = useApi('/stores/extras/update');
 
     // Handle API response
     useEffect(() => {
@@ -33,14 +34,13 @@ const EditStoreExtras = () => {
 
             if (response.success) {
                 setIsRedirecting(true);
-                setTimeout(() => {
-                    router.back();
-                }, 5000);
+                router.back();
             }
         }
 
         if (error) {
             toast.error(error.message || 'An unexpected error occurred.');
+            return;
         }
     }, [response, error]);
 

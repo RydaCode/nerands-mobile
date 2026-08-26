@@ -25,7 +25,7 @@ const AllProducts = ({ store_data, store_id, category }) => {
 
         try {
             const nextPage = reset ? 1 : page + 1;
-            const res = await get(`/products/category?cat_name=${category}&store_id=${store_id}&page=${nextPage}&limit=10`);
+            const res = await get(`/products/category?cat_id=${category?.id}&store_id=${store_id}&page=${nextPage}&limit=10`);
             const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
 
             setProductsList(prev => reset ? newData : [...prev, ...newData]);
@@ -38,18 +38,18 @@ const AllProducts = ({ store_data, store_id, category }) => {
             loadingMoreRef.current = false;
             if (reset) setIsRefreshing(false);
         }
-    }, [category, store_id, page, get]);
+    }, [category?.id, store_id, page, get]);
 
     useEffect(() => {
         fetchProducts(true);
-    }, [category, store_id]);
+    }, [category?.id, store_id]);
 
     if (isLoading && productsList.length === 0) {
         return (
             <LoadingItems
                 mainStyles='mt-24'
                 textStyles='text-base text-slate'
-                indicatorSize={50}
+                indicatorSize={35}
                 indicatorTitle='Loading Products...'
             />
         );

@@ -56,11 +56,34 @@ const FavoritesCard = ({
 
     // Determine which screen to navigate to
     const handlePress = () => {
-    const restaurantCategories = ['Restaurant', 'Liquor', 'Cafe', 'Vegies', 'Dries'];
+    const restaurantCategories = ['restaurant', 'liquor', 'cafe', 'vegies', 'dries'];
+    const localMarketCategory = ['local_market'];
 
     if (restaurantCategories.includes(store_category)) {
         router.push({
             pathname: '../(routes)/home-single-store/',
+            params: {
+                store_id,
+                store_profileimage,
+                store_coverimage,
+                store_name,
+                store_description,
+                store_phone_num,
+                open_close,
+                store_latitude,
+                store_longitude,
+                store_location,
+                store_category,
+                average_rating,
+                total_ratings,
+                favorited: true,
+                open_time,
+                close_time
+            },
+        });
+    } else if (localMarketCategory.includes(store_category)) {
+        router.push({
+            pathname: '../(routes)/local-market-store-details/',
             params: {
                 store_id,
                 store_profileimage,

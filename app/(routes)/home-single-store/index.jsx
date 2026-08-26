@@ -1,22 +1,25 @@
 import { FontAwesome, FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Linking, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, Modal, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import { STORES_IMAGE_URI, USER_IMAGE_URI } from '../../../RequestMethods';
+import { IMAGE_URI, USER_IMAGE_URI } from '../../../RequestMethods';
 import MainHeader from '../../../components/MainHeader';
 import ViewCart from '../../../components/ViewCart';
 import { COLORS } from '../../../constants/constants';
+import { useResponsive } from '../../../hook/useResponsive';
 import StoreMenuTabs from './StoreMenuTabs';
 
 // Import tab components
 import { MotiView } from 'moti';
 import useApi from '../../../hook/useApi';
 import { calculateDistance, makeCall } from '../../../utils/getDistance';
-import { formatText } from '../../../utils/getInitials';
+import { formatText, getAvatarColor } from '../../../utils/getInitials';
 import { formatTime } from '../../../utils/isStoreOpen';
 import { toast } from '../../../utils/toast';
+import useProductCategoryTabs from '../../../utils/useProductCategoryTabs';
 import AllProducts from '../../screens/StoreSingleScreen/AllProducts';
 
 const StorePage = () => {
@@ -54,6 +57,7 @@ const StorePage = () => {
     const [review, setReview] = useState('');
     const [isFavorited, setIsFavorited] = useState(false);
     const isFavoritedParam = favorited === "true";
+    const { wp } = useResponsive();
 
     const {data: storedata, isLoading: loadingStore, error: errorStore, get: getStoreData } = useApi();
     
@@ -63,7 +67,14 @@ const StorePage = () => {
         }
     }, [store_id]);
 
-    console.log("TIMES", storedata)
+    const {
+        tabs,
+        isLoading: loadingTabs,
+        error: errorTabs
+    } = useProductCategoryTabs(
+        storedata?.[0]?.business_id,
+        store_id
+    );
 
     const { data:ratingpost, error: ratingposterror, isLoading:ratingLoading, post } = useApi();
     const {data, error, isLoading, get} = useApi(`/stores/${store_id}/rate/${user_id}`);
@@ -141,32 +152,23 @@ const StorePage = () => {
     const router = useRouter();
 
     const getTabs = () => {
-        if (store_category === "Liquor") {
-            return [
-                "All",
-                "Lagers",
-                "Ciders",
-                "Whisky",
-                "Wine",
-                "Vodka",
-                "Gin",
-                "Brandy",
-                "Spirits"
-            ];
-        }
-
         return [
-            "All",
-            "Break Fast",
-            "Drinks",
-            "Lunch",
-            "Supper"
+            {
+                id: null,
+                name: "All"
+            },
+            ...(getCategories?.categories ?? []).map(category => ({
+                id: category.id,
+                name: category.name
+            }))
         ];
     };
 
-    const tabs = getTabs();
+    const [activeTab, setActiveTab] = useState({
+        id: null,
+        name: "All"
+    });
 
-    const [activeTab, setActiveTab] = useState(tabs[0]);
     const cartItems = useSelector((state) => state.cart.cartItems);
 
     // Total cart price
@@ -191,8 +193,9 @@ const StorePage = () => {
             <AllProducts
                 store_data={store_data}
                 store_id={store_id}
-                category={activeTab === "All" ? null : activeTab}
+                category={activeTab}
                 refreshKey={refreshKey}
+                loadingTabs={loadingTabs}
             />
         );
     };
@@ -298,8 +301,6 @@ const StorePage = () => {
             { cancelable: true }
         );
     };
-
-    console.log("TIMESSS", storedata?.[0]?.next_opening)
 
     return (
         <SafeAreaView className="flex-1 relative bg-white justify-center items-center px-2">
@@ -512,13 +513,31 @@ const StorePage = () => {
                         {/* Store Info */}
                         <View className='w-full mt-2 flex-row items-center'>
                             <View
-                                style={{width: 80, height: 80}}
-                                className="rounded-full border-2 border-lavender"
-                            >
-                                <Image
-                                    className='h-full w-full rounded-full border-2 border-white'
-                                    source={{ uri: `${STORES_IMAGE_URI}${store_profileimage}` }}
-                                />
+                                style={{
+                                    width: wp(23),
+                                    height: wp(23),
+                                    backgroundColor: getAvatarColor(store_id)
+                                }}
+                                className="rounded-full border-2 border-lavender justify-center items-center"
+                            >   
+                                {!store_profileimage ? (
+                                    <Text
+                                        className="text-white text-xs"
+                                        style={{ fontFamily: 'roboto-medium' }}
+                                    >
+                                        Image...
+                                    </Text>
+                                ) : (
+                                    <Image
+                                        source={{ uri: `${IMAGE_URI}${store_profileimage}` }}
+                                        className="rounded"
+                                        style={{ width: '100%', height: '100%', borderRadius: 9999, borderWidth: 1, borderColor: COLORS.white }}
+                                        contentFit="cover"
+                                        cachePolicy="memory-disk"
+                                        transition={500}
+                                    />
+                                )}
+
                                 {storedata?.[0]?.is_closed &&
                                     <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
                                         <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />

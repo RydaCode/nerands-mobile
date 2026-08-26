@@ -23,6 +23,7 @@ const useRehydrateAuth = () => {
                 }
 
                 let finalToken = token;
+                let finalRefreshToken = refreshToken;
 
                 // Token expired
                 if (authService.isExpired(token)) {
@@ -31,10 +32,12 @@ const useRehydrateAuth = () => {
                             '/auth/user/token/refresh', { refreshToken }
                         );
 
-                        finalToken = res.data.accessToken;
-                        await authService.saveAccessToken(
-                            finalToken
-                        );
+                        finalToken = res.data.newAccessToken;
+                        finalRefreshToken = res.data.refresh_token;
+                        await authService.setTokens({
+                            authToken: finalToken,
+                            refreshToken: finalRefreshToken
+                        });
                     } catch(err) {
                         await authService.clearTokens();
                         dispatch(logoutUser());

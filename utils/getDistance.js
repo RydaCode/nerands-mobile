@@ -108,8 +108,8 @@ export const makeCall = (phone) => {
   const cleanPhone = phone.replace(/^0/, '');
   const url =
     Platform.OS === 'android'
-      ? `tel:+260${cleanPhone}`
-      : `telprompt:+260${cleanPhone}`;
+      ? `tel: ${cleanPhone}`
+      : `telprompt: ${cleanPhone}`;
 
   Linking.openURL(url);
 };

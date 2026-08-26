@@ -14,6 +14,7 @@ import WomenSizeChartCard from './WomenSizeChartCard';
 
 const OtherProductsSingleCard = ({
     product_id,
+    business_product_id,
     product_image,
     product_name,
     product_description,
@@ -38,7 +39,7 @@ const OtherProductsSingleCard = ({
     // Make the image height and width responsive based on the screen size
     const imageWidth = width * 0.25;
     const imageHeight = height * 0.10;
-    const {data, isLoading, error, get} = useApi(`/products/product-images?product_id=${product_id}`);
+    const {data, isLoading, error, get} = useApi(`/products/product-images?product_id=${business_product_id}`);
     const dispatch = useDispatch();
     const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
     const [productnotes, setProductNotes] = useState('');
@@ -405,7 +406,7 @@ const isDisabled = alreadyInCart || missing.length > 0;
                             style={{ opacity: quantity >= 10 ? 0.5 : 1 }}
                             className='bg-primary p-2  w-[30px] h-[30px] rounded-full justify-center items-center'
                         >
-                                <FontAwesome name="plus" style={{ color: COLORS.white }} />
+                            <FontAwesome name="plus" style={{ color: COLORS.white }} />
                         </TouchableOpacity>
                     </View>
                 </View>

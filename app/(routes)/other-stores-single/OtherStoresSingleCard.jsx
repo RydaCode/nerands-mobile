@@ -1,17 +1,21 @@
 import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { MotiView } from 'moti';
 import { useEffect, useState } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from '../../../constants/constants';
+import { useResponsive } from '../../../hook/useResponsive';
 import { addOthersItem } from '../../../redux/store/slices/OthersCartSlice';
-import { PRODUCTS_IMAGE_URI } from '../../../RequestMethods';
+import { IMAGE_URI } from '../../../RequestMethods';
+import { getAvatarColor } from '../../../utils/getInitials';
 import { toast } from '../../../utils/toast';
 
 const OtherStoresSingleCard = ({
     params,
     product_id,
-    product_images,
+    business_product_id,
     product_image,
     product_name,
     product_description,
@@ -38,6 +42,7 @@ const OtherStoresSingleCard = ({
     const dispatch = useDispatch();
     const [selectedVariants, setSelectedVariants] = useState({});
     const othersCartItems = useSelector((state) => state.otherscart.othersCartItems);
+    const { wp } = useResponsive();
 
         // Auto select variants
     useEffect(() => {
@@ -92,6 +97,7 @@ const OtherStoresSingleCard = ({
 
         dispatch(addOthersItem({ 
             product_id: product_id,
+            business_product_id: business_product_id,
             product_image: product_image,
             product_name: product_name,
             product_description: product_description,
@@ -132,6 +138,7 @@ const OtherStoresSingleCard = ({
 
                 router.push({ pathname: '../(routes)/other-single-product/', params: {
                     product_id: product_id,
+                    business_product_id: business_product_id,
                     product_image: product_image,
                     product_name: product_name,
                     product_description: product_description,
@@ -160,6 +167,12 @@ const OtherStoresSingleCard = ({
             activeOpacity={0.7}
             className='w-[49%] rounded-md items-center justify-center relative'
         >
+            <MotiView
+                className='w-full'
+                from={{ opacity: 0, translateY: 20 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ type: 'timing', duration: 400 }}
+            >
             {/* <View className='w-full flex-row items-center mb-1' >
                 <View className='flex-row items-center justify-center mr-1' >
                     <Ionicons name='location-outline' color={COLORS.green2} size={13} />
@@ -169,11 +182,32 @@ const OtherStoresSingleCard = ({
                     </Text>
                 </View>
             </View> */}
-            <View className='relative w-full' style={{height: 170}}>
-                <View className='relative justify-center items-center h-full w-full rounded-[3px]'>
-                    <Image resizeMode='cover' className='h-full w-full rounded-[3px]'
-                        source={{uri: `${PRODUCTS_IMAGE_URI}${product_image}`}}
-                    />
+            <View className='relative w-full' style={{height: wp(50)}}>
+                <View
+                    style={{
+                        backgroundColor: getAvatarColor(product_id),
+                    }}
+                    className='relative justify-center items-center h-full w-full rounded overflow-hidden'
+                >
+                    {!product_image ? (
+                        <Text
+                            className="text-white text-xs"
+                            style={{ fontFamily: 'roboto-medium' }}
+                        >
+                            Loading image...
+                        </Text>
+                    ) : (
+                        <Image
+                            className="rounded"
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                            transition={500}
+
+                            source={{uri: `${IMAGE_URI}${product_image}`}}
+                        />
+                    )}
+                    
                     {!is_available && (
                         <View className='absolute rounded-[3px] bg-transparentBlack w-full h-full justify-center items-center'>
                             <MaterialCommunityIcons name="lock" size={15} style={{color: COLORS.lite}} />
@@ -207,6 +241,7 @@ const OtherStoresSingleCard = ({
                 </Text>
             </TouchableOpacity>
             <View className='w-full mt-1 h-[1px] rounded-full bg-slate opacity-10'/>
+            </MotiView>
         </TouchableOpacity>
     )
 }

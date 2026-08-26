@@ -1,16 +1,21 @@
-import { FontAwesome, FontAwesome6, Fontisto, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Fontisto, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { MotiView } from 'moti';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, RefreshControl, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, RefreshControl, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import MainHeader from '../../../components/MainHeader';
+import AppModal from '../../../components/modals/AppModal';
 import { Carticons, COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
-import { STORES_IMAGE_URI } from '../../../RequestMethods';
-import { makeCall } from '../../../utils/getDistance';
-import { formatText } from '../../../utils/getInitials';
+import { useResponsive } from '../../../hook/useResponsive';
+import { IMAGE_URI } from '../../../RequestMethods';
+import { calculateDistance, makeCall } from '../../../utils/getDistance';
+import { formatText, getAvatarColor } from '../../../utils/getInitials';
 import { formatTime } from '../../../utils/isStoreOpen';
+import { toast } from '../../../utils/toast';
+import useProductCategoryTabs from '../../../utils/useProductCategoryTabs';
 import LocalMarketCard from './LocalMarketCard';
 
 const Index = ({category='Localmarket'}) => {
@@ -19,6 +24,7 @@ const Index = ({category='Localmarket'}) => {
     const { width } = useWindowDimensions();
     const { user_id  } = useSelector((state) => state.auth);
     const params = useLocalSearchParams();
+    const { wp } = useResponsive();
     
     const [productsList, setProductsList] = useState([]);
     const [page, setPage] = useState(1);
@@ -31,7 +37,7 @@ const Index = ({category='Localmarket'}) => {
     const { get, isLoading, error } = useApi(null);
     const {data:checkFavorites, error: errorCheckFavorites, isLoading: isLoadingCHeckFAvorite, get:getCheckFavorites} = useApi(`stores/favorites/check?user_id=${user_id}&store_id=${params.store_id}`);
     const {data: storedata, isLoading: loadingStore, error: errorStore, get: getStoreData } = useApi();
-    
+    const [activeCategory, setActiveCategory] = useState(null);
     const [isFavorited, setIsFavorited] = useState(false);
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
@@ -42,6 +48,15 @@ const Index = ({category='Localmarket'}) => {
     // Global refreshKey to trigger child refresh
     const [refreshKey, setRefreshKey] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
+
+    const {
+        tabs,
+        isLoading: loadingTabs,
+        error: errorTabs
+    } = useProductCategoryTabs(
+        storedata?.[0]?.business_id,
+        params.store_id
+    );
 
     useEffect(() => {
         if (params.store_id) {
@@ -54,43 +69,52 @@ const Index = ({category='Localmarket'}) => {
     
     // Fetch products
     const fetchProducts = useCallback(async (reset = false) => {
-    if (loadingMoreRef.current) return;
+        if (loadingMoreRef.current) return;
 
-    loadingMoreRef.current = true;
+        loadingMoreRef.current = true;
+        if (reset) setIsRefreshing(true);
 
-    if (reset) setIsRefreshing(true);
-    else setIsLoadingMore(true);   // 🔥 IMPORTANT
+        try {
+            const nextPage = reset ? 1 : page + 1;
+            const res = await get(`/products/store?store_id=${params.store_id}&cat_id=${activeCategory}&page=${nextPage}&limit=10`);
+            const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
 
-    try {
-        const nextPage = reset ? 1 : page + 1;
+            setProductsList(prev => reset ? newData : [...prev, ...newData]);
+            setPage(nextPage);
+            setHasMore(nextPage < (res?.data?.pagination?.pages || 0));
+        } catch (err) {
+            console.warn('Failed to fetch products:', err);
+            toast.info('Failed to fetch products');
+        } finally {
+            loadingMoreRef.current = false;
+            if (reset) setIsRefreshing(false);
+        }
+    }, [params.store_category, params.store_id, activeCategory, page, get]);
 
-        const res = await get(
-            `/products/store?store_id=${params.store_id}&page=${nextPage}&limit=10`
-        );
+    useEffect(() => {
+        fetchProducts(true);
+    }, [params.store_category, params.store_id, activeCategory]);
 
-        const newData = Array.isArray(res?.data?.products)
-            ? res.data.products
-            : [];
-
-        setProductsList(prev =>
-            reset ? newData : [...prev, ...newData]
-        );
-
-        setPage(nextPage);
-        setHasMore(nextPage < (res?.data?.pagination?.pages || 0));
-
-    } catch (err) {
-        console.warn('Failed to fetch products:', err);
-    } finally {
-        loadingMoreRef.current = false;
-
-        if (reset) setIsRefreshing(false);
-        else setIsLoadingMore(false);   // 🔥 IMPORTANT
-    }
-}, [page, params.store_id, get]);
+    const {data: addFavorites, isLoading: loadingAddFavorites, error: errorAddFavorites, post: postAddFavorites} =useApi(
+        `/stores/favorites/add`
+    );
 
     const { data:ratingpost, error: ratingposterror, isLoading:ratingLoading, post } = useApi();
-    const { data: UserRatings, error:errorGetUserRatings, isLoading:loadingUserRatings, get: getUserRatings } = useApi(`/stores/${params.store_id}/rate/${user_id}`);
+    const { data: UserRatings, error:errorGetUserRatings, isLoading:loadingUserRatings, get: getUserRatings } = useApi(
+        `/stores/${params.store_id}/rate/${user_id}`
+    );
+
+    const {data: storereviews, isLoading: reviewsLoading, error: reviewsError, get: reviewsGet } = useApi(
+        `/stores/${params.store_id}/reviews/`
+    );
+
+    const reviewItems = storereviews?.data?.reviews ?? [];
+
+    useEffect(() => {
+        if (params.store_id) {
+            reviewsGet();   
+        }
+    }, [params.store_id]);
 
     useEffect(() => {
         if (UserRatings && UserRatings.success !== undefined) {
@@ -120,7 +144,7 @@ const Index = ({category='Localmarket'}) => {
 
             if (res.success) {
                 toast.success("Rating submitted");
-                get(); // refresh rating
+                reviewsGet(); // refresh rating
                 setRateStore(false);
             } else {
                 toast.error(res.message || "Failed to submit rating");
@@ -132,7 +156,7 @@ const Index = ({category='Localmarket'}) => {
 
     const AddToFavorites = async () => {
         try {
-            const res = await post(
+            const res = await postAddFavorites(
                 { user_id, store_id: params.store_id },
                 `/stores/favorites/add`
             );
@@ -150,10 +174,6 @@ const Index = ({category='Localmarket'}) => {
             toast.error("Error occurred");
         }
     };
-        
-    useEffect(() => {
-        fetchProducts(true);
-    }, [params.store_category, params.store_id]);
 
     useEffect(() => {
         if (!user_id || !params.store_id) return;
@@ -184,8 +204,10 @@ const Index = ({category='Localmarket'}) => {
         params.favorited === true || params.favorited === 'true';
 
     return (
-        <SafeAreaView className='flex-1 bg-white justify-center w-full items-center px-2'>
-            <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Local Market'/>
+        <SafeAreaView className='flex-1 bg-white justify-center w-full items-center'>
+            <View className='w-full px-2'>
+                <MainHeader fontFamily='ubuntu-medium' textStyles='text-2xl' header_name='Local Market'/>
+            </View>
             
             {/* Render Products */}
             <View className='flex-1 justify-center items-center'>
@@ -246,7 +268,7 @@ const Index = ({category='Localmarket'}) => {
                                 <LocalMarketCard
                                     product_id={item.product_id}
                                     product_images={productImages}
-                                    product_image={firstImage}
+                                    product_image={item.primary_image?.image_url}
                                     product_name={item.product_name}
                                     product_description={item.product_description}
                                     product_actual_price={item.product_actual_price}
@@ -280,36 +302,59 @@ const Index = ({category='Localmarket'}) => {
                                 {/* Store Info */}
                                 <View className='w-full mt-2 flex-row items-center'>
                                     <View
-                                        style={{width: 80, height: 80}}
-                                        className="rounded-full border-2 border-lavender"
+                                        style={{
+                                            width: wp(23),
+                                            height: wp(23),
+                                            backgroundColor: getAvatarColor(params.store_id)
+                                        }}
+                                        className="w-20 h-20 rounded-full border-2 border-lavender"
                                     >
-                                        <Image
-                                            className='h-full w-full rounded-full border-2 border-white'
-                                            source={{ uri: `${STORES_IMAGE_URI}${params.store_profileimage}` }}
-                                        />
+                                        {!params.store_profileimage ? (
+                                            <Text
+                                                className="text-white text-xs"
+                                                style={{ fontFamily: 'roboto-medium' }}
+                                            >
+                                                Image...
+                                            </Text>
+                                        ) : (
+                                            <Image
+                                                source={{ uri: `${IMAGE_URI}${params.store_profileimage}` }}
+                                                className="rounded"
+                                                style={{ width: '100%', height: '100%', borderRadius: 9999, borderWidth: 1, borderColor: COLORS.white }}
+                                                contentFit="cover"
+                                                cachePolicy="memory-disk"
+                                                transition={500}
+                                            />
+                                        )}
+    
                                         {storedata?.[0]?.is_closed &&
                                             <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
-                                                <MaterialCommunityIcons name="lock" size={16} style={{color: COLORS.lite}} />
-                                                <Text style={{fontFamily: 'roboto-medium'}} className='text-sm text-white'>Closed</Text>
+                                                <MaterialCommunityIcons name="lock" size={15} style={{color: COLORS.lite}} />
+                                                <Text style={{fontFamily: 'roboto'}} className='text-sm text-white'>Closed</Text>
                                             </View>
                                         }
                                     </View>
-
+    
                                     <View className='ml-3 flex-1'>
-                                        <Text numberOfLines={2} className="text-lg" style={{ fontFamily: 'roboto-medium' }}>{params.store_name}</Text>
-                                        <Text className="text-sm text-slate" style={{ fontFamily: 'roboto-medium' }}>
+                                        <Text numberOfLines={1} className="text-base" style={{ fontFamily: 'roboto-medium' }}>{params.store_name}</Text>
+                                        <Text className="text-sm text-gray-500" style={{ fontFamily: 'roboto-medium' }}>
                                             {formatText(params.store_category)}
                                         </Text>
                                     </View>
-
+    
                                     <TouchableOpacity
-                                        className='rounded-full h-[40px] bg-[#DFF6E6] border border-green1 w-[40px] items-center justify-center'
+                                        className='rounded-full h-[40px] bg-grey_bg border border-green1 w-[40px] items-center justify-center'
                                         onPress={() => makeCall(params.store_phone_num)}
                                     >
                                         <FontAwesome name='phone' size={20} style={{color: COLORS.green2}} />
                                     </TouchableOpacity>
                                 </View>
-
+    
+                                {/* Store Description */}
+                                <View className='my-2 w-full'>
+                                    <Text className='text-sm text-gray-600' style={{ fontFamily: 'roboto' }}>{params.store_description}</Text>
+                                </View>
+    
                                 {/* Store Opening Hours */}
                                 <View className='mt-1 w-full px-2 my-4 bg-grey_bg rounded py-1'>
                                     <Text
@@ -340,72 +385,66 @@ const Index = ({category='Localmarket'}) => {
                                         )}
                                     </Text>
                                 </View>
-
-                                {/* Store Description */}
-                                <View className='mt-1 w-full px-2'>
-                                    <Text className='text-sm text-gray-600' style={{ fontFamily: 'roboto-medium',textAlign: 'justify' }}>
-                                        {params.store_description || 'No description available for this store.'}
-                                    </Text>
-                                </View>
-
+    
                                 {/* Store Actions */}
-                                    <View className='flex-row items-center justify-between mt-8 '>
-                                        <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
-                                            // onPress={() => setRateStore(true)}
-                                            style={{width: '23.5%'}}
-                                        >
-                                            <View className='flex-row justify-center items-center'>
-                                                <Ionicons name='star' size={13} color={COLORS.primary} />
-                                                <Text className='text-sm' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
-                                                    {' '}{params.average_rating} ({params.review_count})
-
-
-                                                </Text>
-                                            </View>
-                                            <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Rate Us</Text>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            // onPress={() => setShowLocationMap(true)}
-                                            className='items-center justify-center border border-grey_bg rounded py-1'
-                                            style={{width: '23.5%'}}
-                                        >
-                                            <View className='flex-row items-center justify-center'>
-                                                <FontAwesome6 name="location-dot"  size={13} color={COLORS.primary} />
-                                                <Text className='text-sm text-lavender'> | </Text>
-                                                <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto-medium'}}>30km</Text>
-                                            </View>
-                                            <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Location</Text>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity className='items-center border border-grey_bg rounded py-1'
-                                            // onPress={AddToFavorites}
-                                            style={{width: '23.5%'}}
-                                        >
-                                            <MaterialCommunityIcons
-                                                name={!favorited ? "cards-heart-outline" : "cards-heart"}
-                                                size={16}
-                                                color={COLORS.primary}
-                                            />
-                                            <Text className='text-sm' style={{ fontFamily: 'roboto-medium' }}>Favorites</Text>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity className='justify-center items-center border border-grey_bg rounded py-1'
-                                            // onPress={() => setModalVisible(true)}
-                                            style={{width: '23.5%'}}
-                                        >
-                                            <View className='flex-row justify-center items-center'>
-                                                <FontAwesome name='comments' size={16} color={COLORS.primary}/>
-                                                <Text className='text-sm ml-1' style={{fontFamily: 'roboto-medium', color: COLORS.green1}}>
-                                                    {params.review_count}
-                                                </Text>
-                                            </View>
-                                            <Text className='text-sm' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                {/* Tabs */}
-                                {/* <View className='mb-20'/> */}
+                                <View className='flex-row items-center justify-between my-5'>
+                                    <TouchableOpacity className='justify-start items-center rounded'
+                                        onPress={() => setRateStore(true)}
+                                        style={{width: '23%'}}
+                                    >
+                                        <View className='flex-row justify-center items-center'>
+                                            <Ionicons name='star' size={13} color={COLORS.primary} />
+                                            <Text className='text-sm' style={{fontFamily: 'roboto', color: COLORS.green1}}>
+                                                {' '}{params.average_rating} ({formatReviews(params.total_ratings)})
+                                            </Text>
+                                        </View>
+                                        <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Rate Us</Text>
+                                    </TouchableOpacity>
+    
+                                    <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
+    
+                                    <TouchableOpacity
+                                        onPress={() => setOpenMapsModal(true)}
+                                        className='items-center justify-center rounded'
+                                        style={{width: '23%'}}
+                                    >
+                                        <View className='flex-row items-center justify-center'>
+                                            <FontAwesome6 name="location-dot"  size={13} color={COLORS.primary} />
+                                            <Text className='text-sm text-lavender'> | </Text>
+                                            <Text numberOfLines={1} className='text-sm text-green1' style={{fontFamily: 'roboto'}}>{calculateDistance(pointA, pointB) || 0 + "Km"}</Text>
+                                        </View>
+                                        <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Location</Text>
+                                    </TouchableOpacity>
+    
+                                    <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
+    
+                                    <TouchableOpacity className='items-center rounded'
+                                        onPress={AddToFavorites}
+                                        style={{width: '23%'}}
+                                    >
+                                        <MaterialCommunityIcons
+                                            name={!isFavorited ? "cards-heart-outline" : "cards-heart"}
+                                            size={16}
+                                            color={COLORS.primary}
+                                        />
+                                        <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Favorites</Text>
+                                    </TouchableOpacity>
+    
+                                    <View className='bg-grey_bg' style={{height: 25, width: 1.5}}/>
+    
+                                    <TouchableOpacity className='justify-center items-center rounded'
+                                        onPress={() => setGetReviews(true)}
+                                        style={{width: '23%'}}
+                                    >
+                                        <View className='flex-row justify-center items-center'>
+                                            <FontAwesome name='comments' size={16} color={COLORS.primary}/>
+                                            <Text className='text-sm ml-1' style={{fontFamily: 'roboto', color: COLORS.green1}}>
+                                                ({formatReviews(params.review_count)})
+                                            </Text>
+                                        </View>
+                                        <Text className='text-sm' style={{fontFamily: 'roboto'}}>Reviews</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </>
                         }
 
@@ -466,6 +505,251 @@ const Index = ({category='Localmarket'}) => {
                         removeClippedSubviews
                     />
                 ) : null}
+            </View>
+
+
+            <AppModal
+                visible={getReviews}
+                onClose={() => setGetReviews(false)}
+            >
+                <View className='bg-white w-full justify-center items-center rounded-md' style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}>
+                    <TouchableOpacity
+                        className='w-full justify-center items-center'
+                        style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
+                        onPress={() => setGetReviews(false)}
+                    >
+                        <View className='h-1 rounded-full my-2 bg-white w-[30%]'/>
+                    </TouchableOpacity>
+
+                    <View className='px-2'>
+                        <View className='flex-row items-center mt-2'>
+                            <FontAwesome name='comments' size={23}/>
+                            <Text className='text-xl ml-1' style={{fontFamily: 'roboto-medium'}}>Reviews</Text>
+                        </View>
+                        <Text className='text-sm text-green1 mt-1' style={{fontFamily: 'roboto-medium', textAlign: 'justify'}}>
+                            Please take time to read what people are saying about this store
+                        </Text>
+                    </View>
+
+                    <View className='w-full flex-1 justify-center mt-8 pb-16 items-center'>
+                        {reviewsLoading ?
+                            <View className='items-center justify-center mb-8'>
+                                <ActivityIndicator size={35} color={COLORS.primary}/>
+                                <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>Loading comments, please wait...</Text>
+                            </View> :
+                            <FlatList
+                                data={reviewItems}
+                                keyExtractor={(item) => item.rating_id}
+                                renderItem={({item}) => (
+                                    <View className='px-2 w-full'>
+                                        <View className='w-full justify-center'>
+                                            <View className='justify-between w-full items-center flex-row'>
+                                                <View className='border-2 border-lavender justify-center items-center rounded-full' style={{width: 45, height: 45}}>
+                                                    {item.profile_image ?
+                                                        <Image className='h-full w-full rounded-full' source={{ uri: `${IMAGE_URI}${item.profile_image}` }} />
+                                                        : <FontAwesome name='user' size={28} color={COLORS.slate}/> 
+                                                    }
+                                                </View>
+                                                <View className='' style={{width: '83%'}}>
+                                                    <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>
+                                                        {(`${item.first_name || ""} ${item.last_name || ""}`).trim() || "User"}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <View className='w-full'>
+                                                <View className='' >
+                                                    <Text className='' style={{fontFamily: 'roboto', textAlign: 'justify'}}>
+                                                        {item.review}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                        <View className='w-full bg-grey_bg my-4' style={{height: 1}}/>
+                                    </View>
+                                )}
+
+                                ListEmptyComponent={
+                                    <View className='flex-1 justify-center items-center mb-4'>
+                                        <FontAwesome name='comments' size={25}/>
+                                        <Text className='text-base' style={{fontFamily: 'roboto-medium'}}>There are no comments yet</Text>
+                                        <Text className='text-sm text-slate' style={{fontFamily: 'roboto-medium'}}>Be the first to comment.</Text>
+                                    </View>
+                                }
+
+                                ListFooterComponent={
+                                    !reviewsLoading &&
+                                    <View className='w-full px-2 mb-4'>
+                                        {/* Review Input */}
+                                        <TouchableOpacity className='border w-full rounded border-lavender py-6 px-3'
+                                            onPress={() => {
+                                                setGetReviews(false)
+                                                setRateStore(true)
+                                            }}
+                                        >
+                                            <Text className='text-slate' style={{fontFamily: 'roboto-medium'}}>Write a comment...</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                }
+                                showsVerticalScrollIndicator={false}
+                            />
+                        }
+                    </View>
+                </View>
+            </AppModal>
+
+            <AppModal
+                visible={ratestore}
+                onClose={() => setRateStore(false)}
+            >
+                <View className='bg-white w-full justify-center items-center rounded-md pb-10'>
+                    <View className='w-full flex-row justify-end px-4 mt-2'>
+                        <TouchableOpacity
+                            className='bg-grey_bg justify-center items-center rounded-full'
+                            onPress={() => setRateStore(false)}
+                            style={{
+                                height: wp(8),
+                                width: wp(8)
+                            }}
+                        >
+                            <FontAwesome name='times' color={COLORS.red} size={16} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text className='text-xl mt-4' style={{fontFamily: 'roboto-medium'}}>Rate This Store</Text>
+
+                    <View className='w-[90%] justify-center items-center'>
+                        <View className='justify-center items-center pt-4 flex-row'>
+                            {[...Array(5)].map((_, i) => (
+                            <TouchableOpacity key={i} onPress={() => setRating(i + 1)}>
+                                <MaterialIcons
+                                name={i < rating ? "star" : "star-border"}
+                                size={50}
+                                color="#FFD700"
+                                />
+                            </TouchableOpacity>
+                            ))}
+                        </View>
+                        {rating > 0 && (
+                            <Text className="text-sm text-gray-500 my-4">
+                                Your rating: {rating} ⭐
+                            </Text>
+                        )}
+                        <View className='w-full'>
+                            {/* Review Input */}
+                            <Text className='text-base mb-1' style={{fontFamily: 'roboto-medium'}}>Write a review (Optional)</Text>
+                            <TextInput
+                                placeholder="Write a review..."
+                                value={review}
+                                onChangeText={setReview}
+                                multiline
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: '#ddd',
+                                    padding: 10,
+                                    borderRadius: 4,
+                                    marginBottom: 10,
+                                    height: 80
+                                }}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            className='bg-primary my-4 py-3 w-full rounded-md elevation-lg justify-center items-center'
+                            onPress={submitRating}
+                        >
+                            {ratingLoading ? (
+                                <ActivityIndicator color={COLORS.white} size={27}/>
+                            ) : (
+                                <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>Done</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </AppModal>
+
+            {loadingAddFavorites && (
+                <MotiView
+                    from={{ translateY: 400 }}
+                    animate={{ translateY: 0 }}
+                    exit={{ translateY: 400 }}
+                    transition={{ type: 'timing', duration: 400 }}
+                    className=' w-full bg-white'
+                    style={{paddingBottom: 10}}
+                >
+                    <View 
+                        className=' bg-transparent shadow-md justify-end py-8 items-center border-white w-full'
+                        style={{
+                            borderRadius: 20,
+                            borderTopWidth: 1,
+                            borderRightWidth: 1,
+                            borderLeftWidth: 1
+                        }}
+                    >
+                        <ActivityIndicator size={33} color={COLORS.primary}/>
+                        <Text
+                            style={{fontFamily: 'roboto-medium'}}
+                            className='mt-2 text-sm text-slate'
+                        >Adding store to favorites...</Text>
+                    </View>
+                </MotiView>
+            )}
+
+            <View
+                className="w-full bg-[#e6f0fe] py-2"
+                style={{ backgroundColor: '#e6f0fe' }}
+            >
+                <FlatList
+                    data={tabs}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item, index) =>
+                        item.id ? item.id.toString() : `all-${index}`
+                    }
+                    contentContainerStyle={{
+                        paddingHorizontal: 12,
+                        gap: 10,
+                    }}
+                    renderItem={({ item }) => {
+                        const isActive = activeCategory === item.id;
+
+                        return (
+                            <TouchableOpacity
+                                onPress={() => setActiveCategory(item.id)}
+                                activeOpacity={0.9}
+                            >
+                                <MotiView
+                                    animate={{
+                                        scale: isActive ? 1 : 0.96,
+                                        opacity: isActive ? 1 : 0.7,
+                                    }}
+                                    transition={{
+                                        type: 'spring',
+                                        damping: 15,
+                                    }}
+                                    style={{
+                                        backgroundColor: isActive
+                                            ? COLORS.primary
+                                            : 'rgba(255, 255, 255, 0.45)',
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        borderRadius: 20,
+                                        paddingHorizontal: 15,
+                                        paddingVertical: 6,
+                                    }}
+                                >
+                                    <Text
+                                        className={
+                                            isActive
+                                                ? 'font-semibold text-white'
+                                                : 'font-medium text-gray-700'
+                                        }
+                                    >
+                                        {item.name}
+                                    </Text>
+                                </MotiView>
+                            </TouchableOpacity>
+                        );
+                    }}
+                />
             </View>
         </SafeAreaView>
     )

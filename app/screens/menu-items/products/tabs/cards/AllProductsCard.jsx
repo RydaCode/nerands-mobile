@@ -94,6 +94,7 @@ const AllProductsCard = (props) => {
 
         dispatch(addOthersItem({ 
             product_id: props.product_id,
+            business_product_id: props.business_product_id,
             product_image: props.product_image,
             product_name: props.product_name,
             product_description: props.product_description,
@@ -143,6 +144,7 @@ const AllProductsCard = (props) => {
         <TouchableOpacity
             onPress={() => router.push({ pathname: '../(routes)/other-single-product/', params: {
                 product_id: props.product_id,
+                business_product_id: props.business_product_id,
                 product_image: props.product_image,
                 product_name: props.product_name,
                 product_description: props.product_description,

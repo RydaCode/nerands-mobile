@@ -13,6 +13,7 @@ import useApi from '../../hook/useApi';
 import { setUserData } from '../../redux/store/slices/authSlice';
 import { registerDevice } from '../../services/notificationService';
 import { toast } from '../../utils/toast';
+import useNotifications from '../../utils/useNotifications';
 import AuthLayout from '../AuthLayout';
 import OverLay from '../OverLay';
 
@@ -29,7 +30,17 @@ const Login = () => {
         login_id: '',
         password: '',
     });
-    const { post, isLoading, flushQueue } = useApi('/auth/user/login');
+
+    const api = useApi('/auth/user/login');
+
+    const {
+        post,
+        isLoading,
+        flushQueue,
+    } = api;
+
+    // const { post, isLoading, flushQueue } = useApi('/auth/user/login');
+    const { loadNotifications } = useNotifications(api);
 
     // Redirect if already authenticated
     useEffect(() => {
@@ -83,26 +94,19 @@ const Login = () => {
 
             dispatch(
                 setUserData({
-                    user_id: decoded.user_id,
-                    user_type: decoded.user_type,
-                    email_add: decoded.email_add,
-                    first_name: decoded.first_name,
-                    last_name: decoded.last_name,
-                    phone_num: decoded.phone_num,
-                    gender: decoded.gender,
-                    date_of_birth: decoded.date_of_birth,
-                    country: decoded.country,
-                    province: decoded.province,
-                    profile_image: decoded.profile_image,
-                    is_transporter: decoded.is_transporter,
-                    is_runner: decoded.is_runner,
-                    transporter_id: decoded.transporter_id,
-                    runner_id: decoded.runner_id,
-                    created_at: decoded.created_at,
-                    is_verified: decoded.is_verified,
-                    isAuthenticated: true
+                    ...decoded,
+                    isAuthenticated:true,
                 })
             );
+
+            // Load notifications
+            await loadNotifications();
+
+            console.log('TOKEN SAVED, LOADING NOTIFICATIONS');
+
+        const notificationResult = await loadNotifications();
+
+        console.log('NOTIFICATION RESULT:', notificationResult);
 
             // Register device AFTER login is confirmed
             await registerDevice();

@@ -31,10 +31,8 @@ const Index = () => {
 
             if (!isAuthenticated) return;
 
-            console.log("Fetching notifications...");
             const res = await api.get('/notifications/all?limit=10&offset=1');
 
-            
             console.log("Notifications response:", res.data.result);
 
             dispatch(

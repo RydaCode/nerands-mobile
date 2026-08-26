@@ -6,7 +6,6 @@ import {
 } from 'react-native';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import CustomButton from '../../../components/Buttons/CustomButton';
 import EmptyState from '../../../components/EmptyState';
 import { COLORS } from '../../../constants/constants';
@@ -19,6 +18,7 @@ const ViewStoreExtras = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const store_id = params.store_id;
+    const business_id = params.business_id;
     const [errorMessage, setErrorMessage] = useState('');
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [selectedExtras, setSelectedExtras] = useState([]);
@@ -116,6 +116,7 @@ const ViewStoreExtras = () => {
                                     renderItem={({ item }) => (
                                         <StoreExtrasCard
                                         {...item}
+                                            business_id={business_id}
                                             router={router}
                                             selectedExtras={selectedExtras}
                                             setSelectedExtras={setSelectedExtras}
@@ -171,7 +172,6 @@ const ViewStoreExtras = () => {
                                     </Text>
                                 </View>
                             </View>
-                            <Toast />
                         </View>
                         {extrasCount === 0 ? <></> :
                             <CustomButton
@@ -192,6 +192,7 @@ const ViewStoreExtras = () => {
 };
 
 const StoreExtrasCard = ({
+        business_id,
         extra_name,
         extra_price,
         extra_id,
@@ -249,6 +250,7 @@ const StoreExtrasCard = ({
                         router.push({
                             pathname: '../../store-extras/EditStoreExtras',
                             params: {
+                                business_id: business_id,
                                 store_id,
                                 extra_id,
                                 extra_name,

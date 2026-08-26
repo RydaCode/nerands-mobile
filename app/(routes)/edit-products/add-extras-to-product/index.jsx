@@ -98,6 +98,7 @@ const Index = () => {
     const params = useLocalSearchParams();
     const store_id = params.store_id;
     const product_id = params.product_id;
+    const business_id = params.business_id;
     const router = useRouter();
 
     const [selectedExtras, setSelectedExtras] = useState([]);
@@ -121,6 +122,7 @@ const Index = () => {
     const {
         data: addExtraResponse,
         isLoading: AddingLoading,
+        error: errorAddExtras,
         post: addExtraProduct,
     } = useApi(`/products/extras/add`);
 
@@ -153,18 +155,41 @@ const Index = () => {
         }
     }, [productExtras]);
 
-    useEffect(() => {
-        if (addExtraResponse?.message) {
-            if (!addExtraResponse.success) {
-                toast.error(addExtraResponse.message);
-            } else {
-                toast.error(addExtraResponse.message);
-                setIsRedirecting(true);
-                getProductExtras();
-                setTimeout(() => setIsRedirecting(false), 5000);
-            }
+    const handleAddExtra = async(product_id, extra_id) => {
+
+        if (!product_id) {
+            toast.error('Missing product ID.');
+            return;
         }
-    }, [addExtraResponse]);
+
+        if (!extra_id) {
+            toast.error('Extra does not exist.');
+            return;
+        }
+
+        if (!business_id) {
+            toast.error('Extra does not exist in this business.');
+            return;
+        }
+
+        try {
+            const res = await addExtraProduct({ product_id, extra_id, business_id });
+
+            if (!res?.success) {
+                toast.error(res?.message || 'Extra was not added, please try again.');
+                return;
+            }
+
+            toast.success(res?.message || 'Extra added successfully.');
+            setIsRedirecting(true);
+            getProductExtras();
+            setTimeout(() => setIsRedirecting(false), 3000);
+        } catch (error) {
+            console.log('ERROR:', error.message);
+            toast.error('Unknown error occured, try again.');
+            return;
+        }
+    };
 
     useEffect(() => {
         if (deleteExtraResponse?.message) {
@@ -174,7 +199,7 @@ const Index = () => {
                 toast.success(deleteExtraResponse.message);
                 setIsRedirecting(true);
                 getProductExtras();
-                setTimeout(() => setIsRedirecting(false), 5000);
+                setTimeout(() => setIsRedirecting(false), 3000);
             }
         }
     }, [deleteExtraResponse]);
@@ -195,13 +220,9 @@ const Index = () => {
         setSelectedExtras(areAllSelected ? [] : allIds);
     };
 
-    const handleAddExtra = (product_id, extra_id) => {
-        addExtraProduct({ product_id, extra_id });
-    };
-
     const handleDeleteExtra = async (extra_id) => {
         try {
-            const res = await delStoreExtra({ product_id, extra_id });
+            const res = await delStoreExtra({ product_id, extra_id, business_id });
             const response = res.data || res;
 
             if (response?.success) {
@@ -210,9 +231,11 @@ const Index = () => {
                 setSelectedExtras((prev) => prev.filter((id) => id !== extra_id));
             } else {
                 toast.error(response?.message || 'Failed to delete extra');
+                return;
             }
         } catch (error) {
             toast.error(response?.message || 'Failed to delete extra');
+            return;
         }
     };
 
@@ -226,9 +249,10 @@ const Index = () => {
         if (res?.success) {
             toast.success('Extras deleted successfully');
             setSelectedExtras([]);
-            setTimeout(() => router.back(), 5000);
+            setTimeout(() => router.back(), 2000);
         } else {
             toast.error('Extras were not removed');
+            return;
         }
     };
 

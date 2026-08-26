@@ -1,24 +1,28 @@
 import { FontAwesome, FontAwesome6, Fontisto, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import MainHeader from '../../../components/MainHeader';
+import AppModal from '../../../components/modals/AppModal';
 import { COLORS } from '../../../constants/constants';
-import { Carticons } from '../../../constants/icons';
 import useApi from '../../../hook/useApi';
-import { STORES_IMAGE_URI, USER_IMAGE_URI } from '../../../RequestMethods';
+import { useResponsive } from '../../../hook/useResponsive';
+import { IMAGE_URI } from '../../../RequestMethods';
 import { calculateDistance, makeCall } from '../../../utils/getDistance';
-import { formatText } from '../../../utils/getInitials';
+import { formatText, getAvatarColor, getFirstLetter } from '../../../utils/getInitials';
 import { formatTime } from '../../../utils/isStoreOpen';
 import { toast } from '../../../utils/toast';
+import useProductCategoryTabs from '../../../utils/useProductCategoryTabs';
 import LoadingItems from './LoadingItems';
 import MapModal from './MapModal';
 import OtherStoresSingleCard from './OtherStoresSingleCard';
 
 const Index = () => {
+    const { wp } = useResponsive();
     const { user_id  } = useSelector((state) => state.auth);
     const params = useLocalSearchParams();
     const { latitude, longitude } = useSelector(state => state.location) || {};
@@ -38,6 +42,8 @@ const Index = () => {
     const isFavoritedParam = params.favorited === "true";
     const [isFavorited, setIsFavorited] = useState(isFavoritedParam);
     const isOpen = params.open_close === true || params.open_close === "true";
+
+    const [activeCategory, setActiveCategory] = useState(null);
 
     const router = useRouter();
 
@@ -62,7 +68,7 @@ const Index = () => {
 
         try {
             const nextPage = reset ? 1 : page + 1;
-            const res = await get(`/products/store?store_id=${params.store_id}&page=${nextPage}&limit=10`);
+            const res = await get(`/products/store?store_id=${params.store_id}&cat_id=${activeCategory}&page=${nextPage}&limit=10`);
             const newData = Array.isArray(res?.data?.products) ? res.data.products : [];
 
             setProductsList(prev => reset ? newData : [...prev, ...newData]);
@@ -75,7 +81,7 @@ const Index = () => {
             loadingMoreRef.current = false;
             if (reset) setIsRefreshing(false);
         }
-    }, [params.store_category, params.store_id, page, get]);
+    }, [params.store_category, params.store_id, activeCategory, page, get]);
 
     const { data:ratingpost, isLoading:ratingLoading, error: ratingposterror, post } = useApi();
     const { data: UserRatings, error:errorGetUserRatings, isLoading:loadingUserRatings, get: getUserRatings } = useApi(`/stores/${params.store_id}/rate/${user_id}`);
@@ -88,7 +94,25 @@ const Index = () => {
         `/stores/favorites/add`
     );
 
-    // console.log(ratingposterror)
+    const {
+        tabs,
+        isLoading: loadingTabs,
+        error: errorTabs
+    } = useProductCategoryTabs(
+        storedata?.[0]?.business_id,
+        params.store_id
+    );
+
+    // const tabs = [
+    //     {
+    //         id: null,
+    //         name: 'All',
+    //     },
+    //     ...(getCategories?.categories ?? []).map(category => ({
+    //         id: category.id,
+    //         name: category.name,
+    //     })),
+    // ];
 
     useEffect(() => {
         if (params.store_id) {
@@ -163,7 +187,7 @@ const Index = () => {
         
     useEffect(() => {
         fetchProducts(true);
-    }, [params.store_category, params.store_id]);
+    }, [params.store_category, params.store_id, activeCategory]);
 
     useEffect(() => {
         if (!user_id || !params.store_id) return;
@@ -187,7 +211,7 @@ const Index = () => {
     }
 
     return (
-        <SafeAreaView className='flex-1 justify-center items-center relative bg-white'>
+        <SafeAreaView className='flex-1 justify-between items-center relative bg-white'>
             <View className='px-2'>
                 <MainHeader header_name='Store' fontFamily='maven-medium' textStyles='text-2xl' />
             </View>
@@ -203,7 +227,7 @@ const Index = () => {
                 <LoadingItems
                     mainStyles='mt-24'
                     textStyles='text-base text-slate'
-                    indicatorSize={50}
+                    indicatorSize={33}
                     indicatorTitle='Loading Products...'
                 /> : 
                 <FlatList
@@ -211,15 +235,12 @@ const Index = () => {
                     keyExtractor={(item) => item.product_id.toString()}
                     numColumns={numColumns}
                     renderItem={({ item }) => {
-                        const productImages = Array.isArray(item.product_images) ? item.product_images : [];
-                        const firstImage = productImages.length > 0
-                        ? productImages[0] : Carticons.placeholder;
                         return (
                             <OtherStoresSingleCard
                                 params={params}
                                 product_id={item.product_id}
-                                product_images={productImages}
-                                product_image={firstImage}
+                                business_product_id={item.business_product_id}
+                                product_image={item.primary_image?.image_url}
                                 product_name={item.product_name}
                                 product_description={item.product_description}
                                 product_actual_price={item.product_actual_price}
@@ -275,8 +296,32 @@ const Index = () => {
                         <>
                             {/* Store Info */}
                             <View className='w-full mt-2 flex-row items-center'>
-                                <View className="w-20 h-20 rounded-full border-2 border-lavender">
-                                    <Image className='h-full w-full rounded-full' source={{ uri: `${STORES_IMAGE_URI}${params.store_profileimage}` }} />
+                                <View
+                                    style={{
+                                        width: wp(23),
+                                        height: wp(23),
+                                        backgroundColor: getAvatarColor(params.store_id)
+                                    }}
+                                    className="w-20 h-20 rounded-full border-2 border-lavender"
+                                >
+                                    {!params.store_profileimage ? (
+                                        <Text
+                                            className="text-white text-xs"
+                                            style={{ fontFamily: 'roboto-medium' }}
+                                        >
+                                            Image...
+                                        </Text>
+                                    ) : (
+                                        <Image
+                                            source={{ uri: `${IMAGE_URI}${params.store_profileimage}` }}
+                                            className="rounded"
+                                            style={{ width: '100%', height: '100%', borderRadius: 9999, borderWidth: 1, borderColor: COLORS.white }}
+                                            contentFit="cover"
+                                            cachePolicy="memory-disk"
+                                            transition={500}
+                                        />
+                                    )}
+
                                     {storedata?.[0]?.is_closed &&
                                         <View className='absolute w-full h-full bg-black opacity-70 rounded-full flex-row justify-center items-center'>
                                             <MaterialCommunityIcons name="lock" size={15} style={{color: COLORS.lite}} />
@@ -400,108 +445,80 @@ const Index = () => {
                 />
             }
 
-            {ratestore &&
-                <>
-                    <View className='absolute flex-1 px-2 w-full' style={{zIndex: 10000}}>
-                        <MotiView
-                            from={{ opacity: 0, translateY: 50 }}   // start hidden + lower
-                            animate={{ opacity: 1, translateY: 0 }} // end visible + normal pos
-                            transition={{ duration: 1000 }}
-                            className=''
-                        >
-                            <View className='bg-white w-full justify-center items-center rounded-md'>
-                                <TouchableOpacity
-                                    className='w-full bg-red justify-center items-center'
-                                    style={{borderTopLeftRadius: 5, borderTopRightRadius: 4}}
-                                    onPress={() => setRateStore(false)}
-                                >
-                                    <View className='h-1 rounded-full my-2 bg-white w-[30%]'/>
-                                </TouchableOpacity>
-
-                                <Text className='text-xl mt-4' style={{fontFamily: 'roboto-medium'}}>Rate This Store</Text>
-
-                                <View className='w-[90%] justify-center items-center'>
-                                    <View className='justify-center items-center pt-4 flex-row'>
-                                        {[...Array(5)].map((_, i) => (
-                                        <TouchableOpacity key={i} onPress={() => setRating(i + 1)}>
-                                            <MaterialIcons
-                                            name={i < rating ? "star" : "star-border"}
-                                            size={50}
-                                            color="#FFD700"
-                                            />
-                                        </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                    {rating > 0 && (
-                                        <Text className="text-sm text-gray-500 my-4">
-                                            Your rating: {rating} ⭐
-                                        </Text>
-                                    )}
-                                    <View className='w-full'>
-                                        {/* Review Input */}
-                                        <Text className='text-base mb-1' style={{fontFamily: 'roboto-medium'}}>Write a review (Optional)</Text>
-                                        <TextInput
-                                            placeholder="Write a review..."
-                                            value={review}
-                                            onChangeText={setReview}
-                                            multiline
-                                            style={{
-                                                borderWidth: 1,
-                                                borderColor: '#ddd',
-                                                padding: 10,
-                                                borderRadius: 4,
-                                                marginBottom: 10,
-                                                height: 80
-                                            }}
-                                        />
-                                    </View>
-                                    <TouchableOpacity
-                                        className='bg-primary my-4 py-3 w-full rounded-md elevation-lg justify-center items-center'
-                                        onPress={() => submitRating()}
-                                    >
-                                        {ratingLoading ? (
-                                            <ActivityIndicator color={COLORS.white} size={27}/>
-                                        ) : (
-                                            <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>Done</Text>
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            </View>  
-                        </MotiView>
-                    </View>
-                    <Pressable
-                        className="absolute inset-0 bg-transparentBlack"
-                        onPress={() => setRateStore(false)}
-                    />
-                </>
-            }
-            {getReviews &&
-                <Modal
-                    transparent
-                    statusBarTranslucent
-                    visible={getReviews}
-                    animationType="none"
-                    onRequestClose={() => setGetReviews(false)}
+                <AppModal
+                    visible={ratestore}
+                    onClose={() => setRateStore(false)}
                 >
-                    {/* Overlay */}
-                    <MotiView
-                        from={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={styles.overlay}
+                    <View className='bg-white w-full justify-center items-center rounded-md pb-10'>
+                        <View className='w-full flex-row justify-end px-4 mt-2'>
+                            <TouchableOpacity
+                                className='bg-grey_bg justify-center items-center rounded-full'
+                                onPress={() => setRateStore(false)}
+                                style={{
+                                    height: wp(8),
+                                    width: wp(8)
+                                }}
+                            >
+                                <FontAwesome name='times' color={COLORS.red} size={16} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text className='text-xl mt-4' style={{fontFamily: 'roboto-medium'}}>Rate This Store</Text>
+
+                        <View className='w-[90%] justify-center items-center'>
+                            <View className='justify-center items-center pt-4 flex-row'>
+                                {[...Array(5)].map((_, i) => (
+                                <TouchableOpacity key={i} onPress={() => setRating(i + 1)}>
+                                    <MaterialIcons
+                                    name={i < rating ? "star" : "star-border"}
+                                    size={50}
+                                    color="#FFD700"
+                                    />
+                                </TouchableOpacity>
+                                ))}
+                            </View>
+                            {rating > 0 && (
+                                <Text className="text-sm text-gray-500 my-4">
+                                    Your rating: {rating} ⭐
+                                </Text>
+                            )}
+                            <View className='w-full'>
+                                {/* Review Input */}
+                                <Text className='text-base mb-1' style={{fontFamily: 'roboto-medium'}}>Write a review (Optional)</Text>
+                                <TextInput
+                                    placeholder="Write a review..."
+                                    value={review}
+                                    onChangeText={setReview}
+                                    multiline
+                                    style={{
+                                        borderWidth: 1,
+                                        borderColor: '#ddd',
+                                        padding: 10,
+                                        borderRadius: 4,
+                                        marginBottom: 10,
+                                        height: 80
+                                    }}
+                                />
+                            </View>
+                            <TouchableOpacity
+                                className='bg-primary my-4 py-3 w-full rounded-md elevation-lg justify-center items-center'
+                                onPress={() => submitRating()}
+                            >
+                                {ratingLoading ? (
+                                    <ActivityIndicator color={COLORS.white} size={27}/>
+                                ) : (
+                                    <Text className='text-white text-2xl' style={{fontFamily: 'roboto-medium'}}>Done</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </AppModal>
+
+                    <AppModal
+                        visible={getReviews}
+                        onClose={() => setGetReviews(false)}
                     >
-                        <Pressable className="flex-1 inset-0 top-0 bottom-0 left-0 right-0 bg-transparentBlack" onPress={() => setGetReviews(false)} />
-                    </MotiView>
-    
-                    {/* Bottom Sheet */}
-                    <MotiView
-                        from={{ translateY: 400 }}
-                        animate={{ translateY: 0 }}
-                        exit={{ translateY: 400 }}
-                        transition={{ type: 'timing', duration: 400 }}
-                        style={styles.sheet}
-                    >
-                        <View className='bg-white w-full justify-center items-center rounded-md' style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}>
+                        <View className='bg-white w-full justify-center items-center rounded-md'>
                             <TouchableOpacity
                                 className='w-full justify-center items-center'
                                 style={{borderTopLeftRadius: 20, borderTopRightRadius: 20}}
@@ -533,16 +550,41 @@ const Index = () => {
                                             <View className='px-2 w-full'>
                                                 <View className='w-full justify-center'>
                                                     <View className='justify-between w-full items-center flex-row'>
-                                                        <View className='border-2 border-lavender justify-center items-center rounded-full' style={{width: 45, height: 45}}>
-                                                            {item.profile_image ?
-                                                                <Image className='h-full w-full rounded-full' source={{ uri: `${USER_IMAGE_URI}${item.profile_image}` }} />
-                                                                : <FontAwesome name='user' size={28} color={COLORS.slate}/> 
-                                                            }
+                                                        <View
+                                                            className='border-2 border-lavender justify-center items-center rounded-full'
+                                                            style={{
+                                                                width: wp(15),
+                                                                height: wp(15),
+                                                                backgroundColor: getAvatarColor(item.user_id)
+                                                            }}
+                                                        >
+                                                            {!item.profile_image ? (
+                                                                <Text
+                                                                    className="text-white text-xl"
+                                                                    style={{ fontFamily: 'roboto-medium' }}
+                                                                >
+                                                                    {getFirstLetter(item.first_name)}
+                                                                </Text>
+                                                            ) : (
+                                                                <Image
+                                                                    source={{ uri: `${IMAGE_URI}${item.profile_image}` }}
+                                                                    className="rounded"
+                                                                    style={{ width: '100%', height: '100%', borderRadius: 9999, borderWidth: 1, borderColor: COLORS.white }}
+                                                                    contentFit="cover"
+                                                                    cachePolicy="memory-disk"
+                                                                    transition={500}
+                                                                />
+                                                            )}
                                                         </View>
                                                         <View className='' style={{width: '83%'}}>
-                                                            <Text className='text-base text-slate' style={{fontFamily: 'roboto-medium'}}>
-                                                                {(`${item.first_name || ""} ${item.last_name || ""}`).trim() || "User"}
-                                                            </Text>
+                                                            <Text
+                                                                className="text-base text-slate"
+                                                                style={{ fontFamily: "roboto-medium" }}
+                                                                >
+                                                                {[item.first_name, item.last_name]
+                                                                    .filter(Boolean)
+                                                                    .join(" ") || "User"}
+                                                                </Text>
                                                         </View>
                                                     </View>
                                                     <View className='w-full'>
@@ -583,10 +625,8 @@ const Index = () => {
                                     />
                                 }
                             </View>
-                        </View>  
-                    </MotiView>
-                </Modal>
-            }
+                        </View>
+                    </AppModal>
 
             {loadingAddFavorites && (
                 <MotiView
@@ -614,6 +654,65 @@ const Index = () => {
                     </View>
                 </MotiView>
             )}
+        
+            <View
+                className="w-full bg-[#e6f0fe] py-2"
+                style={{ backgroundColor: '#e6f0fe' }}
+            >
+                <FlatList
+                    data={tabs}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(item, index) =>
+                        item.id ? item.id.toString() : `all-${index}`
+                    }
+                    contentContainerStyle={{
+                        paddingHorizontal: 12,
+                        gap: 10,
+                    }}
+                    renderItem={({ item }) => {
+                        const isActive = activeCategory === item.id;
+
+                        return (
+                            <TouchableOpacity
+                                onPress={() => setActiveCategory(item.id)}
+                                activeOpacity={0.9}
+                            >
+                                <MotiView
+                                    animate={{
+                                        scale: isActive ? 1 : 0.96,
+                                        opacity: isActive ? 1 : 0.7,
+                                    }}
+                                    transition={{
+                                        type: 'spring',
+                                        damping: 15,
+                                    }}
+                                    style={{
+                                        backgroundColor: isActive
+                                            ? COLORS.primary
+                                            : 'rgba(255, 255, 255, 0.45)',
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        borderRadius: 20,
+                                        paddingHorizontal: 15,
+                                        paddingVertical: 6,
+                                    }}
+                                >
+                                    <Text
+                                        className={
+                                            isActive
+                                                ? 'font-semibold text-white'
+                                                : 'font-medium text-gray-700'
+                                        }
+                                    >
+                                        {item.name}
+                                    </Text>
+                                </MotiView>
+                            </TouchableOpacity>
+                        );
+                    }}
+                />
+            </View>
         </SafeAreaView>
     );
 };

@@ -13,9 +13,9 @@ export const authService = {
         return SecureStore.getItemAsync(REFRESH_KEY);
     },
 
-    async setTokens({ accessToken, refreshToken }) {
-        if (accessToken) {
-            await SecureStore.setItemAsync(ACCESS_KEY, accessToken);
+    async setTokens({ authToken, refreshToken }) {
+        if (authToken) {
+            await SecureStore.setItemAsync(ACCESS_KEY, authToken);
         }
         
         if (refreshToken) {

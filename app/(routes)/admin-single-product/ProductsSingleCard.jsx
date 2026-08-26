@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS } from '../../../constants/constants';
 import useApi from '../../../hook/useApi';
+import ProductImagesGallery from '../../../utils/ProductImagesGallery';
 import { toast } from '../../../utils/toast';
 import LoadingIndicator from '../../LoadingIndicator';
-import ProductImagesGallery from '../../screens/other-single-product/ProductImagesGallery';
 
 const ProductsSingleCard = ({
     onClose,
@@ -30,6 +30,7 @@ const ProductsSingleCard = ({
     variant_is_required,
     variant_multi_select,
     variant_options,
+    business_id
 }) => {
         const [opendeleteproduct, setOpenDeleteProduct] = useState(false);
         const {data: imagesData, isLoading: imagesLoading, error: imagesError, get: imagesGet} = useApi(`/products/product-images?product_id=${product_id}`);
@@ -73,6 +74,7 @@ const ProductsSingleCard = ({
             const toggledStatus = !activeStatus;
 
             publishProduct({
+                business_id,
                 product_id,
                 product_status: toggledStatus,
                 unpublish: !toggledStatus,
@@ -118,6 +120,7 @@ const ProductsSingleCard = ({
 
                 if (!isSuccess) {
                     toast.error(`Update Failed, ${publishResponse.message}`);
+                    return;
                 } else {
                     toast.success(message);
                     setIsRedirecting(true);
@@ -134,12 +137,25 @@ const ProductsSingleCard = ({
                 // setTimeout(() => onClose(), 3000);
             } else if (deleteResponse?.json?.message) {
                 toast.error(deleteResponse.json.message);
+                return;
             } else if (deleteResponse?.Response) {
                 toast.error(deleteResponse.Response);
+                return;
             } else {
                 toast.error('Delete Failed, Unknown error');
+                return;
             }
         }, [deleteResponse]);
+
+    let parsedProductImages = [];
+
+    try {
+        parsedProductImages = product_images
+            ? JSON.parse(product_images)
+            : [];
+    } catch (error) {
+        console.error('Error parsing product_images:', error);
+    }
 
     return (
         <View className='flex-1'>
@@ -205,7 +221,7 @@ const ProductsSingleCard = ({
                 >
                     <ProductImagesGallery
                         mainImage={product_image}
-                        images={Array.isArray(imagesData?.data) ? imagesData?.data : []}
+                        images={Array.isArray(parsedProductImages) ? parsedProductImages : []}
                     />
 
                     <View className="h-[1px] my-4 bg-lavender" />
@@ -282,7 +298,8 @@ const ProductsSingleCard = ({
                                 store_category,
                                 product_category,
                                 store_profileimage,
-                                product_image
+                                product_image,
+                                business_id
                             }})}
                         >
                             <View className='bg-[#DFF6E6] rounded-full justify-center items-center' style={{width: 45, height: 45}}>
@@ -307,7 +324,8 @@ const ProductsSingleCard = ({
                                         variant_options,
                                         product_image,
                                         product_images,
-                                        product_name
+                                        product_name,
+                                        business_id
                                     },
                                 })
                             }
@@ -322,12 +340,12 @@ const ProductsSingleCard = ({
                             </Text>
                         </TouchableOpacity>
 
-                        {store_category === 'Restaurant' && (
+                        {(store_category === 'restaurant' || store_category === 'liquor') && (
                             <TouchableOpacity
                                 onPress={() =>
                                     router.push({
                                         pathname: '/edit-products/add-extras-to-product',
-                                        params: { store_id, product_id },
+                                        params: { store_id, product_id, business_id },
                                     })
                                 }
                                 className="justify-center py-1 items-center rounded-md border border-[#E2E8F0] mb-4"

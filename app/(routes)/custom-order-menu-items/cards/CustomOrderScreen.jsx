@@ -66,8 +66,6 @@ const CustomOrderScreen = () => {
     const fadeAnim = useRef(new Animated.Value(1)).current;
     const dispatch = useDispatch();
 
-    console.log("Runner details:", runnerdetails);
-
     useEffect(() => {
         if (errorMessage) {
             fadeAnim.setValue(1);
@@ -794,7 +792,7 @@ const CustomOrderScreen = () => {
                 </TouchableOpacity> */}
 
                 <TouchableOpacity
-                    className='flex-row w-full elevation-lg bg-red justify-between px-2 items-center rounded py-3'
+                    className='flex-row w-full elevation bg-red justify-between px-2 items-center rounded py-3'
                     style={{}}
                     onPress={() => setViewCart(true)}
                 >

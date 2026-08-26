@@ -36,9 +36,11 @@ export const uploadImages = async ({
         images: imageMetadata
     });
 
+    console.log('FAILED', response)
+
     if (!response?.data?.success) {
         throw new Error(
-            response?.data?.message ||
+            response?.message ||
             'Failed to prepare image uploads'
         );
     }

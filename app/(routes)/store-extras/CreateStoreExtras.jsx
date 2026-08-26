@@ -18,28 +18,27 @@ const CreateStoreExtras = () => {
     
     const [formData, setFormData] = useState({
         store_id: params.store_id,
+        business_id: params.business_id,
         extra_name: '',
         extra_price: '',
     });
     
-    const { data: response,isLoading,error,post } = useApi('/stores/extras/create');
+    const { data: response, isLoading, error, post } = useApi('/stores/extras/create');
         
     useEffect(() => {
         if (response) {
             if (response.Response === 'Success') {
                 toast.success('Extra created successfully!');
-        
-                setIsRedirecting(true);
-                setTimeout(() => {
-                    router.back(); // Navigate back
-                }, 5000);
+                return;
             } else {
                 toast.error(response.Response || 'Something went wrong');
+                return;
             }
         }
         
         if (error) {
             toast.error('An error occurred. Please try again.');
+            return;
         }
     }, [response, error]);
             
@@ -54,8 +53,8 @@ const CreateStoreExtras = () => {
         setErrorMessage(''); // Clear error message
         
         const validations = [
-            { field: formData.extra_name, message: 'Enter extra name.' },
-            { field: formData.extra_price, message: 'Enter extra price.' },
+            { field: formData.extra_name, message: 'Enter extra name is required.' },
+            { field: formData.extra_price, message: 'Enter extra price is required.' },
         ];
         
         for (let i = 0; i < validations.length; i++) {
@@ -64,7 +63,7 @@ const CreateStoreExtras = () => {
         
             if (!isValid) {
                 setErrorMessage(message);
-                showErrorToast(message);
+                toast.error(message);
                 return;
             }
         }

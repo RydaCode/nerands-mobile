@@ -53,7 +53,7 @@ const Index = () => {
     } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        if (isAuthenticated === false) {
+        if (!isAuthenticated) {
             router.replace('/(auth)/login');
         }
     }, [isAuthenticated]);
@@ -87,6 +87,17 @@ const Index = () => {
     const reload = () => {
         get();
     }
+
+    const confirmLogout = async () => {
+        const result = await logout();
+
+        if (result.success) {
+            toast.success('You have been logged out');
+            setOpenLogout(false);
+        } else {
+            toast.error('Error', result.error);
+        }
+    };
 
     // -----------------------
     // MIME TYPE DETECTION
@@ -132,17 +143,6 @@ const Index = () => {
                 toast.error('Image picker error');
             }
         };
-
-    const confirmLogout = async () => {
-        const result = await logout();
-
-        if (result.success) {
-            toast.success('You have been logged out');
-            router.replace('../(auth)/login');
-        } else {
-            toast.error('Error', result.error);
-        }
-    };
 
     useApi(`/users/${user_id}`);
 
@@ -219,16 +219,11 @@ const Index = () => {
         }
     }
 
+    const { wp } = useResponsive();
+
     if (isLoggingOut) {
         return <LoadingIndicator loading_text="Logging out..." />;
     }
-
-    const {
-        wp,
-        listCardHeight,
-        responsiveSize,
-        isTablet
-    } = useResponsive();
 
     return (
         <SafeAreaView className='flex-1 px-2 bg-white relative'>
@@ -665,9 +660,9 @@ const Index = () => {
                                 <Text className='text-sm' style={{ fontFamily: 'roboto' }}>Delete Account</Text>
                             </TouchableOpacity>
 
-                            {isLoggingOut && (
+                            {/* {isLoggingOut && (
                                 <LoadingIndicator loading_text="Logging out..." />
-                            )}
+                            )} */}
                         </View>
                     </MotiView>
                     </View>

@@ -1,16 +1,18 @@
 import {
     Feather, FontAwesome, FontAwesome5, MaterialCommunityIcons
 } from "@expo/vector-icons";
+import { Image } from 'expo-image';
 import { MotiView } from "moti";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View
+    Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { COLORS, SIZES } from "../../../constants/constants";
+import { COLORS } from "../../../constants/constants";
+import { useResponsive } from "../../../hook/useResponsive";
 import { addItem, clearCart } from "../../../redux/store/slices/CartSlice";
-import { PRODUCTS_IMAGE_URI } from "../../../RequestMethods";
+import { IMAGE_URI } from "../../../RequestMethods";
+import { getAvatarColor } from "../../../utils/getInitials";
 import { toast } from "../../../utils/toast";
 import ExtraCheckbox from "./ExtraCheckbox ";
 import { ACTIONS } from "./useProductDetailsReducer";
@@ -38,6 +40,7 @@ const ProductDetailsModal = ({
     const cartItems = useSelector((state) => state.cart.cartItems);
     const [selectedVariants, setSelectedVariants] = useState({});
     const cartStoreId = useSelector(state => state.cart.store_id);
+    const { wp, responsiveSize } = useResponsive();
 
     const price = useMemo(() => {
         const variants = Object.values(selectedVariants);
@@ -55,7 +58,7 @@ const ProductDetailsModal = ({
     const imageDimensions = useMemo(
         () =>
         isLandscape
-            ? { width: "35%", height: 170, marginRight: 10 }
+            ? { width: "100%", height: 170, marginRight: 10 }
             : { width: width * 0.25, height: height * 0.09 },
         [isLandscape, width, height],
     );
@@ -224,34 +227,55 @@ const ProductDetailsModal = ({
             >
             {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}> */}
                 {/* Header */}
-                    <View className='flex-row justify-between items-center w-full px-4 pt-2'>
+                    <View className='flex-row justify-between items-center w-full pt-2 mb-2'
+                        style={{paddingHorizontal: 10}}
+                    >
                         <View className=''>
                             <Text className="text-black text-2xl mt-1 font-semibold" style={{ fontFamily: "outfit-medium" }}
                             >Product Details</Text>
                         </View>
                         <TouchableOpacity
-                            style={{width: 30, height: 30}}
+                            style={{
+                                width: wp(8),
+                                height: wp(8)
+                            }}
                             className='justify-center items-center rounded-full bg-grey_bg'
                             onPress={toggleModal}
                         >
                             <FontAwesome name="times" size={15} color={'red'}/>
                         </TouchableOpacity>
                     </View>
-                    <View className='w-full px-4 my-2'>
-                        <View className='bg-lavender' style={{height: 0.5,}}/>
-                    </View>
                     <ScrollView
-                        style={{ maxHeight: height * 0.8, paddingHorizontal: 16, width: '100%', paddingBottom: 20, backgroundColor: 'transparent' }}
+                        style={{ maxHeight: height * 0.8, paddingHorizontal: 10, width: '100%', paddingBottom: 20, backgroundColor: 'transparent' }}
                         showsVerticalScrollIndicator={false}
                     >
                         {/* Product Info */}
-                        <View className="flex-row mb-4 pt-2">
-                            <View className="relative rounded" style={imageDimensions}>
-                                <Image
-                                    className="w-full h-full"
-                                    source={{ uri: `${PRODUCTS_IMAGE_URI}${product_iamges}` }}
-                                    style={{ borderRadius: SIZES.radius, resizeMode: "cover" }}
-                                />
+                        <View className="mb-4 w-full">
+                            <View
+                                className="w-full relative justify-center items-center rounded overflow-hidden"
+                                style={{
+                                    height: wp(70),
+                                    backgroundColor: getAvatarColor(item.product_id)
+                                }}
+                            >
+                                {!product_iamges ? (
+                                    <Text
+                                        className="text-white text-base"
+                                        style={{ fontFamily: 'roboto-medium' }}
+                                    >
+                                        Loading image...
+                                    </Text>
+                                ) : (
+                                    <Image
+                                        source={{ uri: `${IMAGE_URI}${product_iamges}` }}
+                                        className="rounded"
+                                        style={{ width: '100%', height: '100%' }}
+                                        contentFit="cover"
+                                        cachePolicy="memory-disk"
+                                        transition={500}
+                                    />
+                                )}
+
                                 {!isAvailable && (
                                     <View className="absolute w-full h-full bg-black rounded opacity-70 justify-center items-center">
                                         <MaterialCommunityIcons
@@ -263,7 +287,7 @@ const ProductDetailsModal = ({
                                     </View>
                                 )}
                             </View>
-                            <View className="justify-center ml-3">
+                            <View className="justify-center mt-2">
                                 <Text className="text-xl" style={{ fontFamily: "roboto-medium" }}>{item.product_name}</Text>
                                 <Text className="text-primary text-xl" style={{ fontFamily: "maven-medium" }}>
                                     K{price ?? item.final_price}
@@ -271,11 +295,24 @@ const ProductDetailsModal = ({
                             </View>
                         </View>
 
-                        {item.product_description && (
-                            <Text className="text-sm text-slate mb-4" style={{ fontFamily: "roboto-regular" }}>
-                                {item.product_description}
-                            </Text>
-                        )}
+                        <View className='w-full'>
+                            {item.product_description && (
+                                <Text className="text-sm text-slate mb-4" style={{ fontFamily: "roboto-regular" }}>
+                                    {item.product_description}
+                                </Text>
+                            )}
+
+                            {item.ingridients && (
+                                <View className='w-full'>
+                                    <Text className="text-base text-black mb-1" style={{ fontFamily: "roboto-medium" }}>
+                                        Ingridients
+                                    </Text>
+                                    <Text className="text-sm text-slate mb-4" style={{ fontFamily: "roboto-regular" }}>
+                                        {item.ingridients}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
 
                         {/* Variants */}
                         <View>
@@ -383,12 +420,12 @@ const ProductDetailsModal = ({
                     </ScrollView>
 
                     {/* Add to Cart */}
-                    <View className=' w-full px-4 bg-transparent justify-center items-center'
-                        style={{marginBottom: 50}}
+                    <View className='bg-transparent justify-center items-center w-full'
+                        style={{marginBottom: 50, paddingHorizontal: 10}}
                     >
                         {/* Total */}
-                        <View className='w-full mb-2 bg-white'>
-                            <Text className="text-2xl text-red" style={{ fontFamily: "ubuntu-bold" }}>
+                        <View className='w-full mb-2 bg-white flex-row justify-end'>
+                            <Text className="text-2xl text-primary" style={{ fontFamily: "ubuntu-bold" }}>
                                 Total: K{totalAmount}
                             </Text>
                         </View>
@@ -400,10 +437,10 @@ const ProductDetailsModal = ({
                                 }}
                                 disabled={alreadyInCart || is_closed || !isAvailable}
                                 onPress={handleAddToCart}
-                                className="bg-primary py-3 flex-row justify-center items-center rounded elevation-md"
+                                className="bg-primary py-3 flex-row justify-center items-center rounded elevation"
                             >
                                 {is_closed || !isAvailable  ? (
-                                    <Feather name="lock" size={19} style={{ color: COLORS.red }} />
+                                    <Feather name="lock" size={19} style={{ color: COLORS.white }} />
                                 ) :  (
                                     <FontAwesome
                                         name="shopping-cart"

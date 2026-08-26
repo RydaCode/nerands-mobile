@@ -1,11 +1,13 @@
 import { Feather, Ionicons } from '@expo/vector-icons'
+import { Image } from 'expo-image'
 import { Text, TouchableOpacity, View } from 'react-native'
 import { useSelector } from 'react-redux'
 import { COLORS, SIZES } from '../../../constants/constants'
 import { usePermissions } from '../../../hook/usePermissions'
+import { IMAGE_URI } from '../../../RequestMethods'
 import { capitalize } from '../../../utils/capitalize'
 import { calculateDistance } from '../../../utils/getDistance'
-import { getAvatarColor, getInitials } from '../../../utils/getInitials'
+import { getAvatarColor, getFirstLetter } from '../../../utils/getInitials'
 import { isStoreOpen } from '../../../utils/isStoreOpen'
 import { toast } from '../../../utils/toast'
 
@@ -99,15 +101,7 @@ const AdminStoresCard = ({
                 <View className='relative justify-center items-center rounded'
                     style={{width: '23%', height: '60', backgroundColor: getAvatarColor(store_id)}}
                 >
-                    <Text
-                        className='text-white'
-                        numberOfLines={1}
-                        style={{
-                            fontFamily: 'roboto-medium',
-                            fontSize: 20,
-                        }}
-                    >{getInitials(store_location)}</Text>
-                    {/* {!store_profileimage ? (
+                    {!store_coverimage ? (
                             <Text
                             className='text-white'
                             numberOfLines={1}
@@ -115,12 +109,17 @@ const AdminStoresCard = ({
                                 fontFamily: 'roboto-medium',
                                 fontSize: 20,
                             }}
-                        >{getInitials(store_location)}</Text>
+                        >{getFirstLetter(store_location)}</Text>
                     ) : (
-                        <Image style={{borderRadius: 3, width: '100%', height: '100%'}} className='w-full h-full'
-                            source={{uri:`${STORES_IMAGE_URI}${store_profileimage}`}}
+                        <Image
+                            style={{borderRadius: 3, width: '100%', height: '100%'}}
+                            className='w-full h-full'
+                            source={{uri:`${IMAGE_URI}${store_coverimage}`}}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                            transition={500}
                         />
-                    )} */}
+                    )}
                     {isStoreOpen(open_time, open_close) && (
                         <View className="w-full h-full justify-center items-center bg-transparentBlack absolute" style={{ borderRadius: 3 }}>
                             <View className='w-full h-full relative'>
@@ -150,7 +149,7 @@ const AdminStoresCard = ({
                         <View>
                             {active_status === false ?
                                 <View className='bg-red rounded-lg px-3'>
-                                    <Text className='text-sm text-white'>Private</Text>
+                                    <Text className='text-xs text-white'>Private</Text>
                                 </View> :
                                 <View className='bg-slate rounded-lg px-3'>
                                     <Text className='text-sm text-white'>Public</Text>

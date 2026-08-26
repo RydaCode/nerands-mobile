@@ -18,8 +18,6 @@ const Index = () => {
         }
     }, [user_id]);
 
-    console.log("LOCAL MARKETmmm", data?.stores)
-
     return (
         <SafeAreaView className='flex-1 px-2 bg-white w-full items-center'>
             <View className='px-2'>

@@ -149,8 +149,9 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                             return (
                                 <AllProductsCard
                                     product_id={item.product_id}
-                                    product_images={productImages}
-                                    product_image={firstImage}
+                                    business_product_id={item.business_product_id}
+                                    product_images={item.product_images}
+                                    product_image={item.primary_image?.image_url}
                                     product_name={item.product_name}
                                     product_description={item.product_description}
                                     product_price={item.product_price}

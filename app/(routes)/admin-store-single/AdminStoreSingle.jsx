@@ -316,14 +316,12 @@ const AdminStoreSingle = ({
                             <FlatList
                                 data={productsList}
                                 renderItem={({ item }) => {
-                                    const productImages = Array.isArray(item.product_images) ? item.product_images : [];
-                                    const firstImage = productImages.length > 0 ? `${productImages[0]}` : null;
                                     return (
                                         <AdminStoreSingleCard
                                             key={item.product_id}
                                             product_id={item.product_id}
-                                            product_image={firstImage}
-                                            product_images={productImages}
+                                            product_image={item.primary_image?.image_url}
+                                            product_images={item.images}
                                             product_name={item.product_name}
                                             product_description={item.product_description}
                                             product_price={item.product_price}
@@ -342,6 +340,7 @@ const AdminStoreSingle = ({
                                             variant_groups={item.variant_groups}
                                             markup_percent={item.markup_percent}
                                             final_price={item.final_price}
+                                            business_id={business_id}
                                         />
                                     );
                                 }}

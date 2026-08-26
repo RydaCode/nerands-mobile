@@ -1,13 +1,15 @@
 import { COLORS, SIZES } from "@/constants/constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { Image } from 'expo-image';
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
-import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Text, TouchableOpacity, View } from "react-native";
 import { useSelector } from "react-redux";
-import { STORES_IMAGE_URI } from "../../RequestMethods";
+import { useResponsive } from '../../hook/useResponsive';
+import { IMAGE_URI } from "../../RequestMethods";
 import { calculateDistance } from "../../utils/getDistance";
-import { formatText } from "../../utils/getInitials";
+import { formatText, getAvatarColor } from "../../utils/getInitials";
 
 const MainContent = ({
   store_id,
@@ -52,6 +54,8 @@ const MainContent = ({
 
   const isLandscape = width > height; // Determine orientation
   const isTablet = width >= 768; // Define a breakpoint for tablets
+
+  const { wp, responsiveSize } = useResponsive();
 
   const textDimension = isLandscape
     ? { fontSize: 25, fontFamily: "roboto-medium" } // Larger dimensions for landscape
@@ -144,13 +148,40 @@ const MainContent = ({
       className="relative mt-6 pb-1"
     >
       <View className="w-full">
-        <View className="w-full relative h-[160px] md:h-[190px] lg:h-[220px]">
-          <Image
-            style={{ borderRadius: 5 }}
-            className="w-full h-full"
-            source={{ uri: `${STORES_IMAGE_URI}${store_coverimage}` }}
-          />
-          {is_closed &&
+        <View 
+          className="w-full relative bg-red rounded"
+          style={{
+            height: wp(47),
+          }}
+        >
+          <View
+            className='overflow-hidden rounded justify-center items-center'
+             style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: getAvatarColor(store_id)
+              }}
+          >
+            {!store_coverimage ? (
+              <Text
+                  className="text-white text-sm"
+                  style={{ fontFamily: 'roboto' }}
+              >
+                  Loading image...
+              </Text>
+            ) : (
+              <Image
+                source={{ uri: `${IMAGE_URI}${store_coverimage}` }}
+                className="rounded"
+                style={{ width: '100%', height: '100%' }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={500}
+              />
+            )}
+          </View>
+
+          {(is_closed && store_coverimage) &&
             <View className="absolute w-full h-full bg-black opacity-70 rounded-[3px] flex-row justify-center items-center z-50">
               <MaterialCommunityIcons
                 name="lock"
@@ -186,24 +217,38 @@ const MainContent = ({
             />
           </TouchableOpacity>
           <View
-            className="
-              absolute
-              -bottom-4
-              left-2
-              rounded-full
-              h-[90px]
-              w-[90px]
-              md:h-[120px]
-              md:w-[120px]
-              lg:h-[180px]
-              lg:w-[180px]
-            "
+            className=" absolute -bottom-4 left-2 rounded-full justify-center items-center"
+            style={{
+              zIndex: 900,
+              width: wp(25),
+              height: wp(25),
+              borderWidth: 3,
+              borderColor: COLORS.white,
+              backgroundColor: getAvatarColor(store_profileimage)
+            }}
           >
-            <Image
-              style={{ }}
-              className="w-full h-full rounded-full p-2 z-50 elevation-xl border-2 border-white"
-              source={{ uri: `${STORES_IMAGE_URI}${store_profileimage}` }}
-            />
+            {!store_profileimage ? (
+              <Text
+                  className="text-white text-sm"
+                  style={{ fontFamily: 'roboto' }}
+              >
+                  Image...
+              </Text>
+            ) : (
+              <Image
+                className="w-full h-full p-2 z-50 elevation-xl"
+                source={{ uri: `${IMAGE_URI}${store_profileimage}` }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderWidth: 0,
+                  borderRadius: 99999,
+                }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={500}
+              />
+            )}
           </View>
         </View>
         <View

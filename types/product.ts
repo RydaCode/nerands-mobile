@@ -18,6 +18,7 @@ export interface Product {
     category: ProductCategory | null;
     sku: string;
     is_active: boolean;
+    already_exists: boolean;
     created_at: string;
     updated_at: string;
 }

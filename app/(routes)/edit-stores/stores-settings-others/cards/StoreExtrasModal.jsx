@@ -39,6 +39,7 @@ const StoreExtrasModal = ({router, params, setStoreExtrasModalVisible}) => {
                                     router.push({
                                     pathname: '../../store-extras/ViewStoreExtras',
                                         params: {
+                                            business_id: params.business_id,
                                             store_id: params.store_id,
                                         },
                                     })
@@ -52,6 +53,7 @@ const StoreExtrasModal = ({router, params, setStoreExtrasModalVisible}) => {
                                     router.push({
                                     pathname: '../../store-extras/CreateStoreExtras',
                                         params: {
+                                            business_id: params.business_id,
                                             store_id: params.store_id,
                                         },
                                     })

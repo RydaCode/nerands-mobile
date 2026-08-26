@@ -1,23 +1,31 @@
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
-import styles from '../../../constants/styles.tabs';
+import ProductstabStyles from '../../../constants/ProductstabStyles';
 
-const TabButton = ({ name, activeTab, onHandleSearchType }) => (
-    <TouchableOpacity
-        style={styles.btn(name, activeTab)} className='py-2 px-6 border border-lavender items-center'
-        onPress={onHandleSearchType}
-    >
-        <Text style={styles.btnText(name, activeTab)}>{name}</Text>
-    </TouchableOpacity>
-);
+const TabButton = ({ tab, activeTab, onHandleSearchType }) => {
+
+    const isActive = activeTab?.id === tab.id;
+
+    return (
+        <TouchableOpacity
+            style={ProductstabStyles.btn(isActive)}
+            className="py-2 px-6 border border-lavender items-center"
+            onPress={onHandleSearchType}
+        >
+            <Text style={ProductstabStyles.btnText(isActive)}>
+                {tab.name}
+            </Text>
+        </TouchableOpacity>
+    );
+};
 
 const StoreMenuTabs = ({ tabs, activeTab, setActiveTab }) => {
     return (
-        <View className='' style={styles.container}>
+        <View style={ProductstabStyles.container}>
             <FlatList
                 data={tabs}
                 renderItem={({ item }) => (
                     <TabButton
-                        name={item}
+                        tab={item}
                         activeTab={activeTab}
                         onHandleSearchType={() => setActiveTab(item)}
                     />
@@ -27,7 +35,7 @@ const StoreMenuTabs = ({ tabs, activeTab, setActiveTab }) => {
                 contentContainerStyle={{ columnGap: 5 }}
             />
         </View>
-    )
-}
+    );
+};
 
 export default StoreMenuTabs
