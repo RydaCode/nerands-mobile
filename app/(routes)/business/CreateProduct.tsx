@@ -50,9 +50,6 @@ const CreateProduct = () => {
         error: productError,
         post: createProduct
     } = useApi('/businesses/products/create');
-
-    console.log("Presign", presignError);
-    console.log("Product", presignError);
     
     const pickImage = async () => {
         try {
@@ -111,7 +108,8 @@ const CreateProduct = () => {
     const [formData, setFormData] = useState({
         business_id,
         name: '',
-        description: ''
+        description: '',
+        ingredients: ''
     });
 
     const handleCreateProduct = async () => {
@@ -214,6 +212,7 @@ const CreateProduct = () => {
                         }
                     />
                 </View>
+
                 <View className='w-full mb-6'>
                     <View
                         className='w-full mb-2'
@@ -273,6 +272,38 @@ const CreateProduct = () => {
                         <FontAwesome name='angle-down' color={COLORS.slate} size={24} />
                     </TouchableOpacity>
                 </View>
+
+                {(business_category === 'restaurant' || business_category === 'local_market') && (
+                    <View className="w-full mb-6">
+                        <View className="w-full mb-2">
+                            <Text
+                                className="text-base"
+                                style={{ fontFamily: 'roboto-medium' }}
+                            >
+                                Ingredients
+                            </Text>
+                        </View>
+
+                        <TextInput
+                            className="rounded-xl w-full px-3"
+                            style={{
+                                fontFamily: 'roboto-medium',
+                                borderWidth: 2,
+                                borderColor: COLORS.lavender,
+                                height: 110
+                            }}
+                            value={formData.ingredients}
+                            onChangeText={(value) =>
+                                setFormData(prev => ({
+                                    ...prev,
+                                    ingredients: value
+                                }))
+                            }
+                            placeholder="e.g. Chicken, lettuce, tomato, mayonnaise"
+                            multiline
+                        />
+                    </View>
+                )}
                 
                 <View className='w-full mt-10'>
                     {/* Pick Image Button */}

@@ -37,17 +37,28 @@ const NewCustomTransporter = ({created_by, custom_order_id, store_order_id, orde
     const handleAssignCustomTransporter = async () => {
         if (!form.firstName) return toast.error('Enter first name');
         if (!form.lastName) return toast.error('Enter last name');
-        if (!form.regNumber) return toast.error('Enter reg number');
         if (!form.phoneNumber) return toast.error('Enter phone number');
-        if (!form.type || form.type === 'none') return toast.error('Select transporter type');
+
+        if (!form.type || form.type === 'none') {
+            toast.error('Select transporter type');
+            return
+        }
+
+        if ((form.type === 'Motor-Car' && !form.regNumber) || form.type === 'Biker' && !form.regNumber) {
+            toast.error('Enter registration number');
+            return
+        }
 
         try {
             const res = await post(form);
 
             if (res?.success) {
                 toast.success(res.message || 'Transporter assigned successfully.');
+                router.back();
+                return;
             } else {
                 toast.error(res?.message || 'Failed to assign transporter.');
+                return;
             }
 
         } catch (error) {
@@ -114,22 +125,7 @@ const NewCustomTransporter = ({created_by, custom_order_id, store_order_id, orde
                                     }}
                                 />
                             </View>
-                            <View className='mb-10'>
-                                <Text className='mb-1' style={{ fontFamily: "roboto-medium" }}>Motor Reg Number. (Eg: ABF-2154)</Text>
-                                <TextInput
-                                    placeholder="Enter reg number"
-                                    autoCapitalize="characters"
-                                    keyboardType="default"
-                                    onChangeText={(text) => updateField("regNumber", text)}
-                                    style={{
-                                        borderWidth: 1,
-                                        borderColor: "#ccc",
-                                        padding: 10,
-                                        paddingVertical: 13,
-                                        borderRadius: 5,
-                                    }}
-                                />
-                            </View>
+
                             <View className='mb-10'>
                                 <Text className='mb-1' style={{ fontFamily: "roboto-medium" }}>Phone Number</Text>
                                 <TextInput
@@ -163,6 +159,25 @@ const NewCustomTransporter = ({created_by, custom_order_id, store_order_id, orde
                                     </Picker>
                                 </View>
                             </View>
+
+                            {(form.type === 'Biker' || form.type === 'Motor-Car') && (
+                                <View className='mb-10'>
+                                    <Text className='mb-1' style={{ fontFamily: "roboto-medium" }}>Motor Reg Number. (Eg: ABF-2154)</Text>
+                                    <TextInput
+                                        placeholder="Enter reg number"
+                                        autoCapitalize="characters"
+                                        keyboardType="default"
+                                        onChangeText={(text) => updateField("regNumber", text)}
+                                        style={{
+                                            borderWidth: 1,
+                                            borderColor: "#ccc",
+                                            padding: 10,
+                                            paddingVertical: 13,
+                                            borderRadius: 5,
+                                        }}
+                                    />
+                                </View>
+                            )}
 
                             <TouchableOpacity
                                 className='justify-center items-center bg-primary my-4 rounded py-3'

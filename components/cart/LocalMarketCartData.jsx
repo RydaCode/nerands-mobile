@@ -90,7 +90,7 @@ const LocalMarketCartData = ({ item }) => {
     const [state, localDispatch] = useReducer(reducer, initialState);
     const extras = item.product_extras || [];
 
-    console.log("LOCALSSS", localMarketCartItems)
+    // console.log("LOCALSSS", localMarketCartItems)
 
     const extrasMap = useMemo(() => {
         return new Map(

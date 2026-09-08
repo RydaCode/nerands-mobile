@@ -13,11 +13,6 @@ import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import SelectProductCategory from './SelectProductCategory'
 
-interface EditBusinessProductsProps {
-    business_type: string,
-    business_category: string
-}
-
 const EditBusinessProduct = () => {
     const { can } = usePermissions();
     const router = useRouter();
@@ -25,10 +20,14 @@ const EditBusinessProduct = () => {
     const user_id = String(params.user_id ?? '');
     const business_id = String(params.business_id ?? '');
     const id = String(params.id);
-    const name = String(params.name);
-    const category_id = String(params.category_id);
-    const category_name = String(params.category_name);
-    const description = String(params.description);
+    const name = String(params.name ?? '');
+    const category_id = String(params.category_id ?? '');
+    const category_name = String(params.category_name ?? '');
+    const description = String(params.description ?? '');
+    const ingredients = String(params.ingredients ?? '');
+    const business_category = String(params.business_category ?? '');
+
+    console.log("PRODD", params)
 
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
     const [openCatModal, setOpenCatModal] = useState(false);
@@ -51,7 +50,8 @@ const EditBusinessProduct = () => {
         category_id,
         name: name ?? '',
         description: description ?? '',
-        is_active: true
+        is_active: true,
+        ingredients: ingredients ?? ''
     });
 
     useEffect(() => {
@@ -91,6 +91,7 @@ const EditBusinessProduct = () => {
                 name: formData.name.trim(),
                 description: formData.description.trim(),
                 category_id: formData.category_id,
+                ingredients: formData.ingredients || null,
             });
 
             if (!response?.success) {
@@ -221,6 +222,40 @@ const EditBusinessProduct = () => {
                         <FontAwesome name='angle-down' color={COLORS.slate} size={24} />
                     </TouchableOpacity>
                 </View>
+                
+                {/* Ingridients */}
+                {(business_category === 'restaurant' || business_category === 'local_markte') && (
+                    <View className="w-full mb-6">
+                        <View className="w-full mb-2">
+                            <Text
+                                className="text-base"
+                                style={{ fontFamily: 'roboto-medium' }}
+                            >
+                                Ingredients
+                            </Text>
+                        </View>
+
+                        <TextInput
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                            className="rounded-xl w-full px-3 py-3 text-sm"
+                            value={formData.ingredients}
+                            onChangeText={(value) =>
+                                setFormData(prev => ({
+                                    ...prev,
+                                    ingredients: value
+                                }))
+                            }
+                            style={{
+                                fontFamily: 'roboto-medium',
+                                borderWidth: 2,
+                                borderColor: COLORS.lavender,
+                                height: 110
+                            }}
+                        />
+                    </View>
+                )}
                 
                 <TouchableOpacity
                     className='w-full mt-10 bg-green2 justify-center items-center rounded-xl py-3'

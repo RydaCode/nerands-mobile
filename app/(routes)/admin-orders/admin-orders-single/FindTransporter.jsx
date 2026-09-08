@@ -21,25 +21,7 @@ const FindTransporter = ({
     const pointA = { latitude: latitude, longitude: longitude }; // User
     const router = useRouter();
     const { searchTransporter } = useTransporterSearch();
-    const [loading, setLoading] = useState(false);
     const [openTransporterModal, setOpenTransporterModal] = useState(false);
-
-
-    if (isRunnerActive || data?.status === 'in_transit') return null;
-
-    // Placeholder push function — replace with real FCM / WebSocket
-    const sendPushNotification = async (userId, payload) => {
-        console.log(`Sending push to user ${userId}:`, payload);
-        return true;
-    };
-
-    const payload = {
-        order_id: params?.store_order_id,
-        store_id: data?.store_id,
-        latitude: pointA?.latitude,
-        longitude: pointA?.longitude,
-        courier_type: data?.shipping_mode
-    };
 
     // --- Find transporter and notify (wait for driver to accept) ---
     const handleFindTransporter = async () => {
@@ -83,6 +65,8 @@ const FindTransporter = ({
     }, [searchFailed, transporter]);
 
     console.log("PAYLOAD", searchResults)
+
+    if (isRunnerActive || data?.status === 'in_transit') return null;
 
     return (
         <>

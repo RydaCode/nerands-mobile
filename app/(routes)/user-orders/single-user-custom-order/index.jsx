@@ -8,7 +8,7 @@ import { COLORS } from '../../../../constants/constants'
 import useApi from '../../../../hook/useApi'
 import UserSingleCustomOrder from '../cards/UserSingleCustomOrder'
 
-const index = () => {
+const Index = () => {
     const params = useLocalSearchParams();
     const { user_id, runner_id, isAuthenticated } = useSelector((s) => s.auth);
     const { data, isLoading, get } = useApi();
@@ -43,4 +43,4 @@ const index = () => {
     )
 }
 
-export default index
+export default Index

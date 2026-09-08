@@ -12,7 +12,9 @@ import {
 import { useSelector } from "react-redux";
 import { COLORS } from "../../constants/constants";
 import useApi from "../../hook/useApi";
+import { useResponsive } from '../../hook/useResponsive';
 import socket from "../../socket-io/socket";
+import { formatText } from "../../utils/getInitials";
 import EmptyState from "../EmptyState";
 import agoTimeStamp from "../agoTimeStamp";
 
@@ -26,7 +28,22 @@ const OrdersData = ({ order, router, user_id }) => {
     cancelled: "bg-red",
   };
 
-  const statusColor = statusColorMap[order.order_status] || "bg-red";
+
+  const statusColors = {
+      pending: COLORS.red,
+      accepted: COLORS.green1,
+      processing: COLORS.extra_blue,
+      ready: COLORS.coral,
+      delayed: COLORS.red,
+      cancelled: COLORS.red,
+      completed: COLORS.green2,
+      in_transit: COLORS.purple,
+      returned: COLORS.grey,
+  };
+
+  const {wp} = useResponsive();
+
+  const statusColor = statusColorMap[order.store_order_status] || "bg-red";
 
   const orderTota = Number(order.order_total_price) + Number(order.delivery_fee);
 
@@ -56,18 +73,38 @@ const OrdersData = ({ order, router, user_id }) => {
         }
         className="flex-row w-full justify-between items-cente border border-lavender rounded bg-white mb-6 p-1"
       >
-        <View className="flex-row justify-start items-center w-full">
-          <View
-            style={{ height: 65, width: '24%' }}
-            className="border rounded border-lavender justify-center items-center"
-          >
-            <Entypo size={40} name="box" color={COLORS.slate} />
-          </View>
-          <View className="w-[71.7%] flex-row ml-2 justify-between items-center">
-            <View className="w-[90%]">
+        <View className="justify-center items-center w-full">
+          <View className="flex-row justify-between items-center w-full">
+            <View
+              style={{
+                height: wp(11),
+                width: '14%',
+                backgroundColor: COLORS.white,
+              }}
+              className="border rounded border-lavender justify-center items-center"
+            >
+              <Entypo size={29} name="box" color={statusColors[order?.store_order_status] || COLORS.grey} />
+            </View>
+
+            <View className="justify-center items-start" style={{width: '78%'}}>
               <Text className="text-base" style={{ fontFamily: "roboto-medium" }}>
                 Order No: {order.order_number}
               </Text>
+            </View>
+
+            {/* <View
+              className='rounded-full'
+              style={{
+                height: 13,
+                width: 13,
+                backgroundColor: statusColors[order?.store_order_status] || COLORS.grey,
+              }}
+            /> */}
+          </View>
+
+
+          <View className="w-full flex-row px-1 justify-between items-center">
+            <View className="w-full">
               <View className="flex-row justify-between items-center">
                 <Text
                   className="text-base text-primary"
@@ -81,19 +118,22 @@ const OrdersData = ({ order, router, user_id }) => {
                 >
                   Qty: {order.items_quantity}
                 </Text>
+                
                 <View
                   className="flex-row px-2 py-0.5 items-center bg-grey_bg justify-center rounded-sm"
                   style={{ width: "30%" }}
                 >
                   <Text
                     className="text-green1 text-sm"
-                    style={{ fontFamily: "roboto-medium" }}
+                    style={{ fontFamily: "roboto" }}
                   >
                     {order.order_type}
                   </Text>
                 </View>
+
               </View>
-              <View className="flex-row mt-1 justify-between items-center">
+              <View className='my-1' style={{height: 1, width: "100%", backgroundColor: COLORS.grey_bg}}/>
+              <View className="flex-row justify-between items-center">
                 <Text
                   className="text-sm text-slate"
                   style={{ fontFamily: "roboto" }}
@@ -110,9 +150,23 @@ const OrdersData = ({ order, router, user_id }) => {
                 >
                   {' '} ({agoTimeStamp(order.created_at)})
                 </Text>
+
+                <View
+                  className="flex-row px-4 py-0.5 items-center justify-center rounded-2xl"
+                  style={{
+                    backgroundColor: statusColors[order?.store_order_status] || COLORS.grey,
+                  }}
+                >
+                  <Text
+                    className="text-white text-sm"
+                    style={{ fontFamily: "roboto-medium" }}
+                  >
+                    {order.store_order_status === 'completed' ? 'Delivered' :
+                    formatText(order.store_order_status)}
+                  </Text>
+                </View>
               </View>
             </View>
-            <View style={{ height: 13, width: 13 }} className={dotClassName} />
           </View>
         </View>
       </TouchableOpacity>
@@ -145,6 +199,8 @@ const OrdersComponent = ({ title }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const { data, isLoading, error, get } = useApi();
 
+  console.log("order.order_status", orders);
+
   const onEndReachedCalledDuringMomentum = useRef(false);
   // Fetch on mount
   useEffect(() => {
@@ -157,10 +213,7 @@ const OrdersComponent = ({ title }) => {
 
       socket.emit("join_user", user_id);
 
-      console.log("Joining user room:", user_id);
-
       const handleOrderUpdated = (data) => {
-          console.log("ORDER UPDATED RECEIVED:", data);
 
           setOrders(prev =>
               prev.map(order =>
@@ -275,7 +328,7 @@ const OrdersComponent = ({ title }) => {
       ) : (
         <FlatList
           data={orders || []}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 80 }}
           keyExtractor={(item) => `${item.order_id}`}
           renderItem={({ item }) => (
             <OrdersData order={item} router={router} user_id={user_id} />
@@ -339,10 +392,6 @@ const OrdersComponent = ({ title }) => {
                 </View>
               );
             }
-          }}
-
-          contentContainerStyle={{
-            paddingBottom: 80,
           }}
         />
       )}

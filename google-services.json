@@ -7,6 +7,44 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:797185213044:android:a44128cdb5fcd880d84721",
+        "android_client_info": {
+          "package_name": "com.nerands.business"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgNonoOv6zAkNlaFglRrtt80A5ZyvG8Co"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797185213044:android:a983fc046fc4b6d0d84721",
+        "android_client_info": {
+          "package_name": "com.nerands.business.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgNonoOv6zAkNlaFglRrtt80A5ZyvG8Co"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:797185213044:android:bd0fdd0235018c53d84721",
         "android_client_info": {
           "package_name": "com.nerands.marketplace"

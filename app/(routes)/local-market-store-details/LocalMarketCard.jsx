@@ -7,7 +7,7 @@ import { COLORS } from '../../../constants/constants';
 import { useResponsive } from '../../../hook/useResponsive';
 import { addLocalMarketItem } from '../../../redux/store/slices/LocalMarketCartSlice';
 import { IMAGE_URI } from '../../../RequestMethods';
-import { getAvatarColor } from '../../../utils/getInitials';
+import { formatText, getAvatarColor } from '../../../utils/getInitials';
 import { toast } from '../../../utils/toast';
 
 const LocalMarketCard = (props) => {
@@ -83,8 +83,12 @@ const LocalMarketCard = (props) => {
                         source={{uri: `${IMAGE_URI}${props.product_image}`}}
                     />
                 )}
-                <View className='flex-row px-2 absolute h-7 w-30 top-2 left-2 items-center justify-center bg-transparentBlack rounded-full'>
-                    <Text numberOfLines={1} className='text-sm text-white'>Fresh</Text>
+                <View 
+                    className='flex-row px-2 absolute h-7 w-30 top-2 left-2 items-center justify-center bg-transparentBlack rounded-full'
+                    style={{backgroundColor: 'rgba(0, 0, 0, 0.3)'}}>
+                    <Text numberOfLines={1} className='text-sm text-white'>
+                        {formatText(props.business_product_category)}
+                    </Text>
                 </View>
             </View>
             <View className='w-full justify-center items-center px-1'>

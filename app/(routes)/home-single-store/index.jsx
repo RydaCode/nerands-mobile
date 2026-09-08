@@ -171,6 +171,8 @@ const StorePage = () => {
 
     const cartItems = useSelector((state) => state.cart.cartItems);
 
+    console.log("CATRTSSSS", cartItems)
+
     // Total cart price
     const [totalZMK, setTotalZMK] = useState(0);
     useEffect(() => {

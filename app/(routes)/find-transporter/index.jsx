@@ -3,12 +3,12 @@ import { MotiView } from 'moti'
 import { useState } from 'react'
 import { Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import MainHeader from '../../../components/MainHeader'
+import Headers from '../../../components/Headers'
 import { COLORS } from '../../../constants/constants'
 import HistoryCustomTransporters from './HistoryCustomTransporters'
 import NewCustomTransporter from './NewCustomTransporter'
 
-const index = () => {
+const Index = () => {
     const { width, height } = useWindowDimensions();
     const [activeTab, setActiveTab] = useState('new');
     const params = useLocalSearchParams();
@@ -18,7 +18,12 @@ const index = () => {
 
     return (
         <SafeAreaView className='flex-1 bg-white px-4'>
-            <MainHeader fontFamily='maven-medium' textStyles='text-2xl' header_name='Custom'/>
+            <Headers header_name='Custom'
+                fontFamily='ubuntu-medium'
+                textStyles='text-2xl'
+                // icon={<Entypo name='menu' size={24} color={COLORS.slate}/>}
+                // handlePress={openMenu}
+            />
 
             <View className='w-full mt-2'>
                 <View className='flex-row justify-between mt-4 mb-2 relative'>
@@ -94,4 +99,4 @@ const index = () => {
     )
 }
 
-export default index
+export default Index

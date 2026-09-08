@@ -35,13 +35,17 @@ const HistoryCustomTransporters = ({created_by, custom_order_id, store_order_id,
                 custom_order_id,
                 created_by: created_by,
                 order_type: order_type,
-                is_runner: is_runner
+                is_runner: is_runner,
+                store_order_id: store_order_id
             });
 
             if (res?.data.data.success) {
                 toast.success(res?.data.data.message || 'Transporter assigned successfully.');
+                router.back();
+                return;
             } else {
                 toast.error(res?.data.data.message || 'Failed to assign transporter.');
+                return;
             }
 
         } catch (error) {

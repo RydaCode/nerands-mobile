@@ -140,9 +140,7 @@ const LocalMarketCartTab = () => {
                 }))
             }))
         };
-    }, [localMarketCartItems, latitude, longitude, user_id]);
-
-    console.log("ORDER DATA", orderData?.stores[0]?.items[0])
+    }, [localMarketCartItems, latitude, longitude, user_id, deliveryFee]);
 
     const sections = Object.values(
         localMarketCartItems.reduce((acc, item) => {
@@ -165,6 +163,8 @@ const LocalMarketCartTab = () => {
             return acc;
         }, {})
     );
+
+    console.log("ORDER NOW", orderData)
 
     // API hook
     const {

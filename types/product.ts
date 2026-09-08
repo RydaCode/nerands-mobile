@@ -17,6 +17,7 @@ export interface Product {
     images: ProductImage[];
     category: ProductCategory | null;
     sku: string;
+    ingredients: string | null;
     is_active: boolean;
     already_exists: boolean;
     created_at: string;

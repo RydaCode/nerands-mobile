@@ -203,6 +203,8 @@ const Index = ({category='Localmarket'}) => {
     const favorited =
         params.favorited === true || params.favorited === 'true';
 
+    console.log("StoresCard item:", productsList);
+
     return (
         <SafeAreaView className='flex-1 bg-white justify-center w-full items-center'>
             <View className='w-full px-2'>
@@ -293,6 +295,7 @@ const Index = ({category='Localmarket'}) => {
                                     total_ratings={item.total_ratings}
                                     favorited={item.favorited}
                                     is_closed={storedata?.[0]?.is_closed}
+                                    business_product_category={item.business_product_category.name}
                                 />
                             );
                         }}
@@ -307,9 +310,9 @@ const Index = ({category='Localmarket'}) => {
                                             height: wp(23),
                                             backgroundColor: getAvatarColor(params.store_id)
                                         }}
-                                        className="w-20 h-20 rounded-full border-2 border-lavender"
+                                        className="w-20 h-20 justify-center items-center rounded-full border-2 border-lavender"
                                     >
-                                        {!params.store_profileimage ? (
+                                        {!params.store_coverimage ? (
                                             <Text
                                                 className="text-white text-xs"
                                                 style={{ fontFamily: 'roboto-medium' }}
@@ -318,7 +321,7 @@ const Index = ({category='Localmarket'}) => {
                                             </Text>
                                         ) : (
                                             <Image
-                                                source={{ uri: `${IMAGE_URI}${params.store_profileimage}` }}
+                                                source={{ uri: `${IMAGE_URI}${params.store_coverimage}` }}
                                                 className="rounded"
                                                 style={{ width: '100%', height: '100%', borderRadius: 9999, borderWidth: 1, borderColor: COLORS.white }}
                                                 contentFit="cover"
@@ -743,7 +746,7 @@ const Index = ({category='Localmarket'}) => {
                                                 : 'font-medium text-gray-700'
                                         }
                                     >
-                                        {item.name}
+                                        {formatText(item.name)}
                                     </Text>
                                 </MotiView>
                             </TouchableOpacity>

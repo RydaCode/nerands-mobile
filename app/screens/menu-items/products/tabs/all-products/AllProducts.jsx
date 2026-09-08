@@ -105,9 +105,6 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
     const showInitialLoader =
         isLoading && productsList.length === 0 && !isRefreshing;
 
-
-        console.log("LIST OF P", productsList)
-
     /* ------------------ RENDER ------------------ */
     return (
         <>
@@ -153,7 +150,7 @@ const AllProducts = ({ refreshKey, numColumns, category }) => {
                                     product_images={item.product_images}
                                     product_image={item.primary_image?.image_url}
                                     product_name={item.product_name}
-                                    product_description={item.product_description}
+                                    product_description={item.business_product_description}
                                     product_price={item.product_price}
                                     product_status={item.product_status}
                                     store_name={item.store_name}

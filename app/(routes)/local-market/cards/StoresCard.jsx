@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
 import { useSelector } from 'react-redux'
 import { COLORS, SIZES } from '../../../../constants/constants'
-import { STORES_IMAGE_URI } from '../../../../RequestMethods'
+import { IMAGE_URI } from '../../../../RequestMethods'
 import { calculateDistance } from '../../../../utils/getDistance'
 import { formatText } from '../../../../utils/getInitials'
 
@@ -45,7 +45,7 @@ const StoresCard = (item) => {
                 <View className="relative rounded" style={{ width: '29%', height: 70 }}>
                     <Image
                         className="h-full w-full rounded-sm"
-                        source={{ uri: `${STORES_IMAGE_URI}${item?.item?.store_profileimage}` }}
+                        source={{ uri: `${IMAGE_URI}${item?.item?.store_coverimage}` }}
                     />
                     {item?.item?.is_closed &&
                         <View className="absolute w-full h-full bg-black opacity-70 rounded flex-row justify-center items-center z-50">

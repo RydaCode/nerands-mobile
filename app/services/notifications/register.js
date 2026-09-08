@@ -49,7 +49,8 @@ export const registerDevice = async () => {
         "/notifications/register-device", {
             push_token,
             platform: Platform.OS,
-            device_name: Device.deviceName || "Unknown Device"
+            device_name: Device.deviceName || "Unknown Device",
+            app_type: 'customer'
         }
     );
 };

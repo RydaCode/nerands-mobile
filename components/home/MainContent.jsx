@@ -55,7 +55,7 @@ const MainContent = ({
   const isLandscape = width > height; // Determine orientation
   const isTablet = width >= 768; // Define a breakpoint for tablets
 
-  const { wp, responsiveSize } = useResponsive();
+  const { wp } = useResponsive();
 
   const textDimension = isLandscape
     ? { fontSize: 25, fontFamily: "roboto-medium" } // Larger dimensions for landscape

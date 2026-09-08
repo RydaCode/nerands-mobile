@@ -66,7 +66,8 @@ const CreateProductCard = ({params}) => {
         product_name: '',
         category_id: '',
         product_description: '',
-        product_price: ''
+        product_price: '',
+        ingredients: ''
     });
 
     useEffect(() => {
@@ -175,6 +176,7 @@ const CreateProductCard = ({params}) => {
                 store_category: formData.store_category.trim(),
                 category_id: selectedcategory.id,
                 product_price: formData.product_price.trim(),
+                ingredients: formData.ingredients.trim(),
                 images: uploadedImages.map(image => image.key),
             });
 
@@ -331,6 +333,17 @@ const CreateProductCard = ({params}) => {
                                 borderStyle='border-2 border-lavender rounded-xl'
                                 lines={4}
                             />
+
+                            {(params.store_category === 'restaurant' || params.store_category === 'local_market') && (
+                                <DescriptionInput
+                                    title='Ingredients'
+                                    handleChangeText={(value) => handleChangeText('ingredients', value)}
+                                    desc='Please enter all ingredients used in this product, if any.'
+                                    otherStyles='text-lg'
+                                    borderStyle='border-2 border-lavender rounded-xl'
+                                    lines={4}
+                                />
+                            )}
                             
                             <View className='w-full mt-10'>
                                 {/* Pick Image Button */}

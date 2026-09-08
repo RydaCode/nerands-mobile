@@ -1,33 +1,94 @@
-
-// Product total after base price + variants + extras
+// Product unit price
+// ----------------------------------------------------
+// No variant groups:
+//     final_price
+//
+// Has variant groups:
+//     sum of all selected variant option prices
+//
+// Extras:
+//     selected extras are added to the variant/product price
+// ----------------------------------------------------
 export const calculateUnitPrice = (item) => {
-    const variants = Object.values(item.selected_variants || {});
+    const variantGroups = item.variant_groups || [];
 
-    const variantPrice = variants.length
-        ? variants.reduce((s, v) => s + (v.price || 0), 0)
-        : item.final_price;
+    /*
+     * --------------------------------------------------
+     * NO VARIANTS
+     * --------------------------------------------------
+     */
+    const basePrice =
+        variantGroups.length === 0
+            ? Number(item.final_price) || 0
+            : 0;
+
+    /*
+     * --------------------------------------------------
+     * VARIANTS
+     * --------------------------------------------------
+     *
+     * If the product has variants, use the prices of
+     * the selected options.
+     *
+     * Required groups already have their first option
+     * preselected, so their price is automatically
+     * included.
+     */
+    const variantPrice =
+        variantGroups.length > 0
+            ? (item.selected_variants || [])
+                .flatMap(group => group.options || [])
+                .reduce(
+                    (sum, option) =>
+                        sum +
+                        (Number(option.option_price) || 0),
+                    0
+                )
+            : 0;
+
+    /*
+     * --------------------------------------------------
+     * EXTRAS
+     * --------------------------------------------------
+     */
 
     const extrasMap = new Map(
-        (item.product_extras || []).map(e => [e.extra_id, e])
+        (item.product_extras || []).map(extra => [
+            extra.extra_id,
+            extra
+        ])
     );
 
     const extrasTotal = (item.selected_extras || []).reduce(
-        (s, id) => s + (extrasMap.get(id)?.extra_price || 0),
+        (sum, id) =>
+            sum +
+            (Number(extrasMap.get(id)?.extra_price) || 0),
         0
     );
 
-    return variantPrice + extrasTotal;
+    /*
+     * --------------------------------------------------
+     * FINAL UNIT PRICE
+     * --------------------------------------------------
+     */
+
+    return basePrice + variantPrice + extrasTotal;
 };
 
-// Product total after base price + variants + extras + quantity
+
+// Product total after quantity
 export const calculateItemTotal = (item) => {
     const unitPrice = calculateUnitPrice(item);
-    return unitPrice * item.product_qty;
+
+    return unitPrice * (Number(item.product_qty) || 0);
 };
+
 
 // Cart total
 export const calculateCartTotal = (cartItems) => {
-    return cartItems.reduce((sum, item) => {
-        return sum + calculateItemTotal(item);
-    }, 0);
+    return cartItems.reduce(
+        (sum, item) =>
+            sum + calculateItemTotal(item),
+        0
+    );
 };

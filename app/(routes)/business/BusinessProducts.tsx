@@ -22,6 +22,7 @@ const BusinessProducts = () => {
     const {
         user_id: userIdParam,
         business_id: businessIdParam,
+        business_category: businessCategoryParam,
     } = useLocalSearchParams()
 
         const user_id = Array.isArray(userIdParam)
@@ -32,6 +33,10 @@ const BusinessProducts = () => {
         ? businessIdParam[0]
         : businessIdParam
 
+    const business_category = Array.isArray(businessCategoryParam)
+        ? businessCategoryParam[0]
+        : businessCategoryParam
+
 
     const { data, isLoading, error, get } = useApi();
     const { wp, responsiveSize } = useResponsive();
@@ -41,7 +46,7 @@ const BusinessProducts = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    console.log("PRODD", products)
+    console.log("PROSSSS", products)
 
     const currentPageRef = useRef(0);
     const totalPagesRef = useRef(1);
@@ -210,7 +215,9 @@ const BusinessProducts = () => {
                                     name: item.name,
                                     category_id: item.category?.id,
                                     category_name: item.category?.name,
-                                    description: item.description,
+                                    description: item.description ?? null,
+                                    ingredients: item.ingredients ?? null,
+                                    business_category: business_category ?? null
                                 },
                             })
                         }

@@ -164,7 +164,8 @@ const Index = () => {
     const handleUseProduct = async (
         id: string,
         name: string,
-        price: string
+        price: string,
+        already_exists: boolean
     ) => {
         if (!id) {
             toast.error('Product Id is required.');
@@ -183,7 +184,7 @@ const Index = () => {
         // Remove previous price error
         setPriceErrorId(null);
 
-        if (!price.trim()) {
+        if (!price.trim() && !already_exists) {
             setPriceErrorId(id);
             toast.error(`Please enter product price for ${name}`);
             return;
@@ -191,7 +192,7 @@ const Index = () => {
 
         const numericPrice = Number(price);
 
-        if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+        if ((!Number.isFinite(numericPrice) || numericPrice <= 0) && !already_exists) {
             setPriceErrorId(id);
             toast.error(`Please enter a valid product price for ${name}`);
             return;
@@ -203,6 +204,7 @@ const Index = () => {
             store_category: formData.store_category,
             product_id: id,
             product_price: numericPrice,
+            already_exists: already_exists
         };
 
         try {
@@ -212,21 +214,19 @@ const Index = () => {
 
             if (!res?.success) {
                 toast.error(
-                    res?.message || 'Failed to use this product, please try again.'
+                    res?.data?.message || 'Failed to use this product, please try again.'
                 );
                 return;
             }
 
             toast.success(
-                res?.message || 'Product used successfully.'
+                res?.data?.message || 'Product used successfully.'
             );
             reload();
 
         } catch (error) {
             console.error('USE PRODUCT ERROR:', error);
-
             toast.error('Something went wrong. Please try again.');
-
         } finally {
             setUsingProductId(null);
         }
@@ -334,7 +334,8 @@ const Index = () => {
                             handleUseProduct(
                                 item.id,
                                 item.name,
-                                productPrices[item.id] || ''
+                                productPrices[item.id] || '',
+                                item.already_exists
                             )
                         }
                     >
